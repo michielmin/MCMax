@@ -1,0 +1,29 @@
+  This is the central repository for the MCMax code (Min et al 2009). 
+  Changes to the code are monitored by a version control system called git.
+  Don't use this folder as your working directory: keep a local copy of 
+  the files, and only update these files with a stable version!
+
+## How to use:
+
+ # View the log of past changes:
+   > git log
+
+## 'committing' changes. 
+ # (If you have a bugfix or extra feature)
+   - first copy the files you changed from your working directory into this 
+     folder (or merge them)
+
+   - check which files where modified:
+   > git status
+
+   - if git reports there are untracked files:
+   > git add filename
+
+   - commit the changes. This will add an entry to the logfile with the 
+     current version of the code, along with you username and the date/time.
+     Use the comment string to describe what you fixed/updated!:
+   > git commit -a -m "This comment will go into the logfile"
+
+   - you can now check the new status and logfile, which contains your entry:
+   > git status
+   > git log
