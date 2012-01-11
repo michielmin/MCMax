@@ -1222,7 +1222,7 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 				Tevap=1500d0
 				minT=0d0
 				maxT=real(TMAX)*dT
-				do iter=1,100
+				do iter=1,10
 					if(determinegasfrac(Tevap,i,j,ii).gt.1d0) then
 						maxT=Tevap
 						Tevap=(Tevap+minT)/2d0

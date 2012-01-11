@@ -44,7 +44,7 @@
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw
-	real*8 radtau,tau,reprocess,tot2,mrn_index0
+	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2
 	integer ntau1
 
 	startype='PLANCK'
@@ -1400,11 +1400,6 @@ c	else
 	!  Set abundances according to mrn distribution
 	if(mrn) then
 		call gsd_MRN(rgrain(1:ngrains),warg(1:ngrains))	! GijsExp
-		do ii=1,ngrains
-			if(shtype(ii).eq.'INFALL') then
-				warg(ii)=1d0
-			endif
-		enddo
 		warg=warg/sum(warg)
 	endif
 
@@ -1581,7 +1576,7 @@ c	endif
 	D%Mtot=D%Mtot*Msun
 	
 	D%Mdot=D%Mdot*Msun/(365.25d0*24d0*60d0*60d0)
-	if(vexp2.le.0d0) vexp2=vexp
+	if(vexp2.le.0d0) vexp2=vexp1
 	vexp1=vexp1*100000d0
 	vexp2=vexp2*100000d0
 	texp1=D%Rin*AU/vexp1
@@ -2088,9 +2083,9 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		else if(denstype.eq.'MEIXNER') then
 			r=D%R_av(i)/AU
 			C(i,j)%dens=((r/D%Rin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
-     &					(exp(-(r/MeixRsw)**MeixD)/exp(-(D%Rin/MeixRsw)**MeixD)))))*
+     &					(dexp(-(r/MeixRsw)**MeixD+(D%Rin/MeixRsw)**MeixD)))))*
      &					(1d0+MeixA*(1d0-cos(D%theta_av(j)))**MeixF*
-     &					(exp(-(r/MeixRsw)**MeixE)/exp(-(D%Rin/MeixRsw)**MeixE)))
+     &					(dexp(-(r/MeixRsw)**MeixE+(D%Rin/MeixRsw)**MeixE)))
 		endif
 		C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &			(D%Theta(j)-D%Theta(j+1))*AU**3
@@ -2281,26 +2276,17 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	! Set different MRN distributions for Meixner densitity distribution
 	if(denstype.eq.'MEIXNER'.and.MeixG.ne.0d0.and.mrn) then
 		mrn_index0=mrn_index
-		f1=C(D%nR-1,D%nTheta-1)%dens/(D%R_av(D%nR-1)/AU)
-		f2=f1
-		do i=1,D%nR-1
-			r=D%R_av(i)/AU
-			if((C(D%nR-1,D%nTheta-1)%dens/r).lt.f2) f2=C(D%nR-1,D%nTheta-1)%dens/r
-		enddo
+		dens1=C(D%nR-1,1)%dens*(D%R_av(D%nR-1)/AU)**2
+		dens2=C(1,D%nTheta-1)%dens*(D%R_av(1)/AU)**2
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
-			r=D%R_av(i)/AU
-			f1=exp(-(r/MeixRsw)**MeixE)/exp(-(D%Rin/MeixRsw)**MeixE)
-			f2=1d0-f1
-			mrn_index=MeixG*f1+mrn_index0*f2
-
-c			if(r.gt.(D%Rin+MeixRsw)) then
-c				mrn_index=mrn_index*(D%Rin+MeixRsw)/r+MeixG*(1d0-(D%Rin+MeixRsw)/r)
-c			endif
-
+			tot=C(i,j)%dens*(D%R_av(i)/AU)**2
+			f1=(tot-dens1)/(dens2-dens1)
+			f2=(dens2-tot)/(dens2-dens1)
+			mrn_index=MeixG*f2+mrn_index0*f1
 			call gsd_MRN(rgrain(1:ngrains),C(i,j)%w(1:ngrains))
 		enddo
-		write(63,*) r,mrn_index
+		write(63,*) D%R_av(i)/AU,mrn_index
 		enddo
 		mrn_index=mrn_index0
 c		use_topac=.false.
@@ -2610,8 +2596,8 @@ c		endif
 	
 	call BackWarming(1d0)
 
-	call OpticallyThin(.true.)
 	if(Nphot.gt.0) then
+	call OpticallyThin(.true.)
 	do i=1,ngrains
 		if(Grain(i)%parttype.eq.3) call MakeMixAggregates(i)
 	enddo
@@ -2678,24 +2664,51 @@ c Add a possible infalling cloud
 					rho=rho/gas2dust
 					C(i,j)%dens=C(i,j)%dens*(1d0-C(i,j)%w(ii))
 					C(i,j)%dens0=C(i,j)%dens0*(1d0-C(i,j)%w0(ii))
-					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
+c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 					C(i,j)%w=C(i,j)%w*C(i,j)%dens
 					C(i,j)%w0=C(i,j)%w0*C(i,j)%dens0
 					C(i,j)%w(ii)=rho
 					C(i,j)%w0(ii)=rho
 					C(i,j)%dens=C(i,j)%dens+rho
 					C(i,j)%dens0=C(i,j)%dens0+rho
-					C(i,j)%gasdens=C(i,j)%gasdens+rho
+c					C(i,j)%gasdens=C(i,j)%gasdens+rho
+					if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
+					if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
 					C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 					tot=sum(C(i,j)%w(1:ngrains))
-					C(i,j)%w=C(i,j)%w/tot
+					if(tot.gt.1d-50) then
+						C(i,j)%w=C(i,j)%w/tot
+					else
+						C(i,j)%w(1:ngrains)=warg(1:ngrains)/sum(warg(1:ngrains))
+					endif
 					tot=sum(C(i,j)%w0(1:ngrains))
-					C(i,j)%w0=C(i,j)%w0/tot
+					if(tot.gt.1d-50) then
+						C(i,j)%w0=C(i,j)%w0/tot
+					else
+						C(i,j)%w0(1:ngrains)=warg(1:ngrains)/sum(warg(1:ngrains))
+					endif
 				enddo
 			enddo
 		endif
 	enddo
 
+	write(file,'(a,"betas.dat")') outdir(1:len_trim(outdir))
+	open(unit=90,file=file,RECL=6000)
+	write(90,*) ngrains
+	allocate(spec(nlam))
+	do ii=1,ngrains
+	do iopac=1,Grain(ii)%nopac
+		spec(1:nlam)=Grain(ii)%Kabs(iopac,1:nlam)+Grain(ii)%Ksca(iopac,1:nlam)*(1d0-Grain(ii)%g(iopac,1:nlam))
+		call integrate(spec*D%Fstar,tot)
+		call integrate(D%Fstar,tot2)
+		tot=tot/tot2
+		tot=tot*D%Lstar*Lsun/Luminosity(5777d0,Rsun)
+		tot=(tot*1d4/(4d0*pi*clight))/(6.67300d-8*D%Mstar)
+		write(90,*) Grain(ii)%rv,tot,C(D%nR/2,D%nTheta-1)%w0(ii)
+	enddo
+	enddo
+	deallocate(spec)
+	close(unit=90)
 
 	do i=1,D%nR-1
 		do j=1,D%nTheta-1

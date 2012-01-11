@@ -407,7 +407,8 @@ c               write(*,'("vsett[",I0,",",I0"]= ",E16.5)') is,iz,vsett(is,iz)
             !
             ! Check validity of this number 
             !
-            if(number_invalid(vsett(is,iz)).ne.0) then
+            if(number_invalid(vsett(is,iz)).ne.0.and.
+     &			Grain(is)%shtype.eq.'DISK'.and.Grain(is)%shscale(ir).gt.0d0) then
                write(*,*) 'ERROR: NaN or Inf value detected (2)'
                stop 
             endif
