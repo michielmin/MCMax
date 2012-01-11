@@ -1766,7 +1766,6 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		do i=1,D%nR
 		do j=1,D%nTheta
 			read(20,*) C(i,j)%dens
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
 		enddo
 		enddo
 	
@@ -2007,7 +2006,6 @@ c in the theta grid we actually store cos(theta) for convenience
      & (128d0/(17d0))*rd**2*zd*((D%Rout/rd)**(17d0/8d0)-(D%Rin/rd)**(17d0/8d0))
      & )/(AU**3)
 			C(i,j)%dens=C(i,j)%dens*scale
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
 			mdustscale=.false.
 		else if(denstype.eq.'MIN') then
 			r=D%R_av(i)*sin(D%theta_av(j))/AU
@@ -2127,7 +2125,6 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
 		C(i,j)%dens=C(i,j)%dens*D%Mtot/MassTot
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
 		C(i,j)%mass=C(i,j)%V*C(i,j)%dens
 		C(i,j)%dens0=C(i,j)%dens
 	enddo
@@ -2347,9 +2344,7 @@ c		endif
 	do j=1,D%nTheta-1
 		C(i,j)%dens0=C(i,j)%dens0*MassTot0/MassTot
 		C(i,j)%dens=C(i,j)%dens*MassTot0/MassTot
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-		if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-		C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+		call CheckMinimumDensity(i,j)
 	enddo
 	enddo
 
@@ -2549,9 +2544,7 @@ c		endif
 		do j=1,D%nTheta-1
 			C(i,j)%dens0=C(i,j)%dens0*MassTot0/MassTot
 			C(i,j)%dens=C(i,j)%dens*MassTot0/MassTot
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-			if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+			call CheckMinimumDensity(i,j)
 		enddo
 		enddo
 	endif
@@ -2585,7 +2578,6 @@ c		endif
 		hr=zd*(r/rd)**1.125d0
 		f2=exp(-(pi/4d0)*(z/hr)**2)
 		C(i,j)%dens=f1*f2*scale/(AU)
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
 		C(i,j)%mass=C(i,j)%V*C(i,j)%dens
 		MassTot=MassTot+C(i,j)%mass
 		C(i,j)%dens0=C(i,j)%dens
@@ -2671,10 +2663,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 					C(i,j)%w0(ii)=rho
 					C(i,j)%dens=C(i,j)%dens+rho
 					C(i,j)%dens0=C(i,j)%dens0+rho
-c					C(i,j)%gasdens=C(i,j)%gasdens+rho
-					if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-					if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-					C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+					call CheckMinimumDensity(i,j)
 					tot=sum(C(i,j)%w(1:ngrains))
 					if(tot.gt.1d-50) then
 						C(i,j)%w=C(i,j)%w/tot
@@ -2826,7 +2815,7 @@ c		f_weight=1d0
 					else
 						C(i,j)%dens=1d-60
 					endif
-					if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
+					if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-50
 					C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 					C(i,j)%dens0=C(i,j)%dens
 					MassTot=MassTot+C(i,j)%mass
@@ -3096,6 +3085,12 @@ c		f_weight=f_weight_backup
 
 	allocate(ncoolingtime(0:D%nR))
 	allocate(coolingtime(0:D%nR))
+
+	do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			call CheckMinimumDensity(i,j)
+		enddo
+	enddo
 
 	write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
 	open(unit=90,file=surfdensfile,RECL=100)
@@ -3897,9 +3892,7 @@ c-----------------------------------------------------------------------
 		C(i,j)%mass=C(i,j)%mass*MassTot0/MassTot
 		C(i,j)%dens=C(i,j)%dens*MassTot0/MassTot
 		C(i,j)%dens0=C(i,j)%dens0*MassTot0/MassTot
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-		if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-		C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+		call CheckMinimumDensity(i,j)
 	enddo
 	enddo
 
@@ -3945,9 +3938,7 @@ c-----------------------------------------------------------------------
 		C(i,j)%mass=C(i,j)%mass*MassTot0/MassTot
 		C(i,j)%dens=C(i,j)%dens*MassTot0/MassTot
 		C(i,j)%dens0=C(i,j)%dens0*MassTot0/MassTot
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-		if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-		C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+		call CheckMinimumDensity(i,j)
 	enddo
 	enddo
 

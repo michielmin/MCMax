@@ -639,11 +639,7 @@ C	enddo
 					C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)/C(i,j)%mass
 				endif
 			enddo
-			if(C(i,j)%dens.lt.1d-50) then
-				C(i,j)%dens=1d-60
-				C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-			endif
-			if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
+			call CheckMinimumDensity(i,j)
 		else
 			if(Rav(i).gt.D%R_av(i1).or.i1.eq.1) then
 				dens=log10(Cold(i1)%gasdens)+
@@ -690,9 +686,7 @@ C	enddo
 				endif
 			enddo
 		endif
-		if(C(i,j)%gasdens.lt.1d-50) C(i,j)%gasdens=1d-60
-		if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-		if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
+		call CheckMinimumDensity(i,j)
 		tot=0d0
 		do ii=1,ngrains
 			tot=tot+C(i,j)%w(ii)

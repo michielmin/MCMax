@@ -316,22 +316,7 @@ c			endif
 				enddo
 			endif
 			C(i,j)%dens=C(i,j)%dens0*tot
-			if(C(i,j)%dens.lt.1d-50) then
-				C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)
-				C(i,j)%dens=1d-60
-				C(i,j)%gasfrac=1d0
-			else if(C(i,j)%dens.le.C(i,j)%dens0) then
-				C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
-			else
-				C(i,j)%gasfrac=0d0
-				C(i,j)%dens=C(i,j)%dens0
-			endif
-			if(C(i,j)%gasdens.lt.1d-50) then
-				C(i,j)%gasdens=1d-60
-			endif
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-			if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+			call CheckMinimumDensity(i,j)
 		enddo
 	enddo
 
@@ -422,20 +407,7 @@ c	Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
 		endif
 		C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 		C(i,j)%gasdens=dens(i,j)
-		if(C(i,j)%dens.lt.1d-50) then
-			C(i,j)%dens=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-			C(i,j)%w=C(i,j)%w0
-		endif
-		if(C(i,j)%gasdens.lt.1d-50) then
-			C(i,j)%gasdens=1d-60
-		endif
-		if(C(i,j)%dens0.lt.1d-50) then
-			C(i,j)%dens0=1d-60
-			C(i,j)%dens=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-			C(i,j)%w=C(i,j)%w0
-		endif
+		call CheckMinimumDensity(i,j)
 		DiskMass=DiskMass+C(i,j)%V*(gas2dust*C(i,j)%gasdens+C(i,j)%dens0)
 	enddo
 	enddo
@@ -960,7 +932,7 @@ c-----------------------------------------------------------------------
 		enddo
 		do j=1,D%nTheta-1
 			C(i,j)%dens=rho(j)*M0/M1
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
+			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-50
 			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 			C(i,j)%dens0=C(i,j)%dens
 		enddo
@@ -1209,7 +1181,7 @@ c----------------------
 		dens1(i)=C1(i,j)%dens+(tot*C1(i,j)%dens0-C1(i,j)%dens)
 		if(dens1(i).gt.C1(i,j)%dens0) dens1(i)=C1(i,j)%dens0
 		if(dens1(i).lt.1d-50) then
-			dens1(i)=1d-60
+			dens1(i)=1d-50
 		endif
 	enddo
 
@@ -1271,7 +1243,7 @@ c----------------------
 		if(C1(i,j)%dens.gt.C1(i,j)%dens0) C1(i,j)%dens=C1(i,j)%dens0
 		if(C1(i,j)%dens.lt.1d-50) then
 			C1(i,j)%w(1:ngrains)=C1(i,j)%w0(1:ngrains)
-			C1(i,j)%dens=1d-60
+			C1(i,j)%dens=1d-50
 			C1(i,j)%gasfrac=1d0
 		else
 			C1(i,j)%gasfrac=1d0-C1(i,j)%dens/C1(i,j)%dens0
@@ -1468,7 +1440,7 @@ c----------------------
 		if(C1(i,j)%dens.gt.C1(i,j)%dens0) C1(i,j)%dens=C1(i,j)%dens0
 		if(C1(i,j)%dens.lt.1d-50) then
 			C1(i,j)%w(1:ngrains)=C1(i,j)%w0(1:ngrains)
-			C1(i,j)%dens=1d-60
+			C1(i,j)%dens=1d-50
 			C1(i,j)%gasfrac=1d0
 		else
 			C1(i,j)%gasfrac=1d0-C1(i,j)%dens/C1(i,j)%dens0
@@ -1593,13 +1565,13 @@ c----------------------
 	      C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
 	   else
 	      C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)
-	      C(i,j)%dens=1d-60
+	      C(i,j)%dens=1d-50
 	   endif
 c----------------------
 	   if(C(i,j)%dens.gt.C(i,j)%dens0) C(i,j)%dens=C(i,j)%dens0
 	   if(C(i,j)%dens.lt.1d-50) then
 	      C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)
-	      C(i,j)%dens=1d-60
+	      C(i,j)%dens=1d-50
 	      C(i,j)%gasfrac=1d0
 	   else
 	      C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
@@ -1858,9 +1830,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			C(i,j)%dens0=C(i,j)%dens0*Vold/C(i,j)%V
 			C(i,j)%dens=C(i,j)%dens*Vold/C(i,j)%V
 			C(i,j)%gasdens=C(i,j)%gasdens*Vold/C(i,j)%V
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-			if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+			call CheckMinimumDensity(i,j)
 		enddo
 	enddo
 	
@@ -1954,9 +1924,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			C(i,j)%dens0=C(i,j)%dens0*Vold/C(i,j)%V
 			C(i,j)%dens=C(i,j)%dens*Vold/C(i,j)%V
 			C(i,j)%gasdens=C(i,j)%gasdens*Vold/C(i,j)%V
-			if(C(i,j)%dens.lt.1d-50) C(i,j)%dens=1d-60
-			if(C(i,j)%dens0.lt.1d-50) C(i,j)%dens0=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+			call CheckMinimumDensity(i,j)
 		enddo
 	enddo
 	
@@ -2043,7 +2011,7 @@ c ------------ for the IN05 sublimation law --------------------
 			if(C(i,j)%dens.gt.C(i,j)%dens0) C(i,j)%dens=C(i,j)%dens0
 			if(C(i,j)%dens.lt.1d-50) then
 				C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)
-				C(i,j)%dens=1d-60
+				C(i,j)%dens=1d-50
 				C(i,j)%gasfrac=1d0
 			else
 				C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
@@ -2349,7 +2317,7 @@ c ------------ for the IN05 sublimation law --------------------
 				enddo
 				C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
 			else
-				C(i,j)%dens=1d-60
+				C(i,j)%dens=1d-50
 				C(i,j)%gasfrac=1d0
 				C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)
 			endif
@@ -2617,6 +2585,37 @@ c	character*500 s
 	subroutine CheckMinimumDensity(i,j)
 	use Parameters
 	IMPLICIT NONE
+	integer i,j,ii
+	real*8 tot(ngrains)
+	
+c Set minimum density of condensable stuff
+	if(C(i,j)%dens0.le.1d-50) then
+		C(i,j)%dens0=1d-50
+	endif
+c Set minimum dust density
+	if(C(i,j)%dens.le.1d-50) then
+		C(i,j)%dens=1d-50
+	endif
+c Set minimum gas density
+	if(C(i,j)%gasdens.le.1d-50) then
+		C(i,j)%gasdens=1d-50
+	endif
+c Make sure density of condensable stuff is larger than dust density
+	do ii=1,ngrains
+		tot(ii)=C(i,j)%dens*C(i,j)%w(ii)
+	enddo
+	do ii=1,ngrains
+		if(tot(ii).gt.C(i,j)%dens0*C(i,j)%w0(ii)) then
+			tot(ii)=C(i,j)%dens0*C(i,j)%w0(ii)
+		endif
+	enddo
+	C(i,j)%dens=sum(tot(1:ngrains))
+	do ii=1,ngrains
+		C(i,j)%w(ii)=tot(ii)/C(i,j)%dens
+	enddo
+
+	C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
+	C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 	
 	return
 	end

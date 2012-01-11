@@ -183,10 +183,7 @@
 		endif
 		C(i,j)%KextLRF=0d0
 		C(i,j)%ILRF=0d0
-		if(C(i,j)%dens.lt.1d-50) then
-			C(i,j)%dens=1d-60
-			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-		endif
+		call CheckMinimumDensity(i,j)
 	enddo
 	enddo
 	ncoolingtime=0
