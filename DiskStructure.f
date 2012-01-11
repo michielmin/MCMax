@@ -231,18 +231,9 @@ c				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*(cos(D%theta_av(j)))**3d0)
 					rho(j,ii)=-60d0
 				endif
 			enddo
-		else if(Grain(ii)%shtype.eq.'TORUS') then
-			rho(D%nTheta-1,ii)=0d0
-			do j=1,D%nTheta-2
-				x=D%R(i)*sin(D%theta_av(j))-(Grain(ii)%maxrad+Grain(ii)%minrad)/2d0
-				y=D%R(i)*cos(D%theta_av(j))
-				x=x/((Grain(ii)%maxrad+Grain(ii)%minrad)/2d0)
-				y=y/Grain(ii)%shscale(i)
-				if(sqrt(x**2+y**2).le.1d0) then
-					rho(j,ii)=0d0
-				else
-					rho(j,ii)=-60d0
-				endif
+		else if(Grain(ii)%shtype.eq.'WEDGE') then
+			do j=D%nTheta-1,1,-1
+				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*exp(-((90d0-180d0*D%theta_av(j)/pi)/shscale(i))**2d0))
 			enddo
 		else
 			if(i.eq.1) then
@@ -2125,11 +2116,11 @@ c ------------ for the IN05 sublimation law --------------------
 			endif
 			do ii=1,ngrains
 				f=determinegasfrac(Tthin,i,j,ii)
-				if(f.le.1d0) then
+				if(f.le.1d0.or.Tthin.lt.50d0) then
 					Rthin=i
 				endif
 				f=determinegasfrac(Tbw,i,j,ii)
-				if(f.le.1d0) then
+				if(f.le.1d0.or.Tbw.lt.50d0) then
 					Rbw=i
 				endif
 			enddo
@@ -2146,17 +2137,20 @@ c ------------ for the IN05 sublimation law --------------------
 				phot%E=phot%E*fBW(ii,j)
 				Tbw=determineTP(phot,ii)
 				f=determinegasfrac(Tthin,i,j,ii)
-				if(f.le.1d0) then
+				if(f.le.1d0.or.Tthin.lt.50d0) then
 					Rthin=i
 				endif
 				f=determinegasfrac(Tbw,i,j,ii)
-				if(f.le.1d0) then
+				if(f.le.1d0.or.Tbw.lt.50d0) then
 					Rbw=i
 				endif
 			endif
 			enddo
 		endif
 	enddo
+
+	if(Rthin.ge.D%nR-1) Rthin=1
+	if(Rbw.ge.D%nR-1) Rbw=1
 
 	if(Rthin.gt.1) then
 	dR=0.5
@@ -2614,6 +2608,15 @@ c	character*500 s
 	enddo
 
 	ShakuraSunyaevIJ=T
+	
+	return
+	end
+	
+
+
+	subroutine CheckMinimumDensity(i,j)
+	use Parameters
+	IMPLICIT NONE
 	
 	return
 	end
