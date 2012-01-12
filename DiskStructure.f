@@ -265,7 +265,7 @@ c			stop
 C       Gijsexp
 		if (scset) then
 		   call settling(rho(1:D%nTheta-1,0:ngrains),
-     &		D%nTheta-1,ngrains,i)
+     &		                 D%nTheta-1,ngrains,i)
 		endif
 C       end
 		do j=1,D%nTheta-1
