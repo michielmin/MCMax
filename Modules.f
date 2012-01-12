@@ -59,6 +59,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: Kp(:,:),Kpstar(:),Kpabsstar(:),Topac(:),cryst(:)
 		real*8,allocatable :: KabsL(:),KextL(:)
 		real*8 TdesA,TdesB
+		real*8 Td_qhp,Mc	! Needed for QHP particles. Mc is the weight of one atom of the grain (in proton masses)
 		type(Mueller),allocatable :: F(:,:)
 		character*20 name
 		logical settle,qhp,gascoupled,trace,force_vert_gf

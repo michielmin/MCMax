@@ -1,7 +1,7 @@
-	module PAHModule
-	IMPLICIT NONE
-	real*8,allocatable :: BBQHP(:,:)
-	end module PAHModule
+c	module PAHModule
+c	IMPLICIT NONE
+c	real*8,allocatable :: BBQHP(:,:)
+c	end module PAHModule
 
 	subroutine PAHMCMax(niter)
 	use Parameters
@@ -49,7 +49,7 @@ c	close(unit=90)
 					enddo
 				enddo
 				if(niter.eq.0) tau=0d0
-				C(i,j)%LRF(1:nlam)=1d-23*D%Fstar(1:nlam)*(D%Rstar/D%R_av(i))**2*exp(-tau)
+				C(i,j)%LRF(1:nlam)=D%Fstar(1:nlam)/(4d0*pi*D%R_av(i)**2)*exp(-tau)
 			endif
 			if(niter.ne.0.or.((tau.lt.10d0.and.tau.gt.1d0).or.j.eq.1)) then
 				do ii=1,ngrains

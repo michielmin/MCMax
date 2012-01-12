@@ -2601,19 +2601,24 @@ c Set minimum gas density
 		C(i,j)%gasdens=1d-50
 	endif
 c Make sure density of condensable stuff is larger than dust density
-c	do ii=1,ngrains
-c		tot(ii)=C(i,j)%dens*C(i,j)%w(ii)
-c	enddo
-c	do ii=1,ngrains
-c		if(tot(ii).gt.C(i,j)%dens0*C(i,j)%w0(ii)) then
-c			tot(ii)=C(i,j)%dens0*C(i,j)%w0(ii)
-c		endif
-c	enddo
-c	C(i,j)%dens=sum(tot(1:ngrains))
-c	do ii=1,ngrains
-c		C(i,j)%w(ii)=tot(ii)/C(i,j)%dens
-c	enddo
-
+	do ii=1,ngrains
+		tot(ii)=C(i,j)%dens*C(i,j)%w(ii)
+	enddo
+	do ii=1,ngrains
+		if(tot(ii).gt.C(i,j)%dens0*C(i,j)%w0(ii)) then
+			tot(ii)=C(i,j)%dens0*C(i,j)%w0(ii)
+		endif
+	enddo
+	C(i,j)%dens=sum(tot(1:ngrains))
+c Set minimum dust density
+	if(C(i,j)%dens.le.1d-50) then
+		C(i,j)%dens=1d-50
+		C(i,j)%w(ii)=C(i,j)%w0(ii)
+	else
+		do ii=1,ngrains
+			C(i,j)%w(ii)=tot(ii)/C(i,j)%dens
+		enddo
+	endif
 	C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0
 	C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 	

@@ -2344,7 +2344,6 @@ c		endif
 	do j=1,D%nTheta-1
 		C(i,j)%dens0=C(i,j)%dens0*MassTot0/MassTot
 		C(i,j)%dens=C(i,j)%dens*MassTot0/MassTot
-		call CheckMinimumDensity(i,j)
 	enddo
 	enddo
 
@@ -2452,6 +2451,11 @@ c		endif
 	enddo
 	endif
 
+	do i=1,D%nR-1
+	do j=1,D%nTheta-1
+		call CheckMinimumDensity(i,j)
+	enddo
+	enddo
 
 	if(Nphot.ne.0.and.startiter.eq.' ') then
 		allocate(D%gap(ngap))
@@ -2519,7 +2523,8 @@ c		endif
 	endif
 
 	if(use_qhp.and.Nphot.gt.0) then
-		call PAHMCMax(0)
+c		call PAHMCMax(0)
+		call Stochastic(0)
 		call destroyQHP(TdesQHP)
 	endif
 	
@@ -3710,11 +3715,13 @@ c the opacities of scattering and absorption and the single photon
 c emission for each wavelength. The phase function is
 c assumed isotropic. The file is assumed to be as follows:
 c
+c 1st row contains Na Ma Td: The # of atoms, the weight of one atom (in proton mass)
+c								and the Td (450 for C, 175 for silicates)
+c
 c 1st column: wavelenght
 c 2nd column: Kext (cm^2/g)
 c 3th column: Kabs (cm^2/g)
 c 4th column: Ksca (cm^2/g)
-c 5th-nth column: QhpEmis (Jy)
 c
 c The interpolation is done on the set wavelength grid.
 c-----------------------------------------------------------------------
@@ -3723,7 +3730,7 @@ c-----------------------------------------------------------------------
 	IMPLICIT NONE
 	type(particle) p,p0,p1
 	integer i,j,ia
-	character*500 input
+	character*500 input,line
 	logical truefalse
 	real*8 l0,l1,tot,tot2,theta,Mc
 	parameter(Mc=12d0*1.66d-24) !mass of a carbon atom in gram
@@ -3751,7 +3758,15 @@ c-----------------------------------------------------------------------
 	write(*,'("Reading particle file: ",a)') input(1:len_trim(input))
 	write(9,'("Reading particle file: ",a)') input(1:len_trim(input))
 	open(unit=20,file=input,RECL=6000)
-	read(20,*) p%Nc
+	read(20,'(a500)',end=1,err=1) line
+	read(line,*,end=1,err=1) p%Nc,p%Mc,p%Td_qhp
+	goto 2
+1	continue
+	read(line,*) p%Nc
+	p%Mc=12d0
+	p%Td_qhp=450d0
+2	continue
+	print*,p%Nc,p%Mc,p%Td_qhp
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
 	p%m=p%Nc*Mc

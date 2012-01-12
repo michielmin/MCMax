@@ -311,7 +311,8 @@ c	endif
 	endif
 
 	if(Nphot.gt.0.and.use_qhp) then
-		call PAHMCMax(niter)
+c		call PAHMCMax(niter)
+		call Stochastic(niter)
 		call destroyQHP(TdesQHP)
 	endif
 
