@@ -159,6 +159,8 @@
 	ngap=0
 	gap(1:100)=0.1d0
 	gapshape(1:100)=0d0
+	gap1(1:100)=0d0
+	gap2(1:100)=0d0
 	
 	coupledabun(1:100)=0
 	coupledfrac(1:100)=0
@@ -896,6 +898,15 @@ C       Gijsexp, can now also use roundpeak
 	   endif
 	enddo
 C	End
+
+	!  if endgap(i) not supplied, use startgap(i+1) or outer disk
+	do i=1,100
+	   if (gap2(i).eq.0d0.and.i.lt.ngap) then
+	      gap2(i)= gap1(i+1)
+	   elseif (gap2(i).eq.0d0.and.i.eq.ngap) then
+	      gap2(i)= D%Rout
+	   endif
+	enddo
 
 	if(arg_abun.and.sum(coupledabun(1:ngrains)).ne.0) then
 	allocate(abunA(ngrains,ngrains))
