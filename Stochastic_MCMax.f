@@ -260,10 +260,10 @@
 1	continue
 	enddo
 	
-	tot=sum(Tdistr(2:Nt))
+	tot=sum(Tdistr(1:Nt))
 	Tdistr=Tdistr/tot
 	QHPemis=0d0
-	do i=2,Nt
+	do i=1,Nt
 		do j=1,nlam
 			QHPemis(j)=QHPemis(j)+BBQHP(i,j)*kabs(j)*Tdistr(i)
 		enddo

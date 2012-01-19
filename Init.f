@@ -3051,7 +3051,7 @@ c		f_weight=f_weight_backup
 
 	if(RNDW.and.Nphot.ne.0) call InitRandomWalk()
 
-	if(reprocess.gt.0d0) then
+	if(reprocess.gt.0d0.and.Nphot.gt.0) then
 	write(*,'("Scaling density structure to reprocessing: ",f10.3)') reprocess
 	write(9,'("Scaling density structure to reprocessing: ",f10.3)') reprocess
 	do iter=1,10
