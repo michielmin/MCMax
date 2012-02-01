@@ -270,7 +270,7 @@ C       Gijsexp
 C       end
 		do j=1,D%nTheta-1
 			do ii=1,ngrains
-				if(C(i,j)%w0(ii).ne.0d0) then
+				if(C(i,j)%w0(ii).ge.1d-100) then
 					gasf(ii)=1d0-C(i,j)%dens*C(i,j)%w(ii)/(C(i,j)%dens0*C(i,j)%w0(ii))
 				else
 					gasf(ii)=0d0

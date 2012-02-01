@@ -26,7 +26,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal
 	integer nspan,nlev,ntspan,ntlev,nexits,nruns,iTD(0:TMAX),NsigDiskstructure,nBW,nqhp
 	integer nplanets,niter0,nspike,ngrains2
-	integer gsd_rstep,gsd_diag !Gijsexp
+	integer gsd_diag !Gijsexp
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp
 	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC
@@ -35,7 +35,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas
 	logical fastviscous,convection,outfluxcontr
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
-	logical gsd,gsd_full		!Gijsexp
+	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
 	logical deadzone	!Gijsexp
 	logical topac_interpol	!Gijsexp
@@ -54,7 +54,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	end type Mueller
 	
 	type Particle
-		real*8 m,rv,rho,Nc
+		real*8 m,rho,Nc,rv,rvmin,rvmax
 		real*8,allocatable :: Kabs(:,:),Ksca(:,:),Kext(:,:),shscale(:),g(:,:)
 		real*8,allocatable :: Kp(:,:),Kpstar(:),Kpabsstar(:),Topac(:),cryst(:)
 		real*8,allocatable :: KabsL(:),KextL(:)

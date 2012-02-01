@@ -13,6 +13,8 @@ c
 c  Abundances of particles outside the sizegrid (mrn_rmin,mrn_rmax) are 
 c  set to zero.
 c
+c  Helper routines: gsd_edges
+c
 c-----------------------------------------------------------------------
 
 
@@ -21,44 +23,18 @@ c-----------------------------------------------------------------------
       implicit none
 
       doubleprecision    :: abun(1:ngrains),rgrain(1:ngrains),r_int(1:ngrains+1)
-      doubleprecision    :: logr_int(1:ngrains+1)
       doubleprecision    :: rmin,rmax,r_index,r_factor,abun_norm
       integer            :: i,j,ii
       logical            :: diagnose
+      character*100 mrnfile
 
       doubleprecision, PARAMETER :: micron=1d-4 ! confusing! (also MPSet)
 
       !  Print additional diagnostics?
       diagnose=.false.
 
-	  !  Set grainsize up to mrn_ngrains?
-	  !
-	  if (mrn_ngrains.eq.0)	then
-	  	 mrn_ngrains=ngrains ! set default here to all grains (not done in Init.f)
-	  endif
-	  if (diagnose) write(*,*) "max grains (mrn / total): ",mrn_ngrains,ngrains
-c      do ii=1,ngrains
-c      write(*,'("abun",i02,"=",e16.8)') ii,abun(ii)
-c	  enddo
-
-      !  Find cell interfaces for grain size grid
-      !
-      do ii=2,mrn_ngrains  ! inbetween 
-         logr_int(ii)=( log(rgrain(ii-1))+log(rgrain(ii)) )/2d0
-      enddo
-      logr_int(1)=         2*log(rgrain(1))       -logr_int(2)    ! lower bound
-      logr_int(mrn_ngrains+1)= 2*log(rgrain(mrn_ngrains)) -logr_int(mrn_ngrains) ! upper bound
-      !
-      r_int(1:mrn_ngrains+1)= exp(logr_int(1:mrn_ngrains+1))
-      !
-      if (diagnose) then
-         write(*,*)
-         write(*,*) "Grid check: r_int(ii) < rgrain(ii) < r_int(ii+1)"
-         write(*,*)
-         do ii=1,mrn_ngrains 
-            write(*,*) r_int(ii)," < ",rgrain(ii)," < ",r_int(ii+1)
-         enddo
-      endif
+      !  Cell edges
+      call gsd_edges(rgrain(1:ngrains),r_int(1:ngrains+1))
       
       !  Calculate mass per grain binsize, i.e. abundance
       !
@@ -123,6 +99,11 @@ c     abun(ii)=rmin**r_index - rmax**r_index ! not normalized
 c      if (diagnose) write(*,'("total(abun)",e9.3,"=?=",e9.3," (sum)")') sum(abun(1:mrn_ngrains)),abun_norm
       abun(1:mrn_ngrains)=abun(1:mrn_ngrains) / abun_norm
       
+      !  MCMax crashes at low, non-zero abundances
+      do ii=1,mrn_ngrains
+         if (abun(ii) .le.1d-100) abun(ii)=0d0
+      enddo
+
       !  Check normalization
       !
       if (abs(sum(abun(1:mrn_ngrains))-1d0).ge.1d-6) then
@@ -159,7 +140,90 @@ c      if (diagnose) write(*,'("total(abun)",e9.3,"=?=",e9.3," (sum)")') sum(abu
       if (diagnose) write(*,*) sum(abun)
       if (diagnose) write(*,*)
          
+      !  Write abundances to a file
+      write(mrnfile,'(a,"mrn.dat")') outdir(1:len_trim(outdir))
+      open(unit=66,file=mrnfile,RECL=2000)
+      write(66,'("# Written from module MRN.f ")')
+      write(66,'("# It prints particle radius, abundance ")')
+      do ii=1,ngrains
+         write(66,'(f10.3,x,e16.3)') rgrain(ii)/micron,abun(ii)
+      enddo
+      close(unit=66)
+
       !  Made it!
       !
+      return
+      end
+
+c-----------------------------------------------------------------------
+c This subroutine calculates the cell edges for the grain size bins.
+c It reads the grainsize from rgrain (Because Grain()%rv is not allocated),
+c and sets the minimum and maximum size in rgrain_min and rgrain_max
+c The 
+c
+c Input keywords:
+c (rgrain)      grain sizes
+c (mrn_ngrains) number of grains to include in calculation
+c
+c  The grid edges of particles outside the sizegrid (mrn_rmin,mrn_rmax) are 
+c  not set.
+c
+c-----------------------------------------------------------------------
+
+      subroutine gsd_edges(rgrain,r_int)
+      use Parameters
+      implicit none
+
+      doubleprecision    :: rgrain(1:ngrains)
+      doubleprecision    :: logr_int(1:ngrains+1),r_int(1:ngrains+1)
+      doubleprecision    :: rmin,rmax
+      integer            :: i,j,ii
+      logical            :: diagnose
+      character*100 mrnfile
+
+      doubleprecision, PARAMETER :: micron=1d-4 ! confusing! (also MPSet)
+
+      !  Print additional diagnostics?
+      diagnose=.false.
+
+      !  Set grainsize up to mrn_ngrains?
+      if (mrn_ngrains.eq.0)	then
+         mrn_ngrains=ngrains    ! set default here to all grains (not done in Init.f)
+      endif
+      if (diagnose) write(*,*) "max grains (mrn / total): ",mrn_ngrains,ngrains
+
+      !  Find cell interfaces for grain size grid
+      !
+      do ii=2,mrn_ngrains  ! inbetween 
+         logr_int(ii)=( log(rgrain(ii-1))+log(rgrain(ii)) )/2d0
+      enddo
+      logr_int(1)=         2*log(rgrain(1))       -logr_int(2)    ! lower bound
+      logr_int(mrn_ngrains+1)= 2*log(rgrain(mrn_ngrains)) -logr_int(mrn_ngrains) ! upper bound
+
+      ! the final grid
+      r_int(1:mrn_ngrains+1)= exp(logr_int(1:mrn_ngrains+1))
+
+      !  Check if the grid is ok
+      do ii=1,mrn_ngrains
+         if (r_int(ii).ge.rgrain(ii).or.r_int(ii+1).le.rgrain(ii)) then 
+            write(*,'("grain",i02," doesnt fit in the grid")') ii
+            write(*,'("check that rgrain",i02," satisfies ",
+     1                f10.3," < ",f10.3," < ",f10.3)')
+     2           ii,r_int(ii)/micron,rgrain(ii)/micron,r_int(ii+1)/ micron
+            write(*,*) "grid doesn't match grain size -> stop 67876"
+            stop 67876
+         endif
+      enddo
+
+      ! Check the grid manually
+      if (diagnose) then
+         write(*,*)
+         write(*,*) "Grid check: r_int(ii) < rgrain(ii) < r_int(ii+1)"
+         write(*,*)
+         do ii=1,mrn_ngrains 
+            write(*,*) r_int(ii)," < ",rgrain(ii)," < ",r_int(ii+1)
+         enddo
+      endif
+
       return
       end

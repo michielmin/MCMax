@@ -38,7 +38,7 @@
 	real*8 frac(100),f,phi,shscalevalue,part_shscale(100),shpow,minrad(100),maxrad(100)
 	real*8 roundwidth(100),roundpow(100),roundpeak(100) !Gijsexp
 	real*8 powmix(100),radmix(100),DiffCoeff,Tmix(100),Rfix(100),rimscale,rimwidth
-	real*8 rgrain(100),rhograin(100) ! Gijsexp
+	real*8 rgrain(100),rgrain_edges(101),rhograin(100) ! Gijsexp
 	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
 	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:)
 	integer,allocatable :: IPIV(:)
@@ -140,14 +140,14 @@
 	mrn=.false.		! Gijsexp: calculate grain size distribution 
 	mrn_index=3.5d0		! Gijsexp
 	mrn_rmin=1d-6		! Gijsexp: 0.01 micron
-	mrn_rmax=1d1		! Gijsexp: 10 cm
+        mrn_rmax=1d-1           ! Gijsexp: 1 mm
 	mrn_ngrains=0		! Gijsexp: include grains up to mrn_ngrains (if >0)
 
 	gsd=.false.		! Gijsexp: calculate grain size distribution 
 	gsd_full=.false.	! Gijsexp
-	gsd_rmin=1d-6		! Gijsexp
-	gsd_rmax=1d0		! Gijsexp
-	gsd_rstep=2		! Gijsexp: steps per order of magnitude
+	gsd_plot=.false.	! Gijsexp: write excessive output files
+	gsd_rmin=2.5d-6		! Gijsexp
+	gsd_rmax=1d1		! Gijsexp
 	gsd_xi=1.8d0		! Gijsexp: fragmentation slope
 	gsd_vfrag=100d0		! Gijsexp: fragmentation velocity in cm/s
 	gsd_diag=-1		! Gijsexp
@@ -842,9 +842,15 @@ C       Gijsexp, read in parameters for s.c. settling
 	! parameters for grain size distribution
 	if(key.eq.'gsd') read(value,*) gsd	
 	if(key.eq.'gsd_full') read(value,*) gsd_full
-	if(key.eq.'gsd_rmin') read(value,*) gsd_rmin
-	if(key.eq.'gsd_rmax') read(value,*) gsd_rmax	
-	if(key.eq.'gsd_rstep') read(value,*) gsd_rstep	
+	if(key.eq.'gsd_plot') read(value,*) gsd_plot	
+	if(key.eq.'gsd_rmin') then
+	   read(value,*) gsd_rmin
+	   gsd_rmin = gsd_rmin * 1d-4
+	endif
+	if(key.eq.'gsd_rmax') then
+	   read(value,*) gsd_rmax 
+	   gsd_rmax = gsd_rmax * 1d-4
+	endif
 	if(key.eq.'gsd_xi') read(value,*) gsd_xi	
 	if(key.eq.'gsd_vfrag') read(value,*) gsd_vfrag	
 	if(key.eq.'gsd_diag') read(value,*) gsd_diag
@@ -1306,8 +1312,8 @@ C       Gijsexp
 	   write(*,'("Please credit Til Birnstiel if using this part of the code")')
 	   write(9,'("Please credit Til Birnstiel if using this part of the code")')
 	   if (gsd_full) then
-	      write(*,'("Calculating distribution")')
-	      write(9,'("Calculating distribution")')
+	      write(*,'("Calculating distribution -> not yet")')
+	      write(9,'("Calculating distribution -> not yet")')
 	      stop 65456
 	   else
 	      write(*,'("Using the analytical approximation")')
@@ -1317,8 +1323,6 @@ C       Gijsexp
 	      write(9,'(a26,f12.4)') "Lower bound size grid:",gsd_rmin*1d4
 	      write(*,'(a26,f12.4)') "Upper bound size grid:",gsd_rmax*1d4
 	      write(9,'(a26,f12.4)') "Upper bound size grid:",gsd_rmax*1d4
-	      write(*,'(a26,i12)') "Resolution size grid:",gsd_rstep
-	      write(9,'(a26,i12)') "Resolution size grid:",gsd_rstep
 	      write(*,'(a26,f12.4)') "Fragmentation velocity:",gsd_vfrag
 	      write(9,'(a26,i12.4)') "Fragmentation velocity:",gsd_vfrag
 	      write(*,'(a26,f12.4)') "Fragmentation slope:",gsd_xi
@@ -1399,7 +1403,7 @@ c	write(9,'("Opacity file:         ",a)') opacityfile(1:len_trim(opacityfile))
 c	else
 
 	!  Set abundances to 1/ngrains if not supplied	
-	if(.not.arg_abun .and. .not.mrn) then
+	if(.not.arg_abun .and. .not.(mrn.or.gsd)) then
 	   write(*,'("Abundances not set, using equal weights")')
 	   write(9,'("Abundances not set, using equal weights")')
 	   do i=1,ngrains
@@ -1409,7 +1413,8 @@ c	else
 	endif
 
 	!  Set abundances according to mrn distribution
-	if(mrn) then
+	!  This is also the initial guess for gsd=.true.
+	if(mrn.or.gsd) then
 		call gsd_MRN(rgrain(1:ngrains),warg(1:ngrains))	! GijsExp
 		warg=warg/sum(warg)
 	endif
@@ -2177,6 +2182,9 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		enddo
 	endif
 
+	!  Calculate edges of grain size bins
+	if(gsd) call gsd_edges(rgrain(1:ngrains),rgrain_edges(1:ngrains+1))
+
 	! Set grain properties
 	do ii=1,ngrains
 		Grain(ii)%TdesA=TdesA(ii)
@@ -2189,6 +2197,8 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		Grain(ii)%Rcryst=radmix(ii)
 		Grain(ii)%Tcryst=tmix(ii)
 		Grain(ii)%powcryst=powmix(ii)
+		if (gsd) Grain(ii)%rvmin=rgrain_edges(ii)
+		if (gsd) Grain(ii)%rvmax=rgrain_edges(ii+1)
 	enddo
 	
 	! Read in the particle files / opacities
@@ -2240,7 +2250,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 	enddo
 	
-	! Set composition in every grid cell (from abun kw or compositionfile)
+	! Set composition in every grid cell (from keywords, mrn/gsd or file)
 	if(compositionfile.eq.' ') then
 		do i=0,D%nR-1
 		do j=1,D%nTheta-1
@@ -2508,7 +2518,7 @@ c		endif
 	if(denstype.eq.'POW'.or.denstype.eq.'DOUBLEPOW'.or.
      &     denstype.eq.'SURFFILE'.or.denstype.eq.'SIMILARITY'.or.
      &     denstype.eq.'DOUBLEPOWSIM'.or. ! Gijsexp
-     &     struct_iter.or.mpset.or.scset) then ! Gijsexp
+     &     struct_iter.or.mpset.or.scset.or.gsd) then ! Gijsexp
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%dens0=C(i,j)%dens
