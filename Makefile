@@ -19,7 +19,7 @@ ifeq ($(shell uname),Linux)
 else
   FFLAGS  = $(FLAG_ALL) $(FLAG_MAC)
   LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f
-  LIBS	  = -lm -lfftw3 -lcfitsio -I/sw/include
+  LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
 endif
 
 # use a suffix in file name (i.e. static, test etc.)
