@@ -2613,10 +2613,12 @@ c Make sure density of condensable stuff is larger than dust density
 c Set minimum dust density
 	if(C(i,j)%dens.le.1d-50) then
 		C(i,j)%dens=1d-50
-		C(i,j)%w(ii)=C(i,j)%w0(ii)
+		do ii=1,ngrains
+		   C(i,j)%w(ii)=C(i,j)%w0(ii)
+		enddo
 	else
 		do ii=1,ngrains
-			C(i,j)%w(ii)=tot(ii)/C(i,j)%dens
+		   C(i,j)%w(ii)=tot(ii)/C(i,j)%dens
 		enddo
 	endif
 	C(i,j)%gasfrac=1d0-C(i,j)%dens/C(i,j)%dens0

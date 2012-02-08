@@ -914,6 +914,15 @@ C	End
 	   endif
 	enddo
 
+	!  if startgap(i) not supplied, use endgap(i-1) or inner disk
+	do i=1,100
+	   if (gap1(i).eq.0d0.and.i.gt.1) then
+	      gap1(i)= gap2(i-1)
+	   elseif (gap1(i).eq.0d0.and.i.eq.1) then
+	      gap1(i)= D%Rin
+	   endif
+	enddo
+
 	if(arg_abun.and.sum(coupledabun(1:ngrains)).ne.0) then
 	allocate(abunA(ngrains,ngrains))
 	allocate(abunB(ngrains))
@@ -1324,9 +1333,9 @@ C       Gijsexp
 	      write(*,'(a26,f12.4)') "Upper bound size grid:",gsd_rmax*1d4
 	      write(9,'(a26,f12.4)') "Upper bound size grid:",gsd_rmax*1d4
 	      write(*,'(a26,f12.4)') "Fragmentation velocity:",gsd_vfrag
-	      write(9,'(a26,i12.4)') "Fragmentation velocity:",gsd_vfrag
+	      write(9,'(a26,f12.4)') "Fragmentation velocity:",gsd_vfrag
 	      write(*,'(a26,f12.4)') "Fragmentation slope:",gsd_xi
-	      write(9,'(a26,i12.4)') "Fragmentation slope:",gsd_xi
+	      write(9,'(a26,f12.4)') "Fragmentation slope:",gsd_xi
 	endif
 C       end 
 
