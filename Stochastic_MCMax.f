@@ -201,9 +201,15 @@
 			E=h*nu(ip)
 		endif
 		
-		call hunt(Tgrid,Nt,T,iT)
-		w1=Tgrid(iT+1)-T
-		w2=T-Tgrid(iT)
+		if(T.lt.Tgrid(Nt)) then
+			call hunt(Tgrid,Nt,T,iT)
+			w1=Tgrid(iT+1)-T
+			w2=T-Tgrid(iT)
+		else
+			iT=Nt-1
+			w1=0d0
+			w2=1d0
+		endif
 		tot2=E+(w1*U(iT)+w2*U(iT+1))/(w1+w2)
 		call hunt(U,Nt,tot2,iT)
 		if(iT.lt.1) then
@@ -219,9 +225,15 @@
 		endif
 
 		time0=time-log(ran2(idum))/tot
-		call hunt(Tgrid,Nt,T,iT)
-		w1=Tgrid(iT+1)-T
-		w2=T-Tgrid(iT)
+		if(T.lt.Tgrid(Nt)) then
+			call hunt(Tgrid,Nt,T,iT)
+			w1=Tgrid(iT+1)-T
+			w2=T-Tgrid(iT)
+		else
+			iT=Nt-1
+			w1=0d0
+			w2=1d0
+		endif
 		iTnew=iT
 		if(iTnew.lt.1) iTnew=1
 		dU=(w1*U(iT)+w2*U(iT+1))/(w1+w2)-U(iTnew)
@@ -237,9 +249,15 @@
 		enddo
 		dU=(time0-time)*Cool(iT)
 
-		call hunt(Tgrid,Nt,T,iT)
-		w1=Tgrid(iT+1)-T
-		w2=T-Tgrid(iT)
+		if(T.lt.Tgrid(Nt)) then
+			call hunt(Tgrid,Nt,T,iT)
+			w1=Tgrid(iT+1)-T
+			w2=T-Tgrid(iT)
+		else
+			iT=Nt-1
+			w1=0d0
+			w2=1d0
+		endif
 		tot2=(w1*U(iT)+w2*U(iT+1))/(w1+w2)-dU
 		call hunt(U,Nt,tot2,iT)
 		if(iT.lt.1) then
