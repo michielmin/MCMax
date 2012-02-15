@@ -23,7 +23,7 @@
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
 	character*500 specfile,pressurefile,timefile
 	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
-	logical forcefirst,scatbackup,emitted,dofastvisc
+	logical scatbackup,emitted,dofastvisc
 	integer nsplit,isplit,iter
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ
 
@@ -122,9 +122,7 @@
 		enddo
 	enddo
 	enddo
-	forcefirst=.false.
-	if(tau.lt.0.1d0.and..not.viscous) then
-		forcefirst=.true.
+	if(forcefirst) then
 		write(*,'("Forcing first interaction")')
 		write(9,'("Forcing first interaction")')
 	endif
@@ -180,6 +178,12 @@
 				C(i,j)%EJvP(ii)=0d0
 				C(i,j)%EabsP(ii)=0d0
 			enddo
+		endif
+		if(use_qhp) then
+			do ii=1,ngrains
+				if(Grain(ii)%qhp) C(i,j)%EJvQHP(Grain(ii)%qhpnr)=0d0
+			enddo
+			C(i,j)%LRF(1:nlam)=0d0
 		endif
 		C(i,j)%KextLRF=0d0
 		C(i,j)%ILRF=0d0

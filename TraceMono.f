@@ -324,7 +324,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			scatV(kp,ip,jp)=scatV(kp,ip,jp)*Ksca
 		endif
 
-
+		if(ip.ne.0) then
 		if(outfluxcontr) then
 			if(i.lt.image%nr) then
 				w1=(image%R(i+1)-image%R(i))*pi*abs(image%R(i))*AU**2/real(image%nPhi)
@@ -372,6 +372,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			fact=fact*exptau_e
 		endif
 		tau=tau+tau_e
+		endif
 		if(tau.gt.tau_max) goto 10
 		enddo
 		if(image%p(i,j)%hitstar.and.tracestar) then

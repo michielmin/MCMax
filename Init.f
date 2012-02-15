@@ -204,6 +204,8 @@
 	viscous=.false.
 	fastviscous=.false.
 	
+	forcefirst=.false.	! do not force the first interaction in the radiative transport
+	
 	NsigDiskstructure=1
 	
 	nBW=-1
@@ -377,6 +379,7 @@
 	if(key.eq.'vexp2') read(value,*) vexp2
 	if(key.eq.'scaledisk') read(value,*) scale_R
 	if(key.eq.'tmax') read(value,*) Tmax_R
+	if(key.eq.'forcefirst') read(value,*) forcefirst
 
 	if(key.eq.'iter') read(value,*) struct_iter
 	if(key.eq.'raditer') read(value,*) raditer
@@ -891,6 +894,8 @@ C       End
 	if(denstype.eq.'MASSLOSS'.or.denstype.eq.'INFALL') then
 		mdustscale=.false.
 	endif
+
+	if(viscous) forcefirst=.false. !cannot use first interaction forcing with viscous heating
 	
 C       Gijsexp, disable scaleheight scaling when doing the s.c. settling
 	if (scset) scalesh='NONE'
@@ -1047,6 +1052,10 @@ C	End
 	else
 	write(*,'("No automatic grid refinement")')
 	write(9,'("No automatic grid refinement")')
+	endif
+	if(forcefirst) then
+	write(*,'("Forcing first interaction")')
+	write(9,'("Forcing first interaction")')
 	endif
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')

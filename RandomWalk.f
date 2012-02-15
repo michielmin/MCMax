@@ -51,7 +51,7 @@ c				delta-Eddington approximation.
 	real*8 dmin,v,ran2,x,lr,increaseT,increaseTP,Kabs,Kext
 	real*8 EJv,T,T0,spec(nlam),nRWinteract
 	type(photon) phot
-	integer i,iT,iy,iT0,iter,iT1,l,ii
+	integer i,iT,iy,iT0,iter,iT1,l,ii,iopac
 
 	RandomWalk=.false.
 	
@@ -93,15 +93,31 @@ c				delta-Eddington approximation.
 
 	EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
 
-	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs
 	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs*C(phot%i,phot%j)%dens
-	C(phot%i,phot%j)%EJvQHP=C(phot%i,phot%j)%EJv+EJv*C(phot%i,phot%j)%KDQHP
 	if(.not.tcontact.or.tdes_iter) then
 		do i=1,ngrains
-			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs
 			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs*C(phot%i,phot%j)%dens
-     	enddo
-   	endif
+		enddo
+	endif
+
+c==============================================================================
+c Change 15-02-2012, do not use the random walk module to compute the EJv's
+c
+c	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs
+c	if(use_qhp) then
+c		do ii=1,ngrains
+c			if(Grain(ii)%qhp) then
+c				C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
+c     &							+EJv*C(phot%i,phot%j)%KDQHP*C(phot%i,phot%j)%w(ii)
+c			endif
+c		enddo
+c	endif
+c	if(.not.tcontact.or.tdes_iter) then
+c		do i=1,ngrains
+c			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs
+c		enddo
+c	endif
+c==============================================================================
 
 	C(phot%i,phot%j)%T=increaseT(phot)
 
