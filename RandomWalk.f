@@ -103,7 +103,7 @@ c				delta-Eddington approximation.
 c==============================================================================
 c Change 15-02-2012, do not use the random walk module to compute the EJv's
 c
-c	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs
+	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs
 c	if(use_qhp) then
 c		do ii=1,ngrains
 c			if(Grain(ii)%qhp) then
@@ -112,11 +112,11 @@ c     &							+EJv*C(phot%i,phot%j)%KDQHP*C(phot%i,phot%j)%w(ii)
 c			endif
 c		enddo
 c	endif
-c	if(.not.tcontact.or.tdes_iter) then
-c		do i=1,ngrains
-c			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs
-c		enddo
-c	endif
+	if(.not.tcontact.or.tdes_iter) then
+		do i=1,ngrains
+			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs
+		enddo
+	endif
 c==============================================================================
 
 	C(phot%i,phot%j)%T=increaseT(phot)
