@@ -44,7 +44,7 @@
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw
-	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2
+	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
 	integer ntau1
 
 	startype='PLANCK'
@@ -269,6 +269,11 @@
 	MeixF=1d0
 	MeixG=0d0
 	MeixRsw=1800d0
+	
+c	Interstellar Radiation Field (IRF)
+	T_IRF=20000d0
+	F_IRF=1d-16
+	use_IRF=.false.
 	
 	ntau1_lam=1		! allways one extra tau=1 surface
 	do i=1,100
@@ -878,6 +883,11 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'meixf') read(value,*) MeixF
 	if(key.eq.'meixg') read(value,*) MeixG
 	if(key.eq.'meixrsw') read(value,*) MeixRsw
+	
+	!Interstellar Radiation Field
+	if(key.eq.'irf') read(value,*) use_IRF
+	if(key.eq.'t_irf') read(value,*) T_IRF
+	if(key.eq.'f_irf') read(value,*) F_IRF
 
 C       End 
 
@@ -2100,7 +2110,7 @@ c			f2=exp(-0.5*(z/hr)**2)
 			f1=r**(-D%denspow)
 			f2=exp(-(z/hr)**2)
 			scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
-			if(r.lt.400d0) then
+			if(r.lt.D%Rexp.and.r.gt.D%Rin) then
 				C(i,j)%dens=scale*f1*f2*r**(-D%shpow)
 			else
 				C(i,j)%dens=1d-60
@@ -2844,7 +2854,7 @@ c		f_weight=1d0
 				if(allocated(D%Rfix)) deallocate(D%Rfix)
 				allocate(D%Rfix(D%nRfix))
 				do j=1,D%nRfix
-					D%Rfix(j)=400d0+(D%Rout-400d0)*real(j-1)/real(D%nRfix)
+					D%Rfix(j)=D%Rexp+(D%Rout-D%Rexp)*real(j-1)/real(D%nRfix)
 				enddo
 				do i=1,D%nR-1
 				do j=1,D%nTheta-1
@@ -2854,7 +2864,7 @@ c		f_weight=1d0
 					f1=r**(-D%denspow)
 					f2=exp(-(z/hr)**2)
 					scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
-					if(r.lt.400d0) then
+					if(r.lt.D%Rexp.and.r.gt.D%R(1)) then
 						C(i,j)%dens=scale*f1*f2*r**(-D%shpow)
 					else
 						C(i,j)%dens=1d-60
@@ -3111,6 +3121,15 @@ c		f_weight=f_weight_backup
 
 	endif
 
+c Set the spectrum and energy for the interstellar radiation field
+	E_IRF=0d0
+	if(use_IRF) then
+		allocate(IRF(nlam))
+		do i=1,nlam
+			IRF(i)=pi*(D%R(D%nR)*AU)**2*Planck(T_IRF,lam(i))*F_IRF
+		enddo
+		call integrate(IRF,E_IRF)
+	endif
 
 	if(nplanets.ne.0) then
 	allocate(Planets(nplanets))
@@ -3196,6 +3215,7 @@ c-----------------------------------------------------------------------
 		if(allocated(C(i,j)%FE)) deallocate(C(i,j)%FE)
 	enddo
 	enddo
+	if(allocated(IRF)) deallocate(IRF)
 	if(storescatt) then
 		deallocate(scattcomputed)
 		deallocate(nscattcomputed)

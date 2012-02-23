@@ -25,7 +25,7 @@
 	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
 	logical scatbackup,emitted,dofastvisc
 	integer nsplit,isplit,iter
-	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ
+	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
 	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha
 	real*8 F(ngrains),maxT,minT,determinegasfrac,Tevap,A(ngrains)
@@ -89,17 +89,17 @@
 			Evis=Evis+Efrac(i,j)
 		enddo
 	enddo
-	write(*,'("Energy: ",f6.2,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis)
-	write(*,'("Energy: ",f6.2,"% from the disk")') 100d0*Evis/(D%Lstar+Evis)
-	write(9,'("Energy: ",f6.2,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis)
-	write(9,'("Energy: ",f6.2,"% from the disk")') 100d0*Evis/(D%Lstar+Evis)
+	write(*,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF)
+	write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*Evis/(D%Lstar+Evis+E_IRF)
+	write(9,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF)
+	write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*Evis/(D%Lstar+Evis+E_IRF)
 
 	Er=(2d0*sqrt(D%Rstar/(AU*D%R(D%nR)))-3d0)/(3d0*D%R(D%nR)*AU)
 	Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(1)))-3d0)/(3d0*D%R(1)*AU)
 	Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
 
-	print*,100d0*G*D%Mstar*D%Mdot/(2d0*D%Rstar)/(4d0*sigma*D%Tstar**4*pi*D%Rstar**2)
-	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
+c	print*,100d0*G*D%Mstar*D%Mdot/(2d0*D%Rstar)/(4d0*sigma*D%Tstar**4*pi*D%Rstar**2)
+c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 
 	if(dofastvisc) Evis=0d0
 	endif
@@ -147,16 +147,26 @@
 	enddo
 
 
-	write(*,'("Emitting ",i10," photon packages")') NphotTot
-	write(9,'("Emitting ",i10," photon packages")') NphotTot
-
-	FracVis=Evis/(D%Lstar+Evis)
+	FracVis=Evis/(D%Lstar+Evis+E_IRF)
 	if(FracVis.gt.0.5d0) then
 		FracVis=0.5d0
 		write(*,'("Increasing statistics from the star to ",f6.2,"%")') 100d0*(1d0-FracVis)
 		write(9,'("Increasing statistics from the star to ",f6.2,"%")') 100d0*(1d0-FracVis)
 	endif
+	if(use_IRF) then
+		FracIRF=E_IRF/(D%Lstar+Evis+E_IRF)
+		write(*,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF)
+		write(9,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF)
+		if(FracIRF.lt.0.01) then
+			FracIRF=0.01
+		endif
+	else
+		FracIRF=0d0
+	endif
 	
+	write(*,'("Emitting ",i10," photon packages")') NphotTot
+	write(9,'("Emitting ",i10," photon packages")') NphotTot
+
 	do iruns=1,nruns
 	
 	if(nruns.gt.1) then
@@ -205,7 +215,8 @@
 		nEJv=0d0
 
 
-		if(ran2(idum).gt.FracVis.or..not.viscous) then
+		where_emit=ran2(idum)
+		if(where_emit.gt.(FracVis+FracIRF)) then
 c emit from the star
 			phot%viscous=.false.
 			call randomdirection(phot%x,phot%y,phot%z)
@@ -215,7 +226,7 @@ c emit from the star
 
 			call emit(phot,D%Fstar,D%Lstar)
 
-			phot%E=D%Lstar/(real(Nphot)*(1d0-FracVis))
+			phot%E=D%Lstar/(real(Nphot)*(1d0-FracVis-FracIRF))
 
 			call randomdirection(phot%vx,phot%vy,phot%vz)
 			if(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz.lt.0d0) then
@@ -234,7 +245,7 @@ c emit from the star
 				endif
 			enddo
 
-		else
+		else if(where_emit.gt.FracIRF) then
 !c emit from viscous heating
 			phot%viscous=.true.
 9			continue
@@ -271,6 +282,34 @@ c emit from the star
 
 c emit the viscous photon
 			call EmitViscous(phot)
+		else
+c emit from the interstellar radiation field
+			phot%viscous=.false.
+			call randomdirection(phot%x,phot%y,phot%z)
+			phot%x=D%R(D%nR)*phot%x
+			phot%y=D%R(D%nR)*phot%y
+			phot%z=D%R(D%nR)*phot%z
+
+			call emit(phot,IRF,E_IRF)
+
+			phot%E=E_IRF/(real(Nphot)*FracIRF)
+
+			call randomdirection(phot%vx,phot%vy,phot%vz)
+			if(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz.gt.0d0) then
+				phot%vx=-phot%vx
+				phot%vy=-phot%vy
+				phot%vz=-phot%vz
+			endif
+
+			phot%edgeNr=2
+			phot%onEdge=.true.
+			ct=abs(phot%z)/D%R(D%nR)
+			do j=1,D%nTheta-1
+				if(ct.lt.D%Theta(j).and.ct.gt.D%Theta(j+1)) then
+					phot%i=D%nR-1
+					phot%j=j
+				endif
+			enddo
 		endif
 
 		if(scattering) then

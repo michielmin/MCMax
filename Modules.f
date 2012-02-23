@@ -10,13 +10,13 @@
 	parameter(Rsun=6.955e10,Msun=1.98892e33,Lsun=3.827e33)
 	parameter(kb=1.3806503d-16,sigma=5.6704d-5)
 c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
-	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:)
+	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:)
 	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:)
 	real*8 xsf(NPHISCATT),ysf(NPHISCATT),zsf(NPHISCATT),tautot,epsiter,tau_max,nEJv
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
 	real*8 sin2phi(0:360),cos2phi(0:360),RmaxRefine,KDext(0:TMAX),KDabs(0:TMAX),BBint(0:TMAX)
-	real*8 alphavis,dimstar,alphavispow
+	real*8 alphavis,dimstar,alphavispow,E_IRF
 	real*8 lifetime,alphaturb,qturb !Gijsexp
 	real*8 deadalpha,deadheight !Gijsexp: deadzone in midplane
 	real*8 gsd_rmin,gsd_rmax,gsd_xi,gsd_vfrag !Gijsexp
@@ -33,7 +33,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav
 	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac
 	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas
-	logical fastviscous,convection,outfluxcontr,forcefirst
+	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
