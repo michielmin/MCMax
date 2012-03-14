@@ -227,7 +227,7 @@ c	endif
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
-	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.gt.0.and..not.lastiter) then
+	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.gt.0.and..not.lastiter.and.maxiter.gt.0) then
 		if(niter.lt.100) then
 		write(denstempfile,'(a,"denstemp",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(denstempfileND,'(a,"denstempND",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
@@ -826,7 +826,7 @@ c	enddo
 c	close(unit=20)
 
 
-	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.ne.0.and..not.lastiter) then
+	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.ne.0.and..not.lastiter.and.maxiter.gt.0) then
 		niter=niter+1
 		if(niter.gt.niter0) then
 			call TempAverage(dble(1d0/(niter-niter0)))

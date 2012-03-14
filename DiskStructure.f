@@ -204,12 +204,12 @@ c				endif
 			enddo
 		else if(Grain(ii)%shtype.eq.'SHELL') then
 			do j=1,D%nTheta-1
-c				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*(cos(D%theta_av(j)))**3d0)
-				if(Grain(ii)%shscale(i).gt.0d0) then
-					rho(j,ii)=log((cos(D%theta_av(j)))**Grain(ii)%shscale(i))
-				else
-					rho(j,ii)=log((sin(D%theta_av(j)))**(-Grain(ii)%shscale(i)))
-				endif
+				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*(sin(D%theta_av(j)))**3d0)
+c				if(Grain(ii)%shscale(i).gt.0d0) then
+c					rho(j,ii)=log((cos(D%theta_av(j)))**Grain(ii)%shscale(i))
+c				else
+c					rho(j,ii)=log((sin(D%theta_av(j)))**(-Grain(ii)%shscale(i)))
+c				endif
 			enddo
 		else if(Grain(ii)%shtype.eq.'CYLI') then
 			rho(D%nTheta-1,ii)=0d0

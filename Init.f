@@ -1172,10 +1172,8 @@ C	End
 	write(9,'("Meixner D:            ",f14.3)') MeixD
 	write(9,'("Meixner E:            ",f14.3)') MeixE
 	write(9,'("Meixner F:            ",f14.3)') MeixF
-	if(MeixG.ne.0d0.and.mrn) then
 	write(*,'("Meixner G:            ",f14.3)') MeixG
 	write(9,'("Meixner G:            ",f14.3)') MeixG
-	endif
 	write(*,'("Superwind radius:     ",f14.3," AU")') MeixRsw
 	write(9,'("Superwind radius:     ",f14.3," AU")') MeixRsw
 	else if(denstype.eq.'BETAPIC') then
@@ -2110,7 +2108,7 @@ c			f2=exp(-0.5*(z/hr)**2)
 			f1=r**(-D%denspow)
 			f2=exp(-(z/hr)**2)
 			scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
-			if(r.lt.D%Rexp.and.r.gt.D%Rin) then
+			if(r.lt.D%Rexp) then
 				C(i,j)%dens=scale*f1*f2*r**(-D%shpow)
 			else
 				C(i,j)%dens=1d-60
@@ -2124,10 +2122,15 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))/gas2dust
 		else if(denstype.eq.'MEIXNER') then
 			r=D%R_av(i)/AU
-			C(i,j)%dens=((r/D%Rin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
+			if(r.gt.D%Rin) then
+				C(i,j)%dens=((r/D%Rin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
      &					(dexp(-(r/MeixRsw)**MeixD+(D%Rin/MeixRsw)**MeixD)))))*
      &					(1d0+MeixA*(1d0-cos(D%theta_av(j)))**MeixF*
+     &							        cos(D%theta_av(j))**MeixG*
      &					(dexp(-(r/MeixRsw)**MeixE+(D%Rin/MeixRsw)**MeixE)))
+			else
+				C(i,j)%dens=1d-60
+			endif
 		endif
 		C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &			(D%Theta(j)-D%Theta(j+1))*AU**3
@@ -2318,25 +2321,6 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 	   endif
 	enddo
-
-	! Set different MRN distributions for Meixner densitity distribution
-	if(denstype.eq.'MEIXNER'.and.MeixG.ne.0d0.and.mrn) then
-		mrn_index0=mrn_index
-		dens1=C(D%nR-1,1)%dens*(D%R_av(D%nR-1)/AU)**2
-		dens2=C(1,D%nTheta-1)%dens*(D%R_av(1)/AU)**2
-		do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			tot=C(i,j)%dens*(D%R_av(i)/AU)**2
-			f1=(tot-dens1)/(dens2-dens1)
-			f2=(dens2-tot)/(dens2-dens1)
-			mrn_index=MeixG*f2+mrn_index0*f1
-			call gsd_MRN(rgrain(1:ngrains),C(i,j)%w(1:ngrains))
-		enddo
-		write(63,*) D%R_av(i)/AU,mrn_index
-		enddo
-		mrn_index=mrn_index0
-c		use_topac=.false.
-	endif
 
 	MassTot0=0d0
 	do i=1,D%nR-1
@@ -2864,7 +2848,7 @@ c		f_weight=1d0
 					f1=r**(-D%denspow)
 					f2=exp(-(z/hr)**2)
 					scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
-					if(r.lt.D%Rexp.and.r.gt.D%R(1)) then
+					if(r.lt.D%Rexp) then
 						C(i,j)%dens=scale*f1*f2*r**(-D%shpow)
 					else
 						C(i,j)%dens=1d-60
@@ -2882,6 +2866,7 @@ c		f_weight=1d0
 					C(i,j)%dens0=D%Mtot*C(i,j)%dens0/MassTot
 				enddo
 				enddo
+				call DestroyDustR()
 			endif
 		enddo
 c		f_weight=f_weight_backup

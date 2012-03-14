@@ -160,8 +160,8 @@
 	enddo
 
 	Ne=(Na)**0.125
-	if(Ne.lt.20) Ne=20
-	Ne=20
+	if(Ne.lt.25) Ne=25
+	if(Ne.gt.100) Ne=100
 
 	Tdistr=0d0
 
