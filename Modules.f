@@ -95,6 +95,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8 KappaGas
 		real*8 Tgas,Egas
 		logical useFE
+		real*8,allocatable :: line_emis(:),line_abs(:)
 	end type Cell
 
 	type Disk
@@ -125,6 +126,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	type path
 		real*8 x,y,z,vx,vy,vz
 		real*8,allocatable :: v(:),phi1(:),phi2(:)
+		real*8,allocatable :: velo1(:),velo2(:)
 		integer,allocatable :: i(:),j(:),jphi1(:),jphi2(:),k(:),irg(:)
 		integer n
 		logical hitstar
@@ -140,7 +142,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type Telescope
 		character*100 kind,flag
-		integer nphi,Nphot,NphotAngle,nr,nexits
+		integer nphi,Nphot,NphotAngle,nr,nexits,nt,nstar
 		integer nbaseline,nangle,npixel,nint,nfov,scaletype,nlam ! Gijsexp
 		real*8 lam1,lam2,angle,D,dlam,texp,D2,spider
 		real*8 angle1,angle2,width,opening,mask,wmask,iwa,owa,strehl
@@ -149,7 +151,9 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical usepol,readmcscat,traceinverse,fluxcontr
 		logical,allocatable :: trace(:)
 		logical tracestar,traceemis,tracescat
-		character*500 psffile
+		character*500 psffile,linefile
+		real*8 dvelo
+		integer nvelo
 	end type Telescope
 
 	type ExoPlanet

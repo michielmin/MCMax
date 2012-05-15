@@ -2126,7 +2126,6 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 				C(i,j)%dens=((r/D%Rin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
      &					(dexp(-(r/MeixRsw)**MeixD+(D%Rin/MeixRsw)**MeixD)))))*
      &					(1d0+MeixA*(1d0-cos(D%theta_av(j)))**MeixF*
-     &							        cos(D%theta_av(j))**MeixG*
      &					(dexp(-(r/MeixRsw)**MeixE+(D%Rin/MeixRsw)**MeixE)))
 			else
 				C(i,j)%dens=1d-60
@@ -2295,6 +2294,17 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 	endif
 
+	if(denstype.eq.'MEIXNER'.and.MeixG.ne.0d0) then
+		tot=mrn_index
+		do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			mrn_index=MeixG+(tot-MeixG)*(1d0-cos(D%theta_av(j)))**MeixF
+			call gsd_MRN(rgrain(1:ngrains),warg(1:ngrains))	! GijsExp
+			C(i,j)%w(1:ngrains)=warg(1:ngrains)/sum(warg(1:ngrains))
+		enddo
+		enddo
+	endif
+	
 	! Radial composition gradient (powerlaw) 
 	do ii=1,npow
 	   do i=1,D%nR-1

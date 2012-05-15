@@ -10,6 +10,7 @@
 	integer nbase		!Gijsexp
 	integer i,j,k
 	character*500 specfile
+	real*8,allocatable :: velo(:),velo_flux(:)
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -336,6 +337,22 @@ c		tel%fov(1)=D%R(D%nR)*2d0
      &			,tel%lam1-10d0*int((tel%lam1/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
 		call tau1temp(specfile,tel%lam1)		
+	else if(tel%kind(1:4).eq.'LINE') then
+		readmcscat=.false.
+		call TracePathLine(image,angle,tel%nphi,tel%nr,tel%nt,tel%nstar,tel%lam1)
+		allocate(velo(tel%nvelo))
+		allocate(velo_flux(tel%nvelo))
+		call TraceLine(image,tel%lam1,velo_flux,tel%Nphot,tel%NphotAngle,tel%linefile,velo,tel%dvelo,tel%nvelo)
+		write(specfile,'(a,"line",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+     &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
+     &			,tel%flag(1:len_trim(tel%flag))
+		open(unit=30,file=specfile,RECL=6000)
+		do i=1,tel%nvelo
+			write(30,*) velo(i),1d23*velo_flux(i)/D%distance**2
+		enddo
+		close(unit=30)
+		deallocate(velo)
+		deallocate(velo_flux)
 	else
 		stop
 	endif
@@ -352,6 +369,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 				deallocate(image%p(i,j)%phi2)
 				deallocate(image%p(i,j)%jphi1)
 				deallocate(image%p(i,j)%jphi2)
+				if(allocated(image%p(i,j)%velo1)) deallocate(image%p(i,j)%velo1)
+				if(allocated(image%p(i,j)%velo2)) deallocate(image%p(i,j)%velo2)
 			enddo
 		enddo
 		deallocate(image%p)
@@ -437,6 +456,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 	def%theta(1)=0d0
 	def%nphi=45
 	def%nr=2
+	def%nt=1
+	def%nstar=30
 	def%Nphot=1000
 	def%NphotAngle=1000
 	def%npixel=500
@@ -476,6 +497,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 	def%tracestar=tracestar
 	def%traceemis=traceemis
 	def%tracescat=tracescat
+	def%nvelo=200
+	def%dvelo=1d0
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -656,9 +679,34 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			tel(nobs)%strehl=def%strehl
 		else if(tel(nobs)%kind.eq.'TAU1TEMP') then
 			tel(nobs)%lam1=deflam
+		else if(tel(nobs)%kind.eq.'LINE') then
+			tel(nobs)%angle=def%angle
+			tel(nobs)%lam1=deflam
+			tel(nobs)%nfov=def%nfov
+			tel(nobs)%fov=def%fov
+			tel(nobs)%npixel=def%npixel
+			tel(nobs)%nint=def%nint
+			tel(nobs)%width=def%width
+			tel(nobs)%D=def%D
+			tel(nobs)%D2=def%D2
+			tel(nobs)%spider=def%spider
+			tel(nobs)%mask=def%mask
+			tel(nobs)%wmask=def%wmask
+			tel(nobs)%psffile=def%psffile
+			tel(nobs)%opening=def%opening
+			tel(nobs)%scaletype=def%scaletype			
+			tel(nobs)%Ptelescope=def%Ptelescope
+			tel(nobs)%APtelescope=def%APtelescope
+			tel(nobs)%iwa=def%iwa
+			tel(nobs)%owa=def%owa
+			tel(nobs)%strehl=def%strehl
+			tel(nobs)%nvelo=def%nvelo
+			tel(nobs)%dvelo=def%dvelo
 		endif
 		tel(nobs)%nphi=def%nphi
 		tel(nobs)%nr=def%nr
+		tel(nobs)%nt=def%nt
+		tel(nobs)%nstar=def%nstar
 		tel(nobs)%Nphot=def%Nphot
 		tel(nobs)%NphotAngle=def%NphotAngle
 		tel(nobs)%usepol=def%usepol
@@ -682,6 +730,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
 		if(key.eq.'nrad') read(value,*) def%nr
+		if(key.eq.'ntheta') read(value,*) def%nt
+		if(key.eq.'nstar') read(value,*) def%nstar
 		if(key.eq.'nphot') read(value,*) def%Nphot
 		if(key.eq.'nphotstar') read(value,*) def%NphotAngle
 		if(key.eq.'ninc') read(value,*) def%nangle
@@ -748,9 +798,13 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) def%trace(i)
 		endif
+		if(key.eq.'nvelo') read(value,*) def%nvelo
+		if(key.eq.'dvelo') read(value,*) def%dvelo
 	else
 		if(key.eq.'nphi') read(value,*) tel(nobs)%nphi
 		if(key.eq.'nrad') read(value,*) tel(nobs)%nr
+		if(key.eq.'ntheta') read(value,*) tel(nobs)%nt
+		if(key.eq.'nstar') read(value,*) tel(nobs)%nstar
 		if(key.eq.'nphot') read(value,*) tel(nobs)%Nphot
 		if(key.eq.'nphotstar') read(value,*) tel(nobs)%NphotAngle
 		if(key.eq.'ninc') read(value,*) tel(nobs)%nangle
@@ -836,6 +890,8 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) tel(nobs)%trace(i)
 		endif
+		if(key.eq.'nvelo') read(value,*) tel(nobs)%nvelo
+		if(key.eq.'dvelo') read(value,*) tel(nobs)%dvelo
 	endif
 	
 	goto 1

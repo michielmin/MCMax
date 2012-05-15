@@ -38,6 +38,7 @@ OBJS	      = Modules.o \
 		Subroutines.o \
 		Radiation.o \
 		TraceMono.o \
+		TraceLine.o \
 		Telescope.o \
 		Visibility.o \
 		Diffusion.o \
