@@ -215,7 +215,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		else
 			emis(i,j)=0d0
 		endif
-		if(computeTgas) then
+		if(useTgas) then
 			iT=C(i,j)%Tgas/dT
 			wT1=real(iT+1)-C(i,j)%Tgas/dT
 			wT2=C(i,j)%Tgas/dT-real(iT)
@@ -815,7 +815,7 @@ c				endif
 				EmisDis(i,j)=0d0
 			endif
 			EmisDis(i,j)=EmisDis(i,j)*C(i,j)%dens*C(i,j)%V
-			if(computeTgas) then
+			if(useTgas) then
 				iT=C(i,j)%Tgas/dT
 				wT1=real(iT+1)-C(i,j)%Tgas/dT
 				wT2=C(i,j)%Tgas/dT-real(iT)

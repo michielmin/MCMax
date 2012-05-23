@@ -34,6 +34,7 @@ OBJS	      = Modules.o \
 		DiskStructure.o \
 		RegridR.o \
 		Init.o \
+		ImportProdimo.o \
 		MCRadiation.o \
 		Subroutines.o \
 		Radiation.o \
@@ -52,7 +53,8 @@ OBJS	      = Modules.o \
 		GrainsizeDistribution.o \
 		Topac.o \
 		MRN.o \
-		GasOpacity.o
+		GasOpacity.o \
+		ComputeLTE.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

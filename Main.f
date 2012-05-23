@@ -552,7 +552,7 @@ c
 	enddo
 	close(unit=20)
 
-	if(computeTgas.or.viscous) then
+	if(useTgas.or.viscous) then
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 	write(*,'("Writing gas density and temperature structure to: ",a)') gasdenstempfile(1:len_trim(gasdenstempfile))

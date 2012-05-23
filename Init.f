@@ -255,6 +255,7 @@
 	nRWinter=0
 	
 	computeTgas=.false.
+	useTgas=.false.
 	
 	nspike=0		!number of angles made isotropic
 	
@@ -1178,6 +1179,9 @@ C	End
 	write(9,'("Superwind radius:     ",f14.3," AU")') MeixRsw
 	else if(denstype.eq.'BETAPIC') then
 	else if(denstype.eq.'PREVIOUS') then
+	else if(denstype.eq.'PRODIMO') then
+	write(*,'("File (ProDiMo):       ",a)') densfile(1:len_trim(densfile))
+	write(9,'("File (ProDiMo):       ",a)') densfile(1:len_trim(densfile))
 	else
 	write(*,'("Error in density type")')
 	write(9,'("Error in density type")')
@@ -1611,6 +1615,8 @@ c	endif
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
+	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
+
 	D%Mstar=D%Mstar*Msun
 	D%Rstar=D%Rstar*Rsun
 	D%Rstar2=D%Rstar2*Rsun
@@ -2030,6 +2036,19 @@ c in the theta grid we actually store cos(theta) for convenience
 		enddo
 		enddo
 		deallocate(surfacedens)
+		mdustscale=.false.
+	endif
+	
+	if(denstype.eq.'PRODIMO') then
+		inquire(file=densfile,exist=truefalse)
+		if(.not.truefalse) then
+			write(*,'("ProDiMo file not found")')
+			write(9,'("ProDiMo file not found")')
+			write(*,'("--------------------------------------------------------")')
+			write(9,'("--------------------------------------------------------")')
+			stop
+		endif
+		call ImportProdimo(densfile)
 		mdustscale=.false.
 	endif
 

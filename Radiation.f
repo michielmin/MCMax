@@ -1064,7 +1064,7 @@ c-----------------------------------------------------------------------
 	endif
 
 
-	if(computeTgas) then
+	if(useTgas) then
 		write(file,'(a,"denstempGas.dat")') outdir(1:len_trim(outdir))
 		inquire(file=file,exist=truefalse)
 		if(.not.truefalse) then

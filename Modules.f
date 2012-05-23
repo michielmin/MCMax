@@ -33,7 +33,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav
 	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac
 	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas
-	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF
+	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
@@ -153,7 +153,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical tracestar,traceemis,tracescat
 		character*500 psffile,linefile
 		real*8 dvelo
-		integer nvelo
+		integer nvelo,trans_nr
 	end type Telescope
 
 	type ExoPlanet

@@ -342,7 +342,7 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 		call TracePathLine(image,angle,tel%nphi,tel%nr,tel%nt,tel%nstar,tel%lam1)
 		allocate(velo(tel%nvelo))
 		allocate(velo_flux(tel%nvelo))
-		call TraceLine(image,tel%lam1,velo_flux,tel%Nphot,tel%NphotAngle,tel%linefile,velo,tel%dvelo,tel%nvelo)
+		call TraceLine(image,tel%trans_nr,velo_flux,tel%Nphot,tel%NphotAngle,tel%linefile,velo,tel%dvelo,tel%nvelo)
 		write(specfile,'(a,"line",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
@@ -499,6 +499,7 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 	def%tracescat=tracescat
 	def%nvelo=200
 	def%dvelo=1d0
+	def%trans_nr=1
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -700,6 +701,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			tel(nobs)%iwa=def%iwa
 			tel(nobs)%owa=def%owa
 			tel(nobs)%strehl=def%strehl
+			tel(nobs)%linefile=def%linefile
+			tel(nobs)%trans_nr=def%trans_nr
 			tel(nobs)%nvelo=def%nvelo
 			tel(nobs)%dvelo=def%dvelo
 		endif
@@ -798,6 +801,8 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) def%trace(i)
 		endif
+		if(key.eq.'linefile') read(value,*) def%linefile
+		if(key.eq.'trans_nr') read(value,*) def%trans_nr
 		if(key.eq.'nvelo') read(value,*) def%nvelo
 		if(key.eq.'dvelo') read(value,*) def%dvelo
 	else
@@ -890,6 +895,8 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) tel(nobs)%trace(i)
 		endif
+		if(key.eq.'linefile') read(value,*) tel(nobs)%linefile
+		if(key.eq.'trans_nr') read(value,*) tel(nobs)%trans_nr
 		if(key.eq.'nvelo') read(value,*) tel(nobs)%nvelo
 		if(key.eq.'dvelo') read(value,*) tel(nobs)%dvelo
 	endif

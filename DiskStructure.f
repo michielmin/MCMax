@@ -35,7 +35,7 @@ c ------ for the IN05 interior T -------------
 
 	if(.not.allocated(Temp)) then
 		allocate(Temp(0:D%nR,0:D%nTheta))
-		if(computeTgas.or.viscous) then
+		if(useTgas.or.viscous) then
 			Temp(0:D%nR,0:D%nTheta)=C(0:D%nR,0:D%nTheta)%Tgas
 		else
 			Temp(0:D%nR,0:D%nTheta)=C(0:D%nR,0:D%nTheta)%T
@@ -47,7 +47,7 @@ c ------ for the IN05 interior T -------------
 		do j=1,D%nTheta-1
 			T=0d0
 			tot=0d0
-			if(computeTgas.or.viscous) then
+			if(useTgas.or.viscous) then
 				T=C(i,j)%Tgas
 			else
 c				do ii=1,ngrains
