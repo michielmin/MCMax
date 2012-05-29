@@ -895,6 +895,8 @@ C       End
 	goto 10
 40	close(unit=20)
 
+	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
+
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.
 	if(Nphot.eq.0) then
 		denstype='FILE'
@@ -2539,7 +2541,7 @@ c		endif
 	do j=0,D%nTheta-1
 		C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
 		C(i,j)%dens0=C(i,j)%dens
-		C(i,j)%gasdens=C(i,j)%dens
+		if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens
 		C(i,j)%gasfrac=0d0
 		MassTot=MassTot+C(i,j)%mass
 	enddo
@@ -2563,7 +2565,7 @@ c		endif
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%dens0=C(i,j)%dens
-			C(i,j)%gasdens=C(i,j)%dens0
+			if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens0
 			C(i,j)%gasfrac=0d0
 			C(i,j)%T=D%Tstar*sqrt(D%R_av(1)/D%R_av(i))/10d0
 			if(.not.tcontact) then

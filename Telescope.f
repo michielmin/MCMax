@@ -5,12 +5,14 @@
 	type(Telescope) tel
 	type(RPhiImage) image
 	real*8 spec(nlam),scatspec(nlam),flux,scatflux,R0,angle,FWHM1,FWHM2
-	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam)
+	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam),clight
 	real*8 basegrid(100),V2(100,100),phase(100),phase2(100,100)	!Gijsexp : nbase=100
 	integer nbase		!Gijsexp
-	integer i,j,k
+	integer i,j,k,i_up,i_low
 	character*500 specfile
 	real*8,allocatable :: velo(:),velo_flux(:)
+	character*10 poptype
+	parameter(clight=2.9979d5) !km/s
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -338,19 +340,38 @@ c		tel%fov(1)=D%R(D%nR)*2d0
      &			,tel%flag(1:len_trim(tel%flag))
 		call tau1temp(specfile,tel%lam1)		
 	else if(tel%kind(1:4).eq.'LINE') then
-		readmcscat=.false.
-		call TracePathLine(image,angle,tel%nphi,tel%nr,tel%nt,tel%nstar,tel%lam1)
+		if(tel%trans_nr2.lt.tel%trans_nr1) tel%trans_nr2=tel%trans_nr1
 		allocate(velo(tel%nvelo))
 		allocate(velo_flux(tel%nvelo))
-		call TraceLine(image,tel%trans_nr,velo_flux,tel%Nphot,tel%NphotAngle,tel%linefile,velo,tel%dvelo,tel%nvelo)
+		readmcscat=.false.
 		write(specfile,'(a,"line",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
 		open(unit=30,file=specfile,RECL=6000)
-		do i=1,tel%nvelo
-			write(30,*) velo(i),1d23*velo_flux(i)/D%distance**2
+		write(specfile,'(a,"specline",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+     &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
+     &			,tel%flag(1:len_trim(tel%flag))
+		open(unit=31,file=specfile,RECL=6000)
+		call TracePathLine(image,angle,tel%nphi,tel%nr,tel%nt,tel%nstar,tel%lam1)
+		do j=tel%trans_nr1,tel%trans_nr2
+			call TraceLine(image,j,velo_flux,tel%Nphot,tel%NphotAngle,tel%linefile,tel%popfile,velo,tel%dvelo,tel%nvelo,
+     &								tel%abun,poptype,i_up,i_low)
+			write(*,'("Writing transition number: ",i5," (",i3,"-",i3,")")') j,i_up,i_low
+			write(9,'("Writing transition number: ",i5," (",i3,"-",i3,")")') j,i_up,i_low
+			write(30,'("# transition nr ",i)') j
+			write(30,'("# up, low       ",i,i)') i_up,i_low
+			write(30,'("# population    ",a)') trim(poptype)
+			do i=1,tel%nvelo
+				write(30,*) velo(i),1d23*velo_flux(i)/D%distance**2
+			enddo
+			if(tel%trans_nr1.ne.tel%trans_nr2) write(30,*)
+			do i=tel%nvelo,1,-1
+				write(31,*) image%lam*sqrt((1d0+velo(i)/clight)/(1d0-velo(i)/clight)),1d23*velo_flux(i)/D%distance**2,
+     &											trim(poptype),i_up,i_low
+			enddo
 		enddo
 		close(unit=30)
+		close(unit=31)
 		deallocate(velo)
 		deallocate(velo_flux)
 	else
@@ -497,9 +518,12 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 	def%tracestar=tracestar
 	def%traceemis=traceemis
 	def%tracescat=tracescat
-	def%nvelo=200
+	def%nvelo=101
 	def%dvelo=1d0
-	def%trans_nr=1
+	def%abun=1d-4
+	def%trans_nr1=1
+	def%trans_nr2=1
+	def%popfile=' '
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -702,9 +726,12 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			tel(nobs)%owa=def%owa
 			tel(nobs)%strehl=def%strehl
 			tel(nobs)%linefile=def%linefile
-			tel(nobs)%trans_nr=def%trans_nr
+			tel(nobs)%popfile=def%popfile
+			tel(nobs)%trans_nr1=def%trans_nr1
+			tel(nobs)%trans_nr2=def%trans_nr2
 			tel(nobs)%nvelo=def%nvelo
 			tel(nobs)%dvelo=def%dvelo
+			tel(nobs)%abun=def%abun
 		endif
 		tel(nobs)%nphi=def%nphi
 		tel(nobs)%nr=def%nr
@@ -801,10 +828,14 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) def%trace(i)
 		endif
-		if(key.eq.'linefile') read(value,*) def%linefile
-		if(key.eq.'trans_nr') read(value,*) def%trans_nr
+		if(key.eq.'linefile') def%linefile=value
+		if(key.eq.'popfile') def%popfile=value
+		if(key.eq.'trans_nr') read(value,*) def%trans_nr1
+		if(key.eq.'trans_nr1') read(value,*) def%trans_nr1
+		if(key.eq.'trans_nr2') read(value,*) def%trans_nr2
 		if(key.eq.'nvelo') read(value,*) def%nvelo
 		if(key.eq.'dvelo') read(value,*) def%dvelo
+		if(key.eq.'abun') read(value,*) def%abun
 	else
 		if(key.eq.'nphi') read(value,*) tel(nobs)%nphi
 		if(key.eq.'nrad') read(value,*) tel(nobs)%nr
@@ -895,10 +926,14 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) tel(nobs)%trace(i)
 		endif
-		if(key.eq.'linefile') read(value,*) tel(nobs)%linefile
-		if(key.eq.'trans_nr') read(value,*) tel(nobs)%trans_nr
+		if(key.eq.'linefile') tel(nobs)%linefile=value
+		if(key.eq.'popfile') tel(nobs)%popfile=value
+		if(key.eq.'trans_nr') read(value,*) tel(nobs)%trans_nr1
+		if(key.eq.'trans_nr1') read(value,*) tel(nobs)%trans_nr1
+		if(key.eq.'trans_nr2') read(value,*) tel(nobs)%trans_nr2
 		if(key.eq.'nvelo') read(value,*) tel(nobs)%nvelo
 		if(key.eq.'dvelo') read(value,*) tel(nobs)%dvelo
+		if(key.eq.'abun') read(value,*) tel(nobs)%abun
 	endif
 	
 	goto 1

@@ -151,9 +151,9 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical usepol,readmcscat,traceinverse,fluxcontr
 		logical,allocatable :: trace(:)
 		logical tracestar,traceemis,tracescat
-		character*500 psffile,linefile
-		real*8 dvelo
-		integer nvelo,trans_nr
+		character*500 psffile,linefile,popfile
+		real*8 dvelo,abun
+		integer nvelo,trans_nr1,trans_nr2
 	end type Telescope
 
 	type ExoPlanet

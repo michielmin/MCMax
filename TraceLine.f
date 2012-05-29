@@ -1,9 +1,9 @@
 c New version of TraceMono that actually does the line radiative integration
-	subroutine TraceLine(image,iTr,flux,Nphot,NphotStar,linefile,velo,dvelo,nvelo)
+	subroutine TraceLine(image,iTr,flux,Nphot,NphotStar,linefile,popfile,velo,dvelo,nvelo,abun,poptype,i_up,i_low)
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,k,ii,jj,Nphot,NphotStar,nvelo,iv,iTr
-	real*8 lam0,tau(nvelo),phi,flux(nvelo),velo(nvelo),dvelo
+	real*8 lam0,tau(nvelo),phi,flux(nvelo),velo(nvelo),dvelo,abun
 	type(RPhiImage) image
 	real*8 tau_e,tau_s,tau_a,w1,w2,nu0,exptau_e(nvelo),velo0
 	real*8 wT1,wT2,emis(0:D%nR,D%nTheta),frac,wl1,wl2,Ksca
@@ -11,13 +11,14 @@ c New version of TraceMono that actually does the line radiative integration
 	real*8 scat(2,0:D%nR,D%nTheta),fact(nvelo)
 	real*8 scatQ(2,0:D%nR,D%nTheta),scatU(2,0:D%nR,D%nTheta)
 	real*8 scatV(2,0:D%nR,D%nTheta),nf,sf,fracirg(D%nTheta,360)
-	character*500 fluxfile,linefile
-	integer il10,il100,il1000,il10000,i10,kk,nkk
+	character*500 fluxfile,linefile,popfile
+	character*10 poptype
+	integer il10,il100,il1000,il10000,i10,kk,nkk,i_low,i_up
 	real*8 i1,il1,Planck,velo_emis(nvelo),velo_scat(nvelo),velo_tau(nvelo)
 	real*8 velo_scatQ(nvelo),velo_scatU(nvelo),velo_scatV(nvelo),add
 	real*8 im(nvelo),imQ(nvelo),imU(nvelo),imV(nvelo),gu,gl,x,h,T
 	real*8 Aul,Bul,Blu,mol_mass,n_up(0:D%nR-1,D%nTheta-1),n_low(0:D%nR-1,D%nTheta-1)
-	real*8 y1(nvelo),y2(nvelo),y3(nvelo),y4(nvelo),Resolution,clight
+	real*8 y1(nvelo),y2(nvelo),y3(nvelo),y4(nvelo),Resolution,clight,nm(0:D%nR-1,D%nTheta-1)
 	real*8,allocatable :: velo_imageI(:,:,:),velo_imageQ(:,:,:),velo_imageU(:,:,:),velo_imageV(:,:,:)
 	parameter(h=6.626068e-27) ! cm^2 g/s
 	parameter(clight=2.9979d5) !km/s
@@ -28,8 +29,19 @@ c New version of TraceMono that actually does the line radiative integration
 
 	tau_max=1d2
 
-	call ComputeLTE(linefile,iTr,Aul,Bul,Blu,nu0,n_low,n_up,mol_mass)
-	lam0=2.9979d14/nu0
+	poptype='LTE'
+	call ComputeLTE(linefile,iTr,i_low,i_up,Aul,Bul,Blu,nu0,n_low,n_up,mol_mass)
+	nm=mol_mass*abun
+	lam0=clight*1d9/nu0
+
+	if(popfile.ne.' ') call PopulationsProdimo(popfile,i_low,i_up,n_low,n_up,nm,mol_mass,poptype)
+
+	do i=1,D%nR-1
+	do j=1,D%nTheta-1
+		n_up(i,j)=n_up(i,j)*nm(i,j)
+		n_low(i,j)=n_low(i,j)*nm(i,j)
+	enddo
+	enddo
 
 	if(lam0.lt.lam(1).or.lam0.gt.lam(nlam)) then
 		write(*,'("Wavelength not in the grid: ",f10.3)') lam0
@@ -297,11 +309,13 @@ c New version of TraceMono that actually does the line radiative integration
 		velo0=image%p(i,j)%velo1(k)+(image%p(i,j)%velo2(k)-image%p(i,j)%velo1(k))*(real(kk)-0.5)/real(nkk)
 
 		call velo_abs_ext(velo0,ip,jp,velo_emis,velo_tau,velo,nvelo,dvelo)
-		velo_emis=velo_emis*image%p(i,j)%v(k)*AU/real(nkk)
-		velo_tau=tau_e/real(nkk)+velo_tau*image%p(i,j)%v(k)*AU/real(nkk)
 
-		velo_emis=(velo_emis+emis(ip,jp)*tau_e/real(nkk))/velo_tau
-		velo_scat=scat(kp,ip,jp)*tau_e/(real(nkk)*velo_tau)
+		velo_emis=velo_emis*1d-2+emis(ip,jp)*C(ip,jp)%Kext*C(ip,jp)%dens/(C(ip,jp)%gasdens*gas2dust)
+		velo_tau=tau_e/real(nkk)+velo_tau*C(ip,jp)%gasdens*gas2dust*image%p(i,j)%v(k)*AU/real(nkk)
+
+		velo_emis=velo_emis*C(ip,jp)%gasdens*gas2dust*(image%p(i,j)%v(k)*AU/real(nkk))/velo_tau
+		
+		velo_scat=scat(kp,ip,jp)*tau_e/(velo_tau*real(nkk))
 		if(aniso) then
 			velo_scatQ=scatQ(kp,ip,jp)*tau_e/(real(nkk)*velo_tau)
 			velo_scatU=scatU(kp,ip,jp)*tau_e/(real(nkk)*velo_tau)
@@ -750,7 +764,7 @@ c v=29.7859 * (1/a^(1/2)) * [y,-x,0]/sqrt(x^2+y^2)       in km/s
 	r=sqrt(x*x+y*y+z*z)
 	p%velo1(p%n)=0D0
 c Keppler velocity
-	p%velo1(p%n)=p%velo1(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/r
+	p%velo1(p%n)=p%velo1(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
 c 20 km/s outflow
 c	p%velo1(p%n)=p%velo1(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
 
@@ -773,7 +787,7 @@ c	p%velo1(p%n)=p%velo1(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
 	r=sqrt(x*x+y*y+z*z)
 	p%velo2(p%n)=0d0
 c Keppler velocity
-	p%velo2(p%n)=p%velo2(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/r
+	p%velo2(p%n)=p%velo2(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
 c 20 km/s outflow
 c	p%velo2(p%n)=p%velo2(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
 
@@ -835,16 +849,15 @@ c mol_mass		: molecule mass in proton masses
 		endif
 
 		velo_T=1d-5*sqrt(2d0*kb*T/(mp*mol_mass)) ! factor 1e-5 is to convert from cm/s to km/s
-		velo_T=velo_T+1d0
-c		print*,T,velo_T
-		if(velo_T.lt.dvelo/2d0) velo_T=dvelo/2d0
+c		velo_T=velo_T+1d0
+c		if(velo_T.lt.dvelo/2d0) velo_T=dvelo/2d0
 		do iv=1,nvelo
-			phi(iv)=(clight/(sqrt(pi)*velo_T*nu0))*exp(-(velo(iv)/velo_T)**2)
+			phi(iv)=(clight/(sqrt(pi)*velo_T*nu0*1d5))*exp(-(velo(iv)/velo_T)**2)
 		enddo
 		tot=sum(phi(1:nvelo))*dvelo/(lam0*1d-9)
 		phi=phi/tot
 
-		fact=h*nu0*C(i,j)%gasdens*gas2dust*1d-4/(4d0*pi*mol_mass*mp)
+		fact=h*nu0/(4d0*pi*mol_mass*mp)
 		C(i,j)%line_emis=fact*n_up(i,j)*Aul*phi
 		C(i,j)%line_abs=fact*(n_low(i,j)*Blu-n_up(i,j)*Bul)*phi
 	enddo
