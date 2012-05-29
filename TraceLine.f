@@ -302,7 +302,7 @@ c New version of TraceMono that actually does the line radiative integration
 
 		tau_e=image%p(i,j)%v(k)*C(ip,jp)%dens*C(ip,jp)%Kext*AU
 
-		nkk=2d0*abs(image%p(i,j)%velo1(k)-image%p(i,j)%velo2(k))/dvelo+1
+		nkk=abs(image%p(i,j)%velo1(k)-image%p(i,j)%velo2(k))/dvelo+1
 
 		do kk=1,nkk
 		
@@ -310,7 +310,7 @@ c New version of TraceMono that actually does the line radiative integration
 
 		call velo_abs_ext(velo0,ip,jp,velo_emis,velo_tau,velo,nvelo,dvelo)
 
-		velo_emis=velo_emis*1d-2+emis(ip,jp)*C(ip,jp)%Kext*C(ip,jp)%dens/(C(ip,jp)%gasdens*gas2dust)
+		velo_emis=velo_emis+emis(ip,jp)*C(ip,jp)%Kext*C(ip,jp)%dens/(C(ip,jp)%gasdens*gas2dust)
 		velo_tau=tau_e/real(nkk)+velo_tau*C(ip,jp)%gasdens*gas2dust*image%p(i,j)%v(k)*AU/real(nkk)
 
 		velo_emis=velo_emis*C(ip,jp)%gasdens*gas2dust*(image%p(i,j)%v(k)*AU/real(nkk))/velo_tau
@@ -462,7 +462,7 @@ c-----------------------------------------------------------------------
 	integer ilam,MinPhot,nabs,nj,nj2,nphi
 	real*8 x,y,z,phi,theta,Albedo,w1,w2,fact(nlam),Rad,r,ran2
 	logical hitstar
-	real*8 extstar(nlam),R01(D%nTheta),t_offset
+	real*8 extstar(nlam),R01(D%nTheta),t_offset,velo_r,velo_t
 	type(RPhiImage) image
 
 	write(*,'("Creating photon paths for image")')
@@ -708,7 +708,6 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 	enddo
 	enddo
 
-
 	return
 	end
 	
@@ -721,7 +720,7 @@ c-----------------------------------------------------------------------
 	type(Photon) phot
 	real*8 tau(nlam),tau_a(nlam),tau_e(nlam),v,fact(nlam)
 	real*8 Kext(nlam),Kabs(nlam),emis(nlam),spec(nlam)
-	real*8 absfrac(nlam),wT1,wT2,x,y,z,phi,G,r
+	real*8 absfrac(nlam),wT1,wT2,x,y,z,phi,G,r,velo_r,velo_t
 	integer inext,jnext,ntrace,iT,i,j,l1,l2,irgnext
 	logical hitstar
 	type(path) p
@@ -762,12 +761,8 @@ c-----------------------------------------------------------------------
 c v=29.7859 * (1/a^(1/2)) * [y,-x,0]/sqrt(x^2+y^2)       in km/s
 
 	r=sqrt(x*x+y*y+z*z)
-	p%velo1(p%n)=0D0
-c Keppler velocity
-	p%velo1(p%n)=p%velo1(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
-c 20 km/s outflow
-c	p%velo1(p%n)=p%velo1(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
-
+	call velocities(phot%i,phot%j,r,velo_r,velo_t)
+	p%velo1(p%n)=velo_r*(phot%vx*x+phot%vy*y+phot%vz*z)/r+velo_t*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
 
 	x=phot%x+phot%vx*v
 	y=phot%y+phot%vy*v
@@ -785,11 +780,8 @@ c	p%velo1(p%n)=p%velo1(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
 	if(p%jphi2(p%n).gt.NPHISCATT/2) p%jphi2(p%n)=NPHISCATT+1-p%jphi2(p%n)
 
 	r=sqrt(x*x+y*y+z*z)
-	p%velo2(p%n)=0d0
-c Keppler velocity
-	p%velo2(p%n)=p%velo2(p%n)+1d-5*sqrt(G*D%Mstar*sin(D%theta_av(phot%j))/(AU*r))*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
-c 20 km/s outflow
-c	p%velo2(p%n)=p%velo2(p%n)-20d0*(phot%vx*x+phot%vy*y+phot%vz*z)/r
+	call velocities(phot%i,phot%j,r,velo_r,velo_t)
+	p%velo2(p%n)=velo_r*(phot%vx*x+phot%vy*y+phot%vz*z)/r+velo_t*(phot%vx*y-phot%vy*x)/sqrt(x**2+y**2)
 
 	phot%x=phot%x+phot%vx*v
 	phot%y=phot%y+phot%vy*v
@@ -849,15 +841,17 @@ c mol_mass		: molecule mass in proton masses
 		endif
 
 		velo_T=1d-5*sqrt(2d0*kb*T/(mp*mol_mass)) ! factor 1e-5 is to convert from cm/s to km/s
-c		velo_T=velo_T+1d0
-c		if(velo_T.lt.dvelo/2d0) velo_T=dvelo/2d0
+c	================================================
+c	add half the sound speed as the turbulent velocity.
+		velo_T=velo_T+0.5d-5*sqrt((7.0/5.0)*kb*T/(mp*2.3))
+c	================================================
 		do iv=1,nvelo
 			phi(iv)=(clight/(sqrt(pi)*velo_T*nu0*1d5))*exp(-(velo(iv)/velo_T)**2)
 		enddo
 		tot=sum(phi(1:nvelo))*dvelo/(lam0*1d-9)
 		phi=phi/tot
 
-		fact=h*nu0/(4d0*pi*mol_mass*mp)
+		fact=h*nu0*1d-2/(4d0*pi*mol_mass*mp)
 		C(i,j)%line_emis=fact*n_up(i,j)*Aul*phi
 		C(i,j)%line_abs=fact*(n_low(i,j)*Blu-n_up(i,j)*Bul)*phi
 	enddo
@@ -923,7 +917,7 @@ c	shift=(nvelo+1)/2-shift
 	tot2=sum(y2)
 	if((tot1/tot2).lt.1e-6.or.(tot2/tot1).lt.1e-6) nj=1
 
-	if(nj.lt.1) then
+	if(nj.le.1) then
 		y=y1in+y2in
 	else
 		y=y1+y2
@@ -954,4 +948,25 @@ c	shift=(nvelo+1)/2-shift
 	return
 	end
 	
+
+	subroutine velocities(i,j,r,velo_r,velo_t)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j
+	real*8 r,velo_r,velo_t,G
+	parameter(G=6.67300d-8) ! in cm^3/g/s^2
+
+	velo_r=0d0
+	velo_t=0d0
+
+c Keppler velocity
+	velo_t=1d-5*sqrt(G*D%Mstar*sin(D%theta_av(j))/(AU*r))
+c 20 km/s outflow
+c	velo_r=20d0
+	
+	return
+	end
+
+
+
 

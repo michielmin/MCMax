@@ -943,6 +943,8 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 	deallocate(def%b)
 	deallocate(def%theta)
 	
+	if(2*(tel(nobs)%nvelo/2).eq.tel(nobs)%nvelo) tel(nobs)%nvelo=tel(nobs)%nvelo+1
+	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 	
