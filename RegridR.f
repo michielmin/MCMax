@@ -449,6 +449,7 @@ C	enddo
 	Rnew(D%nR)=D%Rout
 
 71	continue
+	call sort(Rnew(0:D%nR),D%nR+1)
 	if(Rnew(1).eq.Rnew(2)) then
 		Rnew(2)=(Rnew(2)+Rnew(3))/2d0
 		goto 71

@@ -895,6 +895,7 @@ C       End
 	goto 10
 40	close(unit=20)
 
+	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.

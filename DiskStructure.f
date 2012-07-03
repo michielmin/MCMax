@@ -67,6 +67,7 @@ c				else
 					T=C(i,j)%T
 c				endif
 			endif
+			if(T.lt.2.7) T=2.7
 			Temp(i,j)=(1d0-fw)*Temp(i,j)+fw*T
 			C(i,j)%Tav=Temp(i,j)
 		enddo
@@ -1748,7 +1749,7 @@ C     close the file and free the unit number
 	end
 
 
-	subroutine RegridTheta(n1)
+	subroutine RegridThetaOld(n1)
 	use Parameters
 	IMPLICIT NONE
 	integer n,n1,i,j,ii,j0,iopac
@@ -1840,7 +1841,7 @@ c in the theta grid we actually store cos(theta) for convenience
 
 
 
-	subroutine RegridThetaNew(n1)
+	subroutine RegridTheta(n1)
 	use Parameters
 	IMPLICIT NONE
 	integer n,n1,i,j,ii,j0,iopac
