@@ -43,7 +43,7 @@
 	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:)
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
-	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw
+	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
 	integer ntau1
 
@@ -52,6 +52,7 @@
 	D%Rstar=2.1d0
 	D%Mstar=2.5d0
 	D%distance=100d0
+	D%Av=0d0
 	
 	D%Tstar2=-1d0
 	D%Rstar2=-1d0
@@ -270,6 +271,8 @@
 	MeixF=1d0
 	MeixG=0d0
 	MeixRsw=1800d0
+	MeixRin=-1d0
+	timeshift=0d0
 	
 c	Interstellar Radiation Field (IRF)
 	T_IRF=20000d0
@@ -344,6 +347,7 @@ c	Interstellar Radiation Field (IRF)
 		D%Lstar=D%Lstar*Luminosity(5778d0,Rsun)
 	endif
 	if(key.eq.'distance') read(value,*) D%distance
+	if(key.eq.'av') read(value,*) D%Av
 	if(key.eq.'posangle') read(value,*) D%PA
 	if(key.eq.'incangle') read(value,*) D%IA
 
@@ -884,6 +888,8 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'meixf') read(value,*) MeixF
 	if(key.eq.'meixg') read(value,*) MeixG
 	if(key.eq.'meixrsw') read(value,*) MeixRsw
+	if(key.eq.'meixrin') read(value,*) MeixRin
+	if(key.eq.'timeshift') read(value,*) timeshift
 	
 	!Interstellar Radiation Field
 	if(key.eq.'irf') read(value,*) use_IRF
@@ -895,6 +901,7 @@ C       End
 	goto 10
 40	close(unit=20)
 
+	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
@@ -971,6 +978,11 @@ C	End
 	deallocate(IPIV)
 	endif
 
+	if(timeshift.ne.0d0.and.denstype.eq.'MEIXNER') then
+		D%Rin=D%Rin+timeshift*vexp1*0.210944839d0
+		D%Rout=D%Rout+timeshift*vexp1*0.210944839d0
+	endif
+
 	if((D%Rstar*Rsun/AU).ge.D%Rin) then
 		write(*,'("Inner radius inside the star!")')
 		write(*,'("Changing inner radius")')
@@ -1000,6 +1012,8 @@ C	End
 	
 	write(*,'("Distance:             ",f14.3," parsec")') D%distance
 	write(9,'("Distance:             ",f14.3," parsec")') D%distance
+	write(*,'("Interstellar Av:      ",f14.3)') D%Av
+	write(9,'("Interstellar Av:      ",f14.3)') D%Av
 
 	if(viscous) then
 	write(*,'("Using viscous heating")')
@@ -1180,6 +1194,10 @@ C	End
 	write(9,'("Meixner G:            ",f14.3)') MeixG
 	write(*,'("Superwind radius:     ",f14.3," AU")') MeixRsw
 	write(9,'("Superwind radius:     ",f14.3," AU")') MeixRsw
+	if(timeshift.ne.0d0) then
+	write(*,'("Time shift:           ",f14.3," years")') timeshift
+	write(9,'("Time shift:           ",f14.3," years")') timeshift
+	endif
 	else if(denstype.eq.'BETAPIC') then
 	else if(denstype.eq.'PREVIOUS') then
 	else if(denstype.eq.'PRODIMO') then
@@ -2143,12 +2161,13 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			C(i,j)%dens=((D%Mdot/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))/gas2dust
 		else if(denstype.eq.'MEIXNER') then
-			r=D%R_av(i)/AU
-			if(r.gt.D%Rin) then
-				C(i,j)%dens=((r/D%Rin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
-     &					(dexp(-(r/MeixRsw)**MeixD+(D%Rin/MeixRsw)**MeixD)))))*
+			r=D%R_av(i)/AU-timeshift*vexp1*0.210944839d-5
+			if(r.gt.MeixRin) then
+				C(i,j)%dens=((r/MeixRin)**(-MeixB*(1d0+MeixC*sin(D%theta_av(j))**MeixF*
+     &					(dexp(-(r/MeixRsw)**MeixD+(MeixRin/MeixRsw)**MeixD)))))*
      &					(1d0+MeixA*(1d0-cos(D%theta_av(j)))**MeixF*
-     &					(dexp(-(r/MeixRsw)**MeixE+(D%Rin/MeixRsw)**MeixE)))
+     &					(dexp(-(r/MeixRsw)**MeixE+(MeixRin/MeixRsw)**MeixE)))
+				C(i,j)%dens=C(i,j)%dens*(r/(D%R_av(i)/AU))**2
 			else
 				C(i,j)%dens=1d-60
 			endif

@@ -13,6 +13,7 @@
 	real*8,allocatable :: velo(:),velo_flux(:)
 	character*10 poptype
 	parameter(clight=2.9979d5) !km/s
+	real*8 Reddening,compute_dlam,ExtISM
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -87,27 +88,30 @@
      &			,tel%flag(1:len_trim(tel%flag))
 		open(unit=30,file=specfile,RECL=6000)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		if(scat_how.ne.2) then
-			write(30,*) tel%lam1,1d23*flux/D%distance**2,1d23*scatflux/D%distance**2
+			write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2
 		else
-			write(30,*) tel%lam1,1d23*flux/D%distance**2,1d23*scatflux/D%distance**2,1d23*fluxQ/D%distance**2
+			write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2,1d23*fluxQ*ExtISM/D%distance**2
 		endif
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
 				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle)
+				ExtISM=Reddening(lam(j),compute_dlam(lam(j)),D%Av)
 				if(scat_how.ne.2) then
-					write(30,*) lam(j),1d23*spec(j)/D%distance**2,1d23*scatspec(j)/D%distance**2
+					write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,1d23*scatspec(j)*ExtISM/D%distance**2
 				else
-					write(30,*) lam(j),1d23*spec(j)/D%distance**2,1d23*scatspec(j)/D%distance**2,1d23*specQ(j)/D%distance**2
+					write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,1d23*scatspec(j)*ExtISM/D%distance**2,1d23*specQ(j)*ExtISM/D%distance**2
 				endif
 				call flush(30)
 			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		if(scat_how.ne.2) then
-			write(30,*) tel%lam2,1d23*flux/D%distance**2,1d23*scatflux/D%distance**2
+			write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2
 		else
-			write(30,*) tel%lam2,1d23*flux/D%distance**2,1d23*scatflux/D%distance**2,1d23*fluxQ/D%distance**2
+			write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2,1d23*fluxQ*ExtISM/D%distance**2
 		endif
 		close(unit=30)
 	else if(tel%kind(1:5).eq.'IMAGE') then
@@ -115,6 +119,7 @@
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
 		if(tel%opening.ne.0d0) call opendisk(image,tel%opening)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
@@ -122,7 +127,7 @@
 			else if(tel%scaletype.eq.2) then
 				tel%fov(i)=tel%fov(i)*D%distance/parsec
 				image%rscale=parsec/D%distance
-				image%zscale=1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
+				image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
 			endif
 			if(i.eq.1) call RImage(image,tel)
 			call MakeImage(image,tel,tel%fov(i)/2d0)
@@ -131,6 +136,7 @@
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
@@ -138,7 +144,7 @@
 			else if(tel%scaletype.eq.2) then
 				tel%fov(i)=tel%fov(i)*D%distance/parsec
 				image%rscale=parsec/D%distance
-				image%zscale=1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
+				image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
 			endif
 			call MakeImage(image,tel,tel%fov(i)/2d0)
 		enddo
@@ -151,20 +157,21 @@
 						image%zscale=1d0
 					else if(tel%scaletype.eq.2) then
 						image%rscale=parsec/D%distance
-						image%zscale=1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
+						image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
 					endif
 					call MakeImage(image,tel,tel%fov(i)/2d0)
 				enddo
 			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
 				image%zscale=1d0
 			else if(tel%scaletype.eq.2) then
 				image%rscale=parsec/D%distance
-				image%zscale=1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
+				image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
 			endif
 			call MakeImage(image,tel,tel%fov(i)/2d0)
 		enddo
@@ -183,27 +190,30 @@
 		enddo
 
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam1,V(k),phase(k))
 		enddo
-		write(30,*) tel%lam1,1d23*flux/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+		write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
 				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle)
 				do k=1,tel%nbaseline
 					call Visibility(image,tel%b(k),tel%theta(k),lam(j),V(k),phase(k))
 				enddo
-				write(30,*) lam(j),1d23*spec(j)/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+				write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
 				call flush(30)
 			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam2,V(k),phase(k))
 		enddo
-		write(30,*) tel%lam2,1d23*flux/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+		write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
 		close(unit=30)
 	else if(tel%kind(1:7).eq.'BASEVIS') then
+c is still without interstellar extinction
 c       Gijsexp: 
 		readmcscat=.false.
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
@@ -238,6 +248,7 @@ c		   basegrid(k)=tel%b(1)*(tel%b(2)/tel%b(1))**((k-1d0)/(nbase-1d0))  ! log gri
 		close(unit=30)
 c       End add
 	else if(tel%kind(1:4).eq.'FWHM') then
+c is still without interstellar extinction
 		readmcscat=.false.
 		if(tel%scaletype.eq.1) then
 			image%rscale=1d0
@@ -250,6 +261,7 @@ c       End add
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
 		call FWHM(image,tel%npixel,tel%nint,FWHM1,FWHM2,tel%width*(2d0*sqrt(-2d0*log(0.5d0)))/parsec*D%Distance)
 	else if(tel%kind(1:8).eq.'SPECFWHM') then
+c is still without interstellar extinction
 		readmcscat=.false.
 		if(tel%scaletype.eq.1) then
 			image%rscale=1d0
@@ -283,6 +295,7 @@ c       End add
 		write(30,*) tel%lam2,FWHM1*image%rscale,FWHM2*image%rscale,flux
 		close(unit=30)
 	else if(tel%kind(1:4).eq.'TELFWHM') then
+c is still without interstellar extinction
 		readmcscat=.false.
 c		tel%fov(1)=D%R(D%nR)*2d0
 		if(tel%scaletype.eq.1) then
@@ -297,6 +310,7 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
 		call TELFWHM(image,tel,tel%fov(1)/2d0,FWHM1,FWHM2)
 	else if(tel%kind(1:8).eq.'TELSPECFWHM') then
+c is still without interstellar extinction
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
@@ -332,6 +346,7 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 		write(30,*) tel%lam2,FWHM1*image%rscale,FWHM2*image%rscale,flux
 		close(unit=30)
 	else if(tel%kind(1:8).eq.'TAU1TEMP') then
+c is still without interstellar extinction
 		write(specfile,'(a,"tau1temp",i1,i1,i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%lam1)/1000d0)
      &			,int((tel%lam1-1000d0*int(tel%lam1)/1000d0)/100d0)
@@ -362,11 +377,11 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			write(30,'("# up, low       ",i,i)') i_up,i_low
 			write(30,'("# population    ",a)') trim(poptype)
 			do i=1,tel%nvelo
-				write(30,*) velo(i),1d23*velo_flux(i)/D%distance**2
+				write(30,*) velo(i),1d23*velo_flux(i)*ExtISM/D%distance**2
 			enddo
 			if(tel%trans_nr1.ne.tel%trans_nr2) write(30,*)
 			do i=tel%nvelo,1,-1
-				write(31,*) image%lam*sqrt((1d0+velo(i)/clight)/(1d0-velo(i)/clight)),1d23*velo_flux(i)/D%distance**2,
+				write(31,*) image%lam*sqrt((1d0+velo(i)/clight)/(1d0-velo(i)/clight)),1d23*velo_flux(i)*ExtISM/D%distance**2,
      &											trim(poptype),i_up,i_low
 			enddo
 		enddo

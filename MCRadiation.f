@@ -28,9 +28,15 @@
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
 	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha
-	real*8 F(ngrains),maxT,minT,determinegasfrac,Tevap,A(ngrains)
+	real*8 F(ngrains),maxT,minT,determinegasfrac,Tevap,A(ngrains),ExtISM(nlam)
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
+	real*8 Reddening,compute_dlam
+
+	do i=1,nlam
+		call tellertje(i,nlam)
+		ExtISM(i)=Reddening(lam(i),compute_dlam(lam(i)),D%Av)
+	enddo
 
 	do i=1,nlam
 	do j=1,nangle
@@ -540,8 +546,8 @@ c			else
 		dspec(1:nlam)=spec(1:nlam,j)/sqrt(real(ispec(1:nlam,j)))
 	endif
 	do i=1,nlam
-		write(20,*) lam(i),spec(i,j)/D%distance**2,dspec(i)/D%distance**2
-     &			,scatspec(i,j)/D%distance**2,iscatspec(i,j),1d23*D%Fstar(i)/D%distance**2
+		write(20,*) lam(i),spec(i,j)*ExtISM(i)/D%distance**2,dspec(i)*ExtISM(i)/D%distance**2
+     &			,scatspec(i,j)*ExtISM(i)/D%distance**2,iscatspec(i,j),1d23*D%Fstar(i)/D%distance**2
 	enddo
 	close(unit=20)
 	enddo

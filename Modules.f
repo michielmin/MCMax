@@ -100,7 +100,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type Disk
 		real*8 Tstar,Rstar,Lstar,Mstar,Tstar2,Rstar2
-		real*8 Mtot,Vtot,distance,PA,IA,Mdot,mu0max
+		real*8 Mtot,Vtot,distance,PA,IA,Mdot,mu0max,Av
 		real*8 denspow,Rin,Rout,shpow,sh1AU,denspow2,Rpow2,Rpow3,Rexp
 		real*8,allocatable :: Fstar(:),theta_av(:),R_av(:),Rfix(:)
 		real*8,allocatable :: R(:),Theta(:),thet(:),SinTheta(:)
