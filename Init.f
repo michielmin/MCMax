@@ -2379,6 +2379,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		MassTot0=MassTot0+C(i,j)%dens*C(i,j)%V
 	enddo
 	enddo
+
 c	do ii=1,ngrains
 c		if(minrad(ii).gt.D%R(1)) then
 c			do i=1,D%nR-1

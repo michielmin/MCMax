@@ -1925,6 +1925,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			C(i,j)%dens0=C(i,j)%dens0*Vold/C(i,j)%V
 			C(i,j)%dens=C(i,j)%dens*Vold/C(i,j)%V
 			C(i,j)%gasdens=C(i,j)%gasdens*Vold/C(i,j)%V
+			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 			call CheckMinimumDensity(i,j)
 		enddo
 	enddo

@@ -1323,7 +1323,7 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 			enddo
 
 			enddo
-			if(computeTgas) C(i,j)%Tgas=C(i,j)%T
+			if(computeTgas.or.viscous) C(i,j)%Tgas=C(i,j)%T
 		enddo
 	enddo
 
