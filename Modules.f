@@ -32,7 +32,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav
 	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac
-	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas
+	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
@@ -65,11 +65,10 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical settle,qhp,gascoupled,trace,force_vert_gf
 		real*8 tdes_fast
 		integer qhpnr
-		character*20 material,shtype
+		character*20 material,shtype,roundtype
 		integer nopac,parttype
 		real*8 Rcryst,Tcryst,powcryst,maxtau,maxrad,minrad,shaperad
-		real*8 roundwidth,roundpow !Gijsexp, roundoff with SDP
-		logical softedge !Gijsexp, soft edge Woitke++ 2009
+		real*8 roundwidth,roundpow !Gijsexp, roundoff
 ! parttype=1	Normal particle
 ! parttype=2	Opacity file
 ! parttype=3	Mixed aggregates (still in beta)
@@ -106,6 +105,8 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: R(:),Theta(:),thet(:),SinTheta(:)
 		integer nR,nTheta,nRfix,ngap
 		real*8,allocatable :: gap(:),gap1(:),gap2(:),gapshape(:)
+		real*8,allocatable :: gaproundpow(:)
+		character*20,allocatable :: gaproundtype(:)
 	end type Disk
 
 	type(Cell),allocatable :: C(:,:)

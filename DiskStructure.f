@@ -187,9 +187,15 @@ c model from Leinert et al. 2002
 				rho(j,ii)=-4.8d0*abs(sin(pi/2d0-D%theta_av(j)))**1.3d0
 			enddo
 		else if(Grain(ii)%shtype.eq.'HALO') then
-			do j=1,D%nTheta-1
-				rho(j,ii)=1d0
-			enddo
+		   do j=1,D%nTheta-1
+		      rho(j,ii)=1d0
+
+		      !  a wedge with constant density for z/r < -settle#
+		      if(Grain(ii)%shscale(i).lt.0d0.and.
+     1                     pi/2d0-D%theta_av(j).gt.-(Grain(ii)%shscale(i))) then
+			 rho(j,ii)=-60d0
+		      endif
+		   enddo
 		else if(Grain(ii)%shtype.eq.'LOBE') then
 			do j=1,D%nTheta-1
 				rho(j,ii)=log10(exp(-((D%theta_av(j)*180d0/pi)/scale)**2))
@@ -331,7 +337,7 @@ c			endif
 
 	call CheckCells()
 
-	if(raditer) call RadialStruct()
+	if(raditer.or.getalpha) call RadialStruct()
 
 	return
 	end
@@ -364,15 +370,23 @@ c	dydx=-mu*G*D%Mstar*x/(scale**2*kb*T*D%R_av(i)**3)-dlnT
 	end
 
 
+	!  This routine calculates the radial structure of the disk,
+	!    for a given viscous alpha
+	!  If getalpha=.true., this radial structure is ignored, 
+	!    and only used to calculate what alpha would be necessary
+	!    to obtain the current density structure (radialalpha.dat) 
+	!
 	subroutine RadialStruct()
 	use Parameters
 	use DiskStruct
 	IMPLICIT NONE
 	real*8 dens(D%nR,D%nTheta),Eint,Er,mu,G,DiskMass,alpha,Mdot
+	real*8 surfscale(1:D%nR)	! surface dens
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
 	real*8 infall_rho,infall_mu,infall_mu0,infall_tot
 	integer ii
+	character*100 file
 	
 	do i=1,D%nR-1
 	Eint=0d0
@@ -392,28 +406,49 @@ c	Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
 
 	dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*Er/Eint
 
+	if (getalpha) then
+	   surfscale(i)=Er/Eint ! equal to dens(i,j)/C(i,j)%gasdens
+	endif
+
 	enddo
 	
-	DiskMass=0d0
-	do i=1,D%nR-1
-	do j=1,D%nTheta-1
-		if(C(i,j)%gasdens.gt.1d-50) then
-			C(i,j)%dens=C(i,j)%dens*dens(i,j)/C(i,j)%gasdens
-			C(i,j)%dens0=C(i,j)%dens0*dens(i,j)/C(i,j)%gasdens
-		else
-			C(i,j)%dens=1d-60
-			C(i,j)%dens0=1d-60
-			C(i,j)%w=C(i,j)%w0
-			C(i,j)%gasdens=1d-60
-		endif
-		C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-		C(i,j)%gasdens=dens(i,j)
-		call CheckMinimumDensity(i,j)
-		DiskMass=DiskMass+C(i,j)%V*(gas2dust*C(i,j)%gasdens+C(i,j)%dens0)
-	enddo
-	enddo
-	write(*,'("Total disk mass: ",f10.3," Msun")') DiskMass/Msun
-	write(9,'("Total disk mass: ",f10.3," Msun")') DiskMass/Msun
+	if (.not.getalpha) then ! Set the radial structure
+
+	   DiskMass=0d0
+	   do i=1,D%nR-1
+	      do j=1,D%nTheta-1
+		 if(C(i,j)%gasdens.gt.1d-50) then
+		    C(i,j)%dens=C(i,j)%dens*dens(i,j)/C(i,j)%gasdens
+		    C(i,j)%dens0=C(i,j)%dens0*dens(i,j)/C(i,j)%gasdens
+		 else
+		    C(i,j)%dens=1d-60
+		    C(i,j)%dens0=1d-60
+		    C(i,j)%w=C(i,j)%w0
+		    C(i,j)%gasdens=1d-60
+		 endif
+		 C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+		 C(i,j)%gasdens=dens(i,j)
+		 call CheckMinimumDensity(i,j)
+		 DiskMass=DiskMass+C(i,j)%V*(gas2dust*C(i,j)%gasdens+C(i,j)%dens0)
+	      enddo
+	      
+	   enddo
+
+	   write(*,'("Total disk mass: ",f10.3," Msun")') DiskMass/Msun
+	   write(9,'("Total disk mass: ",f10.3," Msun")') DiskMass/Msun
+
+	else			! only store the radial structure
+	   
+	   write(file,'(a,"radialalpha.dat")') outdir(1:len_trim(outdir))
+	   open(unit=66,file=file,RECL=1000)
+	   write(66,*) "# Value of alpha for current surface density"
+	   write(66,*) "# It prints radius, alpha"
+	   do i=1,D%nR-1
+	      write(66,*) D%R_av(i)/AU,alphavis*surfscale(i)
+	   enddo
+	   close(unit=66)
+
+	endif
 	
 c================================
 c Add a possible infalling cloud
@@ -1487,20 +1522,14 @@ c-----------------------------------------------------------------------
 c This subroutine destroys all dust outside the given maxrad and minrad radii.
 c It also rounds of the innner rim around minrad, using either:
 c   + shaperad: a concave ( <= 0), vertical (1) or rounded (>= 1) rim 
-c   + roundwidth: a scaled surface density between minrad and minrad+roundwidth,
-c                 using a SDP of r^-roundpow.
-c   + softedge=.true.: a soft edge within minrad based on angular momentum 
-c                        conservation. Described in Woitke++ 2009.
-c                        (only a 10% effect, needs grid refinement)
+c   + roundwidth/softedge 
 c-----------------------------------------------------------------------
 	subroutine DestroyDustR()
 	use Parameters
 	IMPLICIT NONE
 	integer ii,k,i,j,ii2
 	real*8 tot,f,T,r1,r2
-	real*8 scale ! Gijsexp, for rounding SDP
-	doubleprecision, PARAMETER :: GG=6.6720000d-08
-	doubleprecision, PARAMETER :: amu=1.66053886d-24
+	real*8 scale,RoundOff ! Gijsexp, for rounding SDP
 
 c	MassTot0=0d0
 c	do i=0,D%nR-1
@@ -1524,31 +1553,24 @@ c	enddo
 	   do ii=1,ngrains
 	      r1=D%R_av(i)/AU*sin(D%thet(j))**Grain(ii)%shaperad
 	      r2=D%R_av(i)/AU	!*sin(D%thet(j+1))**Grain(ii)%shaperad/AU
+
+	      !  destroy outside [minrad,maxrad], round off using shaperad
 	      if(r2.gt.Grain(ii)%maxrad.or.r1.lt.Grain(ii)%minrad) then
+		 C(i,j)%w(ii)=0d0
 
-		 ! use a soft edge
-		 if(Grain(ii)%softedge.and.Grain(ii)%shaperad.eq.0d0.and.r1.lt.Grain(ii)%minrad) then
-		    scale=       (2.3 * amu)/(kb*C(i,D%nTheta-1)%T)* (GG * D%Mstar)/D%R_av(i)
-		    scale=scale* (1d0 - 0.5d0*(Grain(ii)%minrad/r1 - r1/Grain(ii)%minrad))
-c		    if(j.eq.D%nTheta-1) write(*,*) D%R_av(i)/AU,scale
-		    scale=exp(scale)*(r1/Grain(ii)%minrad)**(D%denspow) ! scale from density at edge
+	      !  round rim at minrad?
+	      else if (Grain(ii)%shaperad.eq.0d0.and.
+     &                r1.lt.Grain(ii)%minrad+Grain(ii)%roundwidth) then
 
-		    if(C(i,j)%w(ii).gt.(C(i,j)%w0(ii)*C(i,j)%dens0*scale)) then
-		       ! scale from dens0 if no significant dust destruction
-		       C(i,j)%w(ii)=C(i,j)%w0(ii)*C(i,j)%dens0*scale
-		    endif
-		 else ! no soft edge, just destroy
-		    C(i,j)%w(ii)=0d0		    
-		 endif
-	      else if (Grain(ii)%shaperad.eq.0d0.and..not.Grain(ii)%softedge.and.
-     &           Grain(ii)%roundwidth.ne.0d0.and.r1.lt.Grain(ii)%minrad+Grain(ii)%roundwidth) then
+		 scale=RoundOff(r1,Grain(ii)%minrad,Grain(ii)%minrad+Grain(ii)%roundwidth,
+     &                          Grain(ii)%roundtype,Grain(ii)%roundpow,1d-300)
 
-		 scale=((Grain(ii)%minrad+Grain(ii)%roundwidth)/(D%R_av(i)/AU) )**
-     &	               (Grain(ii)%roundpow - D%denspow) ! scales SDP from (rin+dr) down to rin. 
+                 ! scale from dens0 if no significant dust destruction
 		 if(C(i,j)%w(ii).gt.(C(i,j)%w0(ii)*C(i,j)%dens0*scale)) then
-		    ! scale from dens0 if no significant dust destruction
 		    C(i,j)%w(ii)=C(i,j)%w0(ii)*C(i,j)%dens0*scale
 		 endif
+
+	      !  don't destroy dust
 	      else if(.not.tdes_iter) then
 		 C(i,j)%w(ii)=C(i,j)%w0(ii)*C(i,j)%dens0
 	      endif

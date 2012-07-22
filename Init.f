@@ -21,7 +21,8 @@
 	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(100),scale,Luminosity,MassTot0
 	real*8 powslope(100),powrad0(100),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
 	real*8 gap1(100),gap2(100),gap(100),Rdes,Rmin,zlam1,zlam2,dummy
-	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup,gapshape(100)
+	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup
+	real*8 gapshape(100),gaproundpow(100)
 	real*8 asym(100),asym2(100),wasym2(100),Pmax(100),tdes_fast(100),powinner(100)
 	integer npow,powclose(100),powfar(100),ilam1,ilam2,ngap,nzlam,nr,nt
 	character*500 particlefile,gridfile,input,partarg(100),thetagridfile
@@ -29,11 +30,11 @@
 	character*500 scalesh,shscalefile,starfile,radfile,settlefile(100)
 	character*20 denstype,abuntype,lamtype,scattype,startype,material(100),startiter
 	character*20 shtype(100)
+	character*20 gaproundtype(100),roundtype(100)
 	character*1000 line
 	character*500 key,value,file
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(100)
 	logical mdustscale,settle(100),trace(100)
-	logical softedge(100) ! Gijsexp
 	integer coupledabun(100),coupledfrac(100),info,nrhs,nl,parttype(100),nRfix,iopac
 	real*8 frac(100),f,phi,shscalevalue,part_shscale(100),shpow,minrad(100),maxrad(100)
 	real*8 roundwidth(100),roundpow(100),roundpeak(100) !Gijsexp
@@ -160,6 +161,8 @@
 	ngap=0
 	gap(1:100)=0.1d0
 	gapshape(1:100)=0d0
+	gaproundtype(1:100)=' '   ! 
+	gaproundpow(1:100)=0d0    ! r^p, NOT r^-p like SDP
 	gap1(1:100)=0d0
 	gap2(1:100)=0d0
 	
@@ -173,10 +176,10 @@
 	minrad(1:100)=0d0
 	maxrad(1:100)=1d50
 	shaperad(1:100)=0d0
-	roundwidth(1:100)=0d0	! Gijsexp: round off rim using SDP at minrad 
-	roundpow(1:100)=-5d0	! Gijsexp
+	roundtype(1:100)=' '	! Gijsexp: round off rim at minrad 
+	roundwidth(1:100)=0d0	! Gijsexp
+	roundpow(1:100)=10d0	! Gijsexp
 	roundpeak(1:100)=0d0	! Gijsexp
-	softedge(1:100)=.false.! Gijsexp: soft edge Woitke++ 2009
 	settle(1:100)=.false.
 	settlefile(1:100)=' '
 	part_shscale(1:100)=1d0
@@ -224,6 +227,7 @@
 	
 	alphavis=0.01
 	alphavispow=0d0
+	getalpha=.false.        ! Gijsexp retrieve alpha for current surface density
 	alphaturb=1d-4		! Gijsexp
 	qturb=0.5		! Gijsexp
 	lifetime=1d8		! Gijsexp  (large, equilibrium dust settling)
@@ -588,6 +592,13 @@ c			endif
 			read(value,*) shaperad(i)
 		endif
 	endif
+	if(key(1:9).eq.'roundtype'.and.key(1:12).ne.'roundtypegap') then
+		arg_abun=.true.
+		read(key(10:len_trim(key)),*) i
+		if(i.le.100) then
+			read(value,*) roundtype(i)
+		endif
+	endif
 	if(key(1:10).eq.'roundwidth') then
 		arg_abun=.true.
 		read(key(11:len_trim(key)),*) i
@@ -595,7 +606,7 @@ c			endif
 			read(value,*) roundwidth(i)
 		endif
 	endif
-	if(key(1:8).eq.'roundpow') then
+	if(key(1:8).eq.'roundpow'.and.key(1:11).ne.'roundpowgap') then
 		arg_abun=.true.
 		read(key(9:len_trim(key)),*) i
 		if(i.le.100) then
@@ -609,13 +620,6 @@ c			endif
 			read(value,*) roundpeak(i)
 		endif
 	endif
-	if(key(1:8).eq.'softedge') then
-		arg_abun=.true.
-		read(key(9:len_trim(key)),*) i
-		if(i.le.100) then
-			read(value,*) softedge(i)
-		endif
-	endif	
         if(key(1:6).eq.'settle'.and.key(1:10).ne.'settlefile') then
 		opacity_set=.true.
 		read(key(7:len_trim(key)),*) i
@@ -740,6 +744,20 @@ c gaps in the density structure
 			if(i.gt.ngap) ngap=i
 		endif
 	endif
+	if(key(1:12).eq.'roundtypegap') then
+		read(key(13:len_trim(key)),*) i
+		if(i.le.100) then
+			read(value,*) gaproundtype(i)
+			if(i.gt.ngap) ngap=i
+		endif
+	endif
+	if(key(1:11).eq.'roundpowgap') then
+		read(key(12:len_trim(key)),*) i
+		if(i.le.100) then
+			read(value,*) gaproundpow(i)
+			if(i.gt.ngap) ngap=i
+		endif
+	endif
 
 	if(key(1:4).eq.'rfix') then
 		read(key(5:len_trim(key)),*) i
@@ -792,6 +810,7 @@ c----------------------------------------------
 	if(key.eq.'viscous') read(value,*) viscous
 	if(key.eq.'fastviscous') read(value,*) fastviscous
 	if(key.eq.'alphaviscous') read(value,*) alphavis
+	if(key.eq.'getalpha') read(value,*) getalpha
 	if(key.eq.'powviscous') read(value,*) alphavispow
 	if(key.eq.'tgas') read(value,*) computeTgas
 	
@@ -1208,15 +1227,26 @@ C	End
 	write(9,'("Error in density type")')
 	stop
 	endif
+
 	do i=1,ngap
-	write(*,'("Gap in the disk from: ",f14.3," AU")') gap1(i)
-	write(*,'("to:                   ",f14.3," AU")') gap2(i)
-	write(*,'("Density decrease:     ",e14.3)') gap(i)
-	write(*,'("Shape of the gap:     ",f14.3)') gapshape(i)
-	write(9,'("Gap in the disk from: ",f14.3," AU")') gap1(i)
-	write(9,'("to:                   ",f14.3," AU")') gap2(i)
-	write(9,'("Density decrease:     ",e14.3)') gap(i)
-	write(9,'("Shape of the gap:     ",f14.3)') gapshape(i)
+	   write(*,'("Gap in the disk from: ",f14.3," AU")') gap1(i)
+	   write(*,'("to:                   ",f14.3," AU")') gap2(i)
+	   write(*,'("Density decrease:     ",e14.3)') gap(i)
+	   if (gapshape(i).ne.0) then
+	      write(*,'("Shape of the gap:     ",f14.3)') gapshape(i)
+	   else if (gaproundtype(i).eq.'softedge') then
+	      write(*,'("Gap with soft edge ")')
+	   else if (gaproundtype(i).eq.'powerlaw') then
+	      write(*,'("Round off gap with p: ",f14.3)') gaproundpow(i)
+	   else if (gaproundtype(i).eq.'hydro') then
+	      write(*,'("Hydro gap with width: ",f14.3)') gaproundpow(i)
+	   else
+	      write(*,'("Vertical gap")')
+	   endif
+	   
+	   !  replicate with * -> 9
+	   !
+
 	enddo
 
 	write(*,'("--------------------------------------------------------")')
@@ -1567,20 +1597,24 @@ C       end
 	if(minrad(i).gt.D%Rin) then
 	write(*,'("Destroying inside:    ",f6.2," AU")') minrad(i)
 	write(9,'("Destroying inside:    ",f6.2," AU")') minrad(i)
-	if(softedge(i)) then
-	   write(*,'("Using a soft edge")') 
-	   write(9,'("Using a soft edge")')
-	endif
 	endif
 	if(maxrad(i).lt.D%Rout) then
 	write(*,'("Destroying outside:   ",f6.2," AU")') maxrad(i)
 	write(9,'("Destroying outside:   ",f6.2," AU")') maxrad(i)
 	endif
-	if(roundwidth(i).gt.0d0.and..not.softedge(i)) then ! Gijsexp
+	if(roundtype(i).ne.' ') then ! Gijsexp
 	   write(*,'("  Rounding of the inner wall at ",f6.2," AU")') max(minrad(i),D%Rin)
 	   write(9,'("  Rounding of the inner wall at ",f6.2," AU")') max(minrad(i),D%Rin)
+	endif
+	if(roundtype(i).eq.'powerlaw') then ! Gijsexp
 	   write(*,'("  width: ",f6.2," AU, power law index: ",f6.2)') roundwidth(i),roundpow(i)
 	   write(9,'("  width: ",f6.2," AU, power law index: ",f6.2)') roundwidth(i),roundpow(i)
+	else if(roundtype(i).eq.'hydro') then ! Gijsexp
+	   write(*,'("  width: ",f6.2," AU, power law index: ",f6.2)') roundwidth(i),roundpow(i)
+	   write(9,'("  width: ",f6.2," AU, power law index: ",f6.2)') roundwidth(i),roundpow(i)
+	else if(roundtype(i).eq.'softedge') then
+	   write(*,'("Using a soft edge")') 
+	   write(9,'("Using a soft edge")')
 	endif
 	enddo ! loop over ngrains
 
@@ -2400,9 +2434,10 @@ c	enddo
 		Grain(ii)%maxrad=maxrad(ii)
 		Grain(ii)%minrad=minrad(ii)
 		Grain(ii)%shaperad=shaperad(ii)
+		Grain(ii)%roundtype=roundtype(ii)
 		Grain(ii)%roundpow=roundpow(ii)
 		Grain(ii)%roundwidth=roundwidth(ii)
-		Grain(ii)%softedge=softedge(ii)
+		Grain(ii)%roundtype=roundtype(ii)
 c		if(maxrad(ii).lt.D%R(D%nR)) then
 c			do i=1,D%nR-1
 c				if(maxrad(ii).lt.(D%R_av(i)/AU)) then
@@ -2547,12 +2582,16 @@ c		endif
 		allocate(D%gap1(ngap))
 		allocate(D%gap2(ngap))
 		allocate(D%gapshape(ngap))
+		allocate(D%gaproundtype(ngap))
+		allocate(D%gaproundpow(ngap))
 		D%ngap=ngap
 		do k=1,ngap
 			D%gap(k)=gap(k)
 			D%gap1(k)=gap1(k)
 			D%gap2(k)=gap2(k)
 			D%gapshape(k)=gapshape(k)
+			D%gaproundtype(k)=gaproundtype(k)
+			D%gaproundpow(k)=gaproundpow(k)
 		enddo
 		call MakeGaps()
 	endif
@@ -3270,6 +3309,8 @@ c-----------------------------------------------------------------------
 		deallocate(D%gap1)
 		deallocate(D%gap2)
 		deallocate(D%gapshape)
+		deallocate(D%gaproundtype)
+		deallocate(D%gaproundpow)
 	endif
 
 	deallocate(lam)
@@ -3967,7 +4008,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,k
-	real*8 MassTot,MassTot0,r
+	real*8 MassTot,MassTot0,r,scale,RoundOff
 
 	if(D%ngap.eq.0) return
 
@@ -3979,18 +4020,25 @@ c-----------------------------------------------------------------------
 	enddo
 	
 	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			C(i,j)%densscale=1d0
-			do k=1,D%ngap
-				r=D%R_av(i)*sin(D%theta_av(j))**D%gapshape(k)/AU
-				if(r.gt.D%gap1(k).and.r.lt.D%gap2(k)) then
-					C(i,j)%dens=C(i,j)%dens*D%gap(k)
-					C(i,j)%dens0=C(i,j)%dens0*D%gap(k)
-					C(i,j)%mass=C(i,j)%dens*C(i,j)%V
-					C(i,j)%densscale=C(i,j)%densscale*D%gap(k)
-				endif
-			enddo
-		enddo
+	   do j=1,D%nTheta-1
+	      C(i,j)%densscale=1d0
+	      do k=1,D%ngap
+		 r=D%R_av(i)*sin(D%theta_av(j))**D%gapshape(k)/AU
+		 if(r.gt.D%gap1(k).and.r.lt.D%gap2(k)) then
+		    if (D%gaproundtype(k).ne.' ') then 
+		       scale=RoundOff(r,D%gap1(k),D%gap2(k),D%gaproundtype(k),
+     1                                D%gaproundpow(k),D%gap(k))
+		    else
+		       scale=D%gap(k)
+		    endif
+
+		    C(i,j)%dens=C(i,j)%dens*scale
+		    C(i,j)%dens0=C(i,j)%dens0*scale
+		    C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+		    C(i,j)%densscale=C(i,j)%densscale*scale
+		 endif
+	      enddo
+	   enddo
 	enddo
 	MassTot=0d0
 	do i=1,D%nR-1
@@ -4056,6 +4104,65 @@ c-----------------------------------------------------------------------
 	return
 	end
 
+c-----------------------------------------------------------------------
+c
+c   This subroutine calculates the shape for a rounded of gap edge/rim
+c   It returns only a factor which is the decrease in density, so it
+c   can be used with dust destruction [DestroyDustR()] or for the total
+c   surface density [MakeGaps()] 
+c
+c   + roundtype='softedge': a soft edge inside of rmax, based on angular momentum 
+c                           conservation. Described in Woitke++ 2009.
+c                           (only a 10% effect, needs grid refinement and benchmark)
+c
+c   + roundtype='powerlaw': a powerlaw surface density between rmin and rmax,
+c                           proportional to r^-roundpow.
+c
+c   + roundtype='hydro':    a gaussian like shape that fits Fargo simulations
+c                           of embedded planets well.
+c
+c
+c   OUPUT:  scaling factor at radius r
+c
+c-----------------------------------------------------------------------
+
+	function RoundOff(r,rmin,rmax,type,pow,scalemin)
+	use Parameters
+	IMPLICIT NONE
+	real*8 RoundOff
+
+	integer i,j,k
+	real*8 scale,r,rmin,rmax,type,pow,scalemin
+	doubleprecision, PARAMETER :: GG=6.6720000d-08
+	doubleprecision, PARAMETER :: amu=1.66053886d-24
+	
+	scale=scalemin
+        !  use a soft edge
+	if(type.eq.'softedge') then
+	   scale=       (2.3 * amu)/(kb*C(i,D%nTheta-1)%T)* (GG * D%Mstar)/D%R_av(i)
+	   scale=scale* (1d0 - 0.5d0*(rmax/r - r/rmax))
+	   scale=exp(scale)
+	
+        !  use a shape from Hydrodynamic smulations
+	else if (type.eq.'hydro') then
+!	   scale=exp( -(((rmax-r)/pow)**4d0))
+	   scale=exp( -(((1-r/rmax)/pow)**4d0))
+
+	!  use a powerlaw
+	else if (type.eq.'powerlaw') then
+	   scale=(rmax/r)**(-pow)
+	endif
+	
+	! scale from Sigma=r^-p (not robust for p =!= 1)
+	scale=scale* ((r/rmax)**(D%denspow)) 
+
+	!  return gap depth
+	RoundOff=max(scale,scalemin)
+
+	return
+	end
+
+c-----------------------------------------------------------------------
 
 
 	
