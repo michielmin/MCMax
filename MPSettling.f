@@ -35,11 +35,6 @@ c      cs_T= sqrt(gamma * kb / (mu * amu))  ! gamma here???
       !  Loop over all grains
       !
       do ii=1,ngrains
-         !
-         !  Tell MCMax we are using a scaling factor
-         !
-         Grain(ii)%settle=.true.
-         !
          tauf_csrho= Grain(ii)%rho * Grain(ii)%rv
 c         write(*,'("species:   ",I0)') ii
 c         write(*,'("rgrain=    ",F6.1)') Grain(ii)%rv
@@ -76,6 +71,11 @@ c            scale_w(ii,i)=sh_dtg_w * (1+sh_dtg_w**2)**(-0.5)
             !  Pass scaling factor to MCMax
             !
             if(Grain(ii)%shtype.eq.'DISK') then
+		         !
+		         !  Tell MCMax we are using a scaling factor
+		         !
+		         Grain(ii)%settle=.true.
+		         !
 	            Grain(ii)%shscale(i)=scale_d(ii,i)
 c            Grain(ii)%shscale(i)=scale_w(ii,i)
 			endif
