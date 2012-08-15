@@ -376,6 +376,7 @@ c is still without interstellar extinction
 			write(30,'("# transition nr ",i)') j
 			write(30,'("# up, low       ",i,i)') i_up,i_low
 			write(30,'("# population    ",a)') trim(poptype)
+			ExtISM=Reddening(image%lam,compute_dlam(image%lam),D%Av)
 			do i=1,tel%nvelo
 				write(30,*) velo(i),1d23*velo_flux(i)*ExtISM/D%distance**2
 			enddo

@@ -40,7 +40,7 @@
 	Aul=EinstA(iTr)
 	nu0=freq(iTr)*1d9
 
-	Bul=Aul*2d0*h*nu0**3/((2.9979d14)**2)
+	Bul=Aul*2d0*h*nu0**3/((2.9979d10)**2)
 	Blu=Bul*g(i_up)/g(i_low)
 
 	do i=1,D%nR-1

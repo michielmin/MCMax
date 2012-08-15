@@ -93,10 +93,10 @@ c				delta-Eddington approximation.
 
 	EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
 
-	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs*C(phot%i,phot%j)%dens
+	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
 	if(.not.tcontact.or.tdes_iter) then
 		do i=1,ngrains
-			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs*C(phot%i,phot%j)%dens
+			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
 		enddo
 	endif
 

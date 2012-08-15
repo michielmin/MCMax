@@ -308,13 +308,11 @@ c New version of TraceMono that actually does the line radiative integration
 		
 		velo0=image%p(i,j)%velo1(k)+(image%p(i,j)%velo2(k)-image%p(i,j)%velo1(k))*(real(kk)-0.5)/real(nkk)
 
-		call velo_abs_ext(velo0,ip,jp,velo_emis,velo_tau,velo,nvelo,dvelo)
+		call velo_abs_ext(velo0,ip,jp,velo_emis,velo_tau,velo,nvelo,dvelo,lam0)
 
 		velo_emis=velo_emis+emis(ip,jp)*C(ip,jp)%Kext*C(ip,jp)%dens/(C(ip,jp)%gasdens*gas2dust)
 		velo_tau=tau_e/real(nkk)+velo_tau*C(ip,jp)%gasdens*gas2dust*image%p(i,j)%v(k)*AU/real(nkk)
-
 		velo_emis=velo_emis*C(ip,jp)%gasdens*gas2dust*(image%p(i,j)%v(k)*AU/real(nkk))/velo_tau
-		
 		velo_scat=scat(kp,ip,jp)*tau_e/(velo_tau*real(nkk))
 		if(aniso) then
 			velo_scatQ=scatQ(kp,ip,jp)*tau_e/(real(nkk)*velo_tau)
@@ -439,6 +437,7 @@ c	enddo
 	do j=1,D%nTheta-1
 		deallocate(C(i,j)%line_emis)
 		deallocate(C(i,j)%line_abs)
+		deallocate(C(i,j)%velo_T)
 	enddo
 	enddo
 
@@ -817,7 +816,7 @@ c mol_mass		: molecule mass in proton masses
 	character*500 linefile
 	integer nvelo,i,j,iv
 	real*8 velo(nvelo),dvelo,lam0,velo_T,mp,tot,clight,mol_mass,nu0,gu,gl,x
-	real*8 phi(nvelo),fact,Aul,Bul,Blu,n_up(0:D%nR-1,D%nTheta-1),n_low(0:D%nR-1,D%nTheta-1),T,h
+	real*8 fact,Aul,Bul,Blu,n_up(0:D%nR-1,D%nTheta-1),n_low(0:D%nR-1,D%nTheta-1),T,h
 	parameter(mp=1.67262158d-24) ! the proton mass in gram
 	parameter(clight=2.9979d10) ! cm/s
 	parameter(h=6.626068e-27) ! cm^2 g/s
@@ -831,8 +830,9 @@ c mol_mass		: molecule mass in proton masses
 	
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
-		allocate(C(i,j)%line_emis(nvelo))
-		allocate(C(i,j)%line_abs(nvelo))
+		allocate(C(i,j)%line_emis(1))
+		allocate(C(i,j)%line_abs(1))
+		allocate(C(i,j)%velo_T(1))
 
 		if(useTgas) then
 			T=C(i,j)%Tgas
@@ -840,20 +840,16 @@ c mol_mass		: molecule mass in proton masses
 			T=C(i,j)%T
 		endif
 
-		velo_T=1d-5*sqrt(2d0*kb*T/(mp*mol_mass)) ! factor 1e-5 is to convert from cm/s to km/s
+		C(i,j)%velo_T(1)=1d-5*sqrt(2d0*kb*T/(mp*mol_mass)) ! factor 1e-5 is to convert from cm/s to km/s
 c	================================================
 c	add half the sound speed as the turbulent velocity.
-		velo_T=velo_T+0.5d-5*sqrt((7.0/5.0)*kb*T/(mp*2.3))
+		C(i,j)%velo_T(1)=C(i,j)%velo_T(1)+0.5d-5*sqrt((7.0/5.0)*kb*T/(mp*2.3))
 c	================================================
-		do iv=1,nvelo
-			phi(iv)=(clight/(sqrt(pi)*velo_T*nu0*1d5))*exp(-(velo(iv)/velo_T)**2)
-		enddo
-		tot=sum(phi(1:nvelo))*dvelo/(lam0*1d-9)
-		phi=phi/tot
 
-		fact=h*nu0*1d-2/(4d0*pi*mol_mass*mp)
-		C(i,j)%line_emis=fact*n_up(i,j)*Aul*phi
-		C(i,j)%line_abs=fact*(n_low(i,j)*Blu-n_up(i,j)*Bul)*phi
+		fact=h*nu0/(4d0*pi*mol_mass*mp)
+		C(i,j)%line_emis(1)=fact*n_up(i,j)*Aul
+		C(i,j)%line_abs(1)=fact*(n_low(i,j)*Blu-n_up(i,j)*Bul)
+		
 	enddo
 	enddo
 	
@@ -861,33 +857,30 @@ c	================================================
 	end
 	
 
-	subroutine velo_abs_ext(v,i,j,velo_emis,velo_tau,velo,nvelo,dvelo)
+	subroutine velo_abs_ext(v,i,j,velo_emis,velo_tau,velo,nvelo,dvelo,lam0)
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,nvelo,iv,shift1,shift2,ii
-	real*8 v,velo_emis(nvelo),velo_tau(nvelo),velo(nvelo),ran2,dvelo,w1,w2
+	real*8 v,velo_emis(nvelo),velo_tau(nvelo),velo(nvelo),ran2,dvelo,w1,w2,lam0
+	real*8 phi(nvelo),tot
 
-	shift1=(v/dvelo)
-	shift2=(v/dvelo+sign(1d0,v))
-	w1=abs(real(shift2)*dvelo-v)/dvelo
-	w2=1d0-w1
-
-c	call hunt(velo,nvelo,v,shift)
-c	if(ran2(idum).lt.abs((v-velo(shift))/(velo(2)-velo(1)))) shift=shift+1
-c	shift=(nvelo+1)/2-shift
-	do iv=1,nvelo
-		ii=iv-shift1
-		if(ii.lt.1) ii=1
-		if(ii.gt.nvelo) ii=nvelo
-		velo_tau(iv)=C(i,j)%line_abs(ii)*w1
-		velo_emis(iv)=C(i,j)%line_emis(ii)*w1
-		ii=iv-shift2
-		if(ii.lt.1) ii=1
-		if(ii.gt.nvelo) ii=nvelo
-		velo_tau(iv)=velo_tau(iv)+C(i,j)%line_abs(ii)*w2
-		velo_emis(iv)=velo_emis(iv)+C(i,j)%line_emis(ii)*w2
-	enddo
-
+	if(abs(v).lt.((abs(velo(1))-C(i,j)%velo_T(1)*2d0))) then
+		do iv=1,nvelo
+			if(abs(velo(iv)-v).lt.(C(i,j)%velo_T(1)*5d0)) then
+				phi(iv)=exp(-((velo(iv)-v)/C(i,j)%velo_T(1))**2)
+			else
+				phi(iv)=0d0
+			endif
+		enddo
+		tot=sum(phi(1:nvelo))*dvelo/(lam0*1d-9)
+		phi=phi/tot
+		velo_tau=C(i,j)%line_abs(1)*phi*dvelo/(lam0*1d-9)
+		velo_emis=C(i,j)%line_emis(1)*phi*1d-2
+	else
+		velo_tau=0d0
+		velo_emis=0d0
+	endif
+	
 	return
 	end
 	
@@ -952,9 +945,10 @@ c	shift=(nvelo+1)/2-shift
 	subroutine velocities(i,j,r,velo_r,velo_t)
 	use Parameters
 	IMPLICIT NONE
-	integer i,j
+	integer i,j,k
 	real*8 r,velo_r,velo_t,G
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
+	real*8 sd
 
 	velo_r=0d0
 	velo_t=0d0
@@ -963,6 +957,17 @@ c Keppler velocity
 	velo_t=1d-5*sqrt(G*D%Mstar*sin(D%theta_av(j))/(AU*r))
 c 20 km/s outflow
 c	velo_r=20d0
+
+	if(i.ne.0) then
+c mass accretion flow
+		sd=0d0
+		do k=1,D%nTheta-1
+			sd=sd+C(i,k)%gasdens*C(i,k)%V*gas2dust
+		enddo
+		sd=sd/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+		velo_r=-D%Mdot/(sd*2d0*pi*D%R_av(i))/1d5
+		if(abs(velo_r).gt.velo_t) velo_r=-velo_t
+	endif
 	
 	return
 	end

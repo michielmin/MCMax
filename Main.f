@@ -845,8 +845,8 @@ c	close(unit=20)
 			if(niter.le.nBW.or.nBW.lt.0) then
 				call BackWarming(1d0)
 				tauincrease=1d30
-				do ii=1,15
-					write(*,'("Iteration ",i2," of 15")') ii
+				do ii=1,6	!15
+					write(*,'("Iteration ",i2," of 6")') ii
 					call OpticallyThin(.true.)
 					call DestroyDustT(C,Rdes,Rmin,1d10,.true.)
 					write(*,'("Optically thin destruction R: ",f13.6," AU")') Rmin

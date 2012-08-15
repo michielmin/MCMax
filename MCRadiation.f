@@ -486,11 +486,11 @@ c			else
 			C(i,j)%KextLRF=C(i,j)%KextLRF/C(i,j)%V
 			C(i,j)%ILRF=C(i,j)%ILRF/C(i,j)%V
 		endif
-		if(C(i,j)%useFE.and.computeTgas) then
+		if(C(i,j)%useFE.and.computeTgas.and.g2d_heat) then
 			C(i,j)%EJv=C(i,j)%EJv*(1d0-C(phot%i,phot%j)%FE(0))
 			if(.not.tcontact.or.tdes_iter) then
 				do ii=1,ngrains
-					C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)*(1d0-C(phot%i,phot%j)%FE(0))
+					C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)*(1d0-C(phot%i,phot%j)%FE(ii))
 				enddo
 			endif
 			if(use_qhp) then

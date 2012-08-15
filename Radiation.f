@@ -43,7 +43,7 @@
 	integer i,iT,iT0,iT1,l,ii,iopac
 	type(Mueller) M
 
-	if(C(phot%i,phot%j)%useFE.and.computeTgas) then
+	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
 		Egas=phot%E*C(phot%i,phot%j)%FE(0)
 		Edust=phot%E*(1d0-C(phot%i,phot%j)%FE(0))
 	else
@@ -137,7 +137,7 @@ c No thermal contact
 		enddo
 	enddo
 
-	if(C(phot%i,phot%j)%useFE.and.computeTgas) then
+	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
 		spec=spec/kp
 		kp=1d0
 		T0=C(phot%i,phot%j)%Tgas
@@ -225,7 +225,7 @@ c Thermal contact (single temperature)
 		endif
 	enddo
 
-	if(C(phot%i,phot%j)%useFE.and.computeTgas) then
+	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
 		spec=spec/kp
 		kp=1d0
 		T0=C(phot%i,phot%j)%Tgas
@@ -1556,7 +1556,7 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 
 	spec(1:nlam)=0d0
 	kp=0d0
-	if(C(phot%i,phot%j)%useFE) then
+	if(C(phot%i,phot%j)%useFE.and.g2d_heat) then
 
 c absorption
 	phot%scatt=.false.
@@ -1577,6 +1577,9 @@ c No thermal contact
 
 	C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+Efrac
 	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+Efrac
+
+	C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+Efrac/(C(phot%i,phot%j)%mass*C(phot%i,phot%j)%w(i))
+	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+Efrac/(C(phot%i,phot%j)%mass)
 	
 	T0=C(phot%i,phot%j)%TP(i)
 	T1=increaseTP(phot,i)
@@ -1618,6 +1621,7 @@ c Thermal contact (single temperature)
 	do i=1,ngrains
 		Efrac=phot%E*C(phot%i,phot%j)%FE(i)
 		C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+Efrac
+		C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+Efrac/(C(phot%i,phot%j)%mass)
 	enddo
 
 	T0=C(phot%i,phot%j)%T
@@ -1703,6 +1707,7 @@ c Thermal contact (single temperature)
 
 	T0=C(phot%i,phot%j)%Tgas
 	iT0=int(T0/dT)
+	if(iT0.gt.TMAX-1) iT0=TMAX-1
 	spec(1:nlam)=spec(1:nlam)*(phot%E-Efrac)+Efrac*BB(1:nlam,iT0)/BBint(iT0)
 	kp=phot%E
 
@@ -1710,6 +1715,7 @@ c Thermal contact (single temperature)
 
 	T0=C(phot%i,phot%j)%Tgas
 	iT0=int(T0/dT)
+	if(iT0.gt.TMAX-1) iT0=TMAX-1
 	spec(1:nlam)=BB(1:nlam,iT0)/BBint(iT0)
 	kp=1d0
 	

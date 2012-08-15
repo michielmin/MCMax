@@ -2446,6 +2446,7 @@ c	character*500 s
 
 		do iter=1,10
 
+		j=D%nTheta-1
 		tau=0d0
 		phot%x=(D%R_av(i)/AU)*sin(D%theta_av(j))*sin(0.2d0)
 		phot%y=(D%R_av(i)/AU)*sin(D%theta_av(j))*cos(0.2d0)

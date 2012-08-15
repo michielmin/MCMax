@@ -207,6 +207,7 @@
 	NphotFinal=0
 	viscous=.false.
 	fastviscous=.false.
+	g2d_heat=.false.	! don't compute the heating of the dust by the gas by default
 	
 	forcefirst=.false.	! do not force the first interaction in the radiative transport
 	
@@ -813,6 +814,7 @@ c----------------------------------------------
 	if(key.eq.'getalpha') read(value,*) getalpha
 	if(key.eq.'powviscous') read(value,*) alphavispow
 	if(key.eq.'tgas') read(value,*) computeTgas
+	if(key.eq.'g2d_heat') read(value,*) g2d_heat
 	
 	if(key.eq.'convection') read(value,*) convection
 	
@@ -2848,8 +2850,8 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 
 	if(tdes_iter.and.Nphot.ne.0.and.(iter0.le.nBW.or.nBW.lt.0)) then
 		if(RNDW) call InitRandomWalk()
-		do iter=1,15
-		write(*,'("Iteration ",i2," of 15")') iter
+		do iter=1,6	!15
+		write(*,'("Iteration ",i2," of 6")') iter
 		RmaxRefine=D%Rout
 		if(struct_iter) then
 			dosmooth=.false.
@@ -2868,7 +2870,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 			enddo
 			enddo
 		endif
-		if(iter.lt.7) then
+		if(iter.lt.3) then		! 7) then
 			call DestroyDustTDirect(C,Rdes,Rmin,1d10,.true.)
 		else
 			call DestroyDustT(C,Rdes,Rmin,1d10,.true.)
