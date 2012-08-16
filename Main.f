@@ -441,7 +441,7 @@ c
 				phot%E=C(i,j)%EJvP(ii)
 				C(i,j)%TP(ii)=determineTP(phot,ii)
 				if(C(i,j)%TP(ii).lt.1d0) C(i,j)%TP(ii)=1d0
-				if(number_invalid(C(i,j)%TP(ii)).ne.0) C(i,j)%TP(ii)=C(i,j)%T
+				if(number_invalid(C(i,j)%TP(ii)).ne.0.or.C(i,j)%randomwalk) C(i,j)%TP(ii)=C(i,j)%T
 			enddo
 			endif			
 		enddo
