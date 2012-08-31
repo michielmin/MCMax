@@ -29,10 +29,10 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer gsd_diag !Gijsexp
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp
-	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC
+	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC,exportProDiMo
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav
-	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac
-	logical tracestar,traceemis,tracescat,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
+	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac,computeLRF
+	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
@@ -84,6 +84,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: TP(:),EJvP(:),EJvQHP(:),EviscDirect(:)
 		type(Mueller) F
 		real*8,allocatable :: w(:),scattfield(:,:,:),w0(:),QHP(:,:),LRF(:)
+		integer,allocatable :: nLRF(:)
 		real*8,allocatable :: tdistr(:,:),Tqhp(:),EabsP(:),thetrg(:),Tphi(:)
 		real*8,allocatable :: scattQ(:,:,:),scattU(:,:,:),scattV(:,:,:)
 		logical thick,diff,randomwalk
@@ -151,7 +152,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: b(:),theta(:),fov(:),lam(:) ! Gijsexp
 		logical usepol,readmcscat,traceinverse,fluxcontr
 		logical,allocatable :: trace(:)
-		logical tracestar,traceemis,tracescat
+		logical tracestar,traceemis,tracescat,tracegas
 		character*500 psffile,linefile,popfile
 		real*8 dvelo,abun
 		integer nvelo,trans_nr1,trans_nr2

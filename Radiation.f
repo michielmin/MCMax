@@ -1715,6 +1715,7 @@ c Thermal contact (single temperature)
 
 	T0=C(phot%i,phot%j)%Tgas
 	iT0=int(T0/dT)
+	if(iT0.lt.1) iT0=1
 	if(iT0.gt.TMAX-1) iT0=TMAX-1
 	spec(1:nlam)=BB(1:nlam,iT0)/BBint(iT0)
 	kp=1d0

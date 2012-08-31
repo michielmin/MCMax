@@ -5,15 +5,15 @@
 	type(Telescope) tel
 	type(RPhiImage) image
 	real*8 spec(nlam),scatspec(nlam),flux,scatflux,R0,angle,FWHM1,FWHM2
-	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam),clight
+	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam),clight,Resolution
 	real*8 basegrid(100),V2(100,100),phase(100),phase2(100,100)	!Gijsexp : nbase=100
 	integer nbase		!Gijsexp
 	integer i,j,k,i_up,i_low
 	character*500 specfile
-	real*8,allocatable :: velo(:),velo_flux(:)
+	real*8,allocatable :: velo(:),velo_flux(:),velo_flux_R(:)
 	character*10 poptype
 	parameter(clight=2.9979d5) !km/s
-	real*8 Reddening,compute_dlam,ExtISM
+	real*8 Reddening,compute_dlam,ExtISM,temp,tot
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -34,6 +34,9 @@
 	tracestar=tel%tracestar
 	traceemis=tel%traceemis
 	tracescat=tel%tracescat
+	tracegas=tel%tracegas
+
+	makeangledependence=.false.
 
 	if(scattering.and.(tel%Nphot+tel%NphotAngle).ne.0.and..not.storescatt) then
 		do i=0,D%nR
@@ -309,7 +312,7 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
 		call TELFWHM(image,tel,tel%fov(1)/2d0,FWHM1,FWHM2)
-	else if(tel%kind(1:8).eq.'TELSPECFWHM') then
+	else if(tel%kind(1:11).eq.'TELSPECFWHM') then
 c is still without interstellar extinction
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
@@ -358,6 +361,7 @@ c is still without interstellar extinction
 		if(tel%trans_nr2.lt.tel%trans_nr1) tel%trans_nr2=tel%trans_nr1
 		allocate(velo(tel%nvelo))
 		allocate(velo_flux(tel%nvelo))
+		allocate(velo_flux_R(tel%nvelo))
 		readmcscat=.false.
 		write(specfile,'(a,"line",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
@@ -377,12 +381,24 @@ c is still without interstellar extinction
 			write(30,'("# up, low       ",i,i)') i_up,i_low
 			write(30,'("# population    ",a)') trim(poptype)
 			ExtISM=Reddening(image%lam,compute_dlam(image%lam),D%Av)
+c			Resolution=3000
+c			do i=1,tel%nvelo
+c				velo_flux_R(i)=0d0
+c				tot=0d0
+c				do k=1,tel%nvelo
+c					temp=exp(-((velo(i)-velo(k))*Resolution/299792.458)**2)
+c					tot=tot+temp
+c					velo_flux_R(i)=velo_flux_R(i)+velo_flux(k)*temp
+c				enddo
+c				velo_flux_R(i)=velo_flux_R(i)/tot
+c			enddo
 			do i=1,tel%nvelo
-				write(30,*) velo(i),1d23*velo_flux(i)*ExtISM/D%distance**2
+				write(30,*) velo(i),1d23*velo_flux(i)*ExtISM/D%distance**2!,1d23*velo_flux_R(i)*ExtISM/D%distance**2
 			enddo
 			if(tel%trans_nr1.ne.tel%trans_nr2) write(30,*)
 			do i=tel%nvelo,1,-1
 				write(31,*) image%lam*sqrt((1d0+velo(i)/clight)/(1d0-velo(i)/clight)),1d23*velo_flux(i)*ExtISM/D%distance**2,
+c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
      &											trim(poptype),i_up,i_low
 			enddo
 		enddo
@@ -390,6 +406,7 @@ c is still without interstellar extinction
 		close(unit=31)
 		deallocate(velo)
 		deallocate(velo_flux)
+		deallocate(velo_flux_R)
 	else
 		stop
 	endif
@@ -534,6 +551,7 @@ c is still without interstellar extinction
 	def%tracestar=tracestar
 	def%traceemis=traceemis
 	def%tracescat=tracescat
+	def%tracegas=tracegas
 	def%nvelo=101
 	def%dvelo=1d0
 	def%abun=1d-4
@@ -772,6 +790,7 @@ c is still without interstellar extinction
 		tel(nobs)%tracestar=def%tracestar
 		tel(nobs)%traceemis=def%traceemis
 		tel(nobs)%tracescat=def%tracescat
+		tel(nobs)%tracegas=def%tracegas
 	endif
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
@@ -840,7 +859,8 @@ c is still without interstellar extinction
 		if(key.eq.'tracestar') read(value,*) def%tracestar
 		if(key.eq.'traceemis') read(value,*) def%traceemis
 		if(key.eq.'tracescat') read(value,*) def%tracescat
-		if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat') then
+		if(key.eq.'tracegas') read(value,*) def%tracegas
+		if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat'.and.key.ne.'tracegas') then
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) def%trace(i)
 		endif
@@ -938,7 +958,8 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 		if(key.eq.'tracestar') read(value,*) tel(nobs)%tracestar
 		if(key.eq.'traceemis') read(value,*) tel(nobs)%traceemis
 		if(key.eq.'tracescat') read(value,*) tel(nobs)%tracescat
-		if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat') then
+		if(key.eq.'tracegas') read(value,*) tel(nobs)%tracegas
+		if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat'.and.key.ne.'tracegas') then
 			read(key(6:len_trim(key)),*) i
 			if(i.le.100) read(value,*) tel(nobs)%trace(i)
 		endif

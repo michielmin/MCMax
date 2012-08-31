@@ -199,7 +199,10 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 			do ii=1,ngrains
 				if(Grain(ii)%qhp) C(i,j)%EJvQHP(Grain(ii)%qhpnr)=0d0
 			enddo
+		endif
+		if(computeLRF) then
 			C(i,j)%LRF(1:nlam)=0d0
+			C(i,j)%nLRF(1:nlam)=0
 		endif
 		C(i,j)%KextLRF=0d0
 		C(i,j)%ILRF=0d0
@@ -403,10 +406,17 @@ c			else
 					spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
 				enddo
 			enddo
-			spectemp(1:nlam)=specemit(1:nlam)*exp(-spectemp(1:nlam))
+			do j=1,nlam
+				if(spectemp(j).lt.20d0) then
+					spectemp(j)=specemit(j)*exp(-spectemp(j))
+				else
+					spectemp(j)=0d0
+				endif
+			enddo
 			call integrate(spectemp,tot)
 			if(tot.gt.1d-100) then
-				spectemp=1d23*wangle(iangle)*phot%E*spectemp/tot
+				spectemp=spectemp/tot
+				spectemp=1d23*wangle(iangle)*phot%E*spectemp
 				spec(1:nlam,iangle)=spec(1:nlam,iangle)+spectemp(1:nlam)/real(nruns)
 				ispec(1:nlam,iangle)=ispec(1:nlam,iangle)+1
 				spec2(1:nlam,iangle)=spec2(1:nlam,iangle)+spectemp(1:nlam)**2
@@ -479,7 +489,7 @@ c			else
 				C(i,j)%EJvP(ii)=EJvTotP(ii,i,j)
 			enddo
 		endif
-		if(use_qhp) then
+		if(computeLRF) then
 			C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)/C(i,j)%V
 		endif
 		if(.not.tcontact.or.tdes_iter) then
@@ -767,17 +777,21 @@ c		endif
 		endif
 		if(locfield.and..not.etrace) then
 			EJv=phot%E*v*AU  !*C(phot%i,phot%j)%dens
-			if(use_qhp) then
+			if(computeLRF) then
 				C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
 				C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-				do ii=1,ngrains
-					if(Grain(ii)%qhp) then
-					do iopac=1,Grain(ii)%nopac
-						C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
+				C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+				C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+				if(use_qhp) then
+					do ii=1,ngrains
+						if(Grain(ii)%qhp) then
+						do iopac=1,Grain(ii)%nopac
+							C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
      &	+C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*EJv*Grain(ii)%KabsL(iopac)
+						enddo
+						endif
 					enddo
-					endif
-				enddo
+				endif
 			endif
 			C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*KabsBBGrains
 c ------------------------------------------------
@@ -818,17 +832,21 @@ c ------------------------------------------------
 	endif
 	if(locfield.and..not.etrace) then
 		EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
-		if(use_qhp) then
+		if(computeLRF) then
 			C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
 			C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-			do ii=1,ngrains
-				if(Grain(ii)%qhp) then
-				do iopac=1,Grain(ii)%nopac
-					C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
+			C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+			C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+			if(use_qhp) then
+				do ii=1,ngrains
+					if(Grain(ii)%qhp) then
+					do iopac=1,Grain(ii)%nopac
+						C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
      &	+C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*EJv*Grain(ii)%KabsL(iopac)
+					enddo
+					endif
 				enddo
-				endif
-			enddo
+			endif
 		endif
 		nEJv=nEJv+EJv*KabsBBGrains
 		C(phot%i,phot%j)%EJv2=C(phot%i,phot%j)%EJv2+nEJv**2

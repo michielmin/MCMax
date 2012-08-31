@@ -473,11 +473,14 @@ C	enddo
 			allocate(Cold(i)%EJvP(ngrains))
 		endif
 		if(use_qhp) then
-			allocate(Cold(i)%LRF(nlam))
 			allocate(Cold(i)%QHP(nqhp,nlam))
 			allocate(Cold(i)%tdistr(nqhp,NTQHP))
 			allocate(Cold(i)%Tqhp(nqhp))
 			allocate(Cold(i)%EJvQHP(nqhp))
+		endif
+		if(computeLRF) then
+			allocate(Cold(i)%LRF(nlam))
+			allocate(Cold(i)%nLRF(nlam))
 		endif
 	enddo
 	
@@ -494,7 +497,8 @@ C	enddo
 	Cold(D%nR)%w(1:ngrains)=C(D%nR-1,j)%w(1:ngrains)
 	Cold(D%nR)%w0(1:ngrains)=C(D%nR-1,j)%w0(1:ngrains)
 	if(use_qhp) Cold(D%nR)%Tqhp=C(D%nR-1,j)%Tqhp
-	if(use_qhp) Cold(D%nR)%LRF=C(D%nR-1,j)%LRF
+	if(computeLRF) Cold(D%nR)%LRF=C(D%nR-1,j)%LRF
+	if(computeLRF) Cold(D%nR)%nLRF=C(D%nR-1,j)%nLRF
 	if(use_qhp) Cold(D%nR)%tdistr=C(D%nR-1,j)%tdistr
 	if(use_qhp) Cold(D%nR)%EJvQHP=C(D%nR-1,j)%EJvQHP
 	if(.not.tcontact.or.tdes_iter) then
@@ -549,7 +553,8 @@ C	enddo
 			Ni=real(Cold(i1)%Ni)*M
 			C(i,j)%EJv=Cold(i1)%EJv*M
 			if(use_qhp) C(i,j)%EJvQHP=Cold(i1)%EJvQHP*M
-			if(use_qhp) C(i,j)%LRF(1:nlam)=Cold(i1)%LRF(1:nlam)*M
+			if(computeLRF) C(i,j)%LRF(1:nlam)=Cold(i1)%LRF(1:nlam)*M
+			if(computeLRF) C(i,j)%nLRF(1:nlam)=Cold(i1)%nLRF(1:nlam)
 			if(use_qhp) C(i,j)%tdistr(1:nqhp,1:NTQHP)=Cold(i1)%tdistr(1:nqhp,1:NTQHP)*M
 			C(i,j)%EJv2=Cold(i1)%EJv2*M**2
 			if(use_qhp) C(i,j)%Tqhp(1:nqhp)=Cold(i1)%Tqhp(1:nqhp)**4*M0
@@ -581,7 +586,8 @@ C	enddo
 			Ni=Ni+real(Cold(i2)%Ni)*M
 			C(i,j)%EJv=C(i,j)%EJv+Cold(i2)%EJv*M
 			if(use_qhp) C(i,j)%EJvQHP=C(i,j)%EJvQHP+Cold(i2)%EJvQHP*M
-			if(use_qhp) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)+Cold(i2)%LRF(1:nlam)*M
+			if(computeLRF) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)+Cold(i2)%LRF(1:nlam)*M
+			if(computeLRF) C(i,j)%nLRF(1:nlam)=C(i,j)%nLRF(1:nlam)+Cold(i2)%LRF(1:nlam)
 			if(use_qhp) C(i,j)%tdistr(1:nqhp,1:NTQHP)=C(i,j)%tdistr(1:nqhp,1:NTQHP)
      &					+Cold(i2)%tdistr(1:nqhp,1:NTQHP)*M
 			C(i,j)%EJv2=C(i,j)%EJv2+Cold(i2)%EJv2*M**2
@@ -603,7 +609,8 @@ C	enddo
 				Ni=Ni+real(Cold(k)%Ni)*M
 				C(i,j)%EJv=C(i,j)%EJv+Cold(k)%EJv*M
 				if(use_qhp) C(i,j)%EJvQHP=C(i,j)%EJvQHP+Cold(k)%EJvQHP*M
-				if(use_qhp) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)+Cold(k)%LRF(1:nlam)*M
+				if(computeLRF) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)+Cold(k)%LRF(1:nlam)*M
+				if(computeLRF) C(i,j)%nLRF(1:nlam)=C(i,j)%nLRF(1:nlam)+Cold(k)%nLRF(1:nlam)
 				if(use_qhp) C(i,j)%tdistr(1:nqhp,1:NTQHP)=C(i,j)%tdistr(1:nqhp,1:NTQHP)
      &						+Cold(k)%tdistr(1:nqhp,1:NTQHP)*M
 				C(i,j)%EJv2=C(i,j)%EJv2+Cold(k)%EJv2*M**2
@@ -628,7 +635,7 @@ C	enddo
 			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
 			C(i,j)%EJv=C(i,j)%EJv/C(i,j)%mass
 			if(use_qhp) C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%mass
-			if(use_qhp) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)/C(i,j)%mass
+			if(computeLRF) C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)/C(i,j)%mass
 			if(use_qhp) C(i,j)%tdistr(1:nqhp,1:NTQHP)=
      &					C(i,j)%tdistr(1:nqhp,1:NTQHP)/C(i,j)%mass
 			C(i,j)%EJv2=C(i,j)%EJv2/C(i,j)%mass**2
@@ -674,7 +681,8 @@ C	enddo
 			Temp(i,j)=TdiskStruct(i1)
 			C(i,j)%EJv=Cold(i1)%EJv
 			if(use_qhp) C(i,j)%EJvQHP=Cold(i1)%EJvQHP
-			if(use_qhp) C(i,j)%LRF(1:nlam)=Cold(i1)%LRF(1:nlam)
+			if(computeLRF) C(i,j)%LRF(1:nlam)=Cold(i1)%LRF(1:nlam)
+			if(computeLRF) C(i,j)%nLRF(1:nlam)=Cold(i1)%nLRF(1:nlam)
 			if(use_qhp) C(i,j)%tdistr(1:nqhp,1:NTQHP)=Cold(i1)%tdistr(1:nqhp,1:NTQHP)
 			C(i,j)%EJv2=Cold(i1)%EJv2
 			if(use_qhp) C(i,j)%Tqhp(1:nqhp)=Cold(i1)%Tqhp(1:nqhp)
@@ -769,11 +777,14 @@ c			C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)/C(i,j)%mass
 			deallocate(Cold(i)%EJvP)
 		endif
 		if(use_qhp) then
-			deallocate(Cold(i)%LRF)
 			deallocate(Cold(i)%QHP)
 			deallocate(Cold(i)%tdistr)
 			deallocate(Cold(i)%Tqhp)
 			deallocate(Cold(i)%EJvQHP)
+		endif
+		if(computeLRF) then
+			deallocate(Cold(i)%LRF)
+			deallocate(Cold(i)%nLRF)
 		endif
 	enddo
 

@@ -215,6 +215,7 @@
 	
 	nBW=-1
 	use_qhp=.false.
+	computeLRF=.false.
 	TdesQHP=1d6
 	
 	use_topac=.false.
@@ -243,6 +244,7 @@
 	tracestar=.true.
 	traceemis=.true.
 	tracescat=.true.
+	tracegas=.false.
 	trace(1:100)=.true.
 	
 	asym(1:100)=2d0
@@ -342,6 +344,8 @@ c	Interstellar Radiation Field (IRF)
 		endif
 	enddo
 	
+	call Keywordlist(key)
+	
 	if(key.eq.'startype') startype=value
 	if(key.eq.'starfile') starfile=value
 	if(key.eq.'tstar') read(value,*) D%Tstar
@@ -428,10 +432,19 @@ c		opacity_file_set=.true.
 c	endif
 	if(key.eq.'scattype') then
 		read(value,*) scattype
-		if(scattype.eq.'NONE') scat_how=0
-		if(scattype.eq.'ISOTROPIC') scat_how=1
-		if(scattype.eq.'FULL') scat_how=2
-		if(scattype.eq.'RAYLEIGH') scat_how=2
+		if(scattype.eq.'NONE') then
+			scat_how=0
+		else if(scattype.eq.'ISOTROPIC') then
+			scat_how=1
+		else if(scattype.eq.'FULL') then
+			scat_how=2
+		else if(scattype.eq.'RAYLEIGH') then
+			scat_how=2
+		else
+			write(*,'("Unrecognized scattype")')
+			write(9,'("Unrecognized scattype")')
+			stop
+		endif
 	endif
 	if(key.eq.'tcontact') read(value,*) tcontact
 	if(key(1:5).eq.'tdesa') then
@@ -480,7 +493,8 @@ c	endif
 	if(key.eq.'dimstar') read(value,*) dimstar
 	if(key.eq.'traceemis') read(value,*) traceemis
 	if(key.eq.'tracescat') read(value,*) tracescat
-	if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat') then
+	if(key.eq.'tracegas') read(value,*) tracegas
+	if(key(1:5).eq.'trace'.and.key.ne.'tracestar'.and.key.ne.'traceemis'.and.key.ne.'tracescat'.and.key.ne.'tracegas') then
 		read(key(6:len_trim(key)),*) i
 		if(i.le.100) read(value,*) trace(i)
 	endif
@@ -917,6 +931,8 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'t_irf') read(value,*) T_IRF
 	if(key.eq.'f_irf') read(value,*) F_IRF
 
+	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
+
 C       End 
 
 	goto 10
@@ -925,6 +941,8 @@ C       End
 	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
+
+	if(exportProDiMo) computeLRF=.true.
 
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.
 	if(Nphot.eq.0) then
@@ -1734,6 +1752,49 @@ c first setup the wavelength grid
 		allocate(nu(nlam))
 		allocate(D%Fstar(nlam))
 	endif
+
+	if(exportProDiMo) then
+
+	allocate(spec(nlam+1))
+	spec(1)=0.0912d0
+	spec(2)=0.1110d0
+	spec(3)=0.150847605217981
+	spec(4)=0.2050d0
+
+	lam1=spec(1)
+
+	lam(1)=spec(1)
+	do i=2,4
+		lam(i)=spec(i)**2/lam(i-1)
+	enddo
+
+	if(nzlam.le.0) then
+		do i=5,nlam
+			lam(i)=10d0**(log10(lam(4))+(log10(lam2)-log10(lam(4)))*real(i-4)/real(nlam-4))
+		enddo
+	else
+		nl=(nlam-nzlam)*(log10(zlam1/lam(4))/log10(lam2*zlam1/(zlam2*lam(4))))
+		do i=5,nl
+			lam(i)=10d0**(log10(lam(4))+(log10(zlam1)-log10(lam(4)))*real(i-4)/real(nl-4))
+		enddo
+		j=i-1
+		nl=(nlam-nzlam)-nl
+		do i=1,nl
+			lam(i+j)=10d0**(log10(zlam2)+(log10(lam2)-log10(zlam2))*real(i-1)/real(nl-1))
+		enddo
+		j=j+i-1
+		do i=1,nzlam
+			lam(i+j)=10d0**(log10(zlam1)+(log10(zlam2)-log10(zlam1))*real(i)/real(nzlam+1))
+		enddo
+		call sort(lam,nlam)
+	endif
+
+	call sort(lam,nlam)
+
+	deallocate(spec)
+
+	else
+
 	if(nzlam.le.0) then
 		do i=1,nlam
 			lam(i)=10d0**(log10(lam1)+(log10(lam2)-log10(lam1))*real(i-1)/real(nlam-1))
@@ -1754,7 +1815,9 @@ c first setup the wavelength grid
 		enddo
 		call sort(lam,nlam)
 	endif
-	
+
+	endif	
+
 	endif
 
 	clight=2.9979d14
@@ -2562,15 +2625,23 @@ c		endif
 	enddo
 	endif
 	if(use_qhp) then
-	do i=0,D%nR
-	do j=0,D%nTheta
-		allocate(C(i,j)%QHP(nqhp,nlam))
-		allocate(C(i,j)%LRF(nlam))
-		allocate(C(i,j)%tdistr(nqhp,NTQHP))
-		allocate(C(i,j)%Tqhp(nqhp))
-		allocate(C(i,j)%EJvQHP(nqhp))
-	enddo
-	enddo
+		do i=0,D%nR
+		do j=0,D%nTheta
+			allocate(C(i,j)%QHP(nqhp,nlam))
+			allocate(C(i,j)%tdistr(nqhp,NTQHP))
+			allocate(C(i,j)%Tqhp(nqhp))
+			allocate(C(i,j)%EJvQHP(nqhp))
+		enddo
+		enddo
+		computeLRF=.true.
+	endif
+	if(computeLRF) then
+		do i=0,D%nR
+		do j=0,D%nTheta
+			allocate(C(i,j)%LRF(nlam))
+			allocate(C(i,j)%nLRF(nlam))
+		enddo
+		enddo
 	endif
 
 	do i=1,D%nR-1
@@ -3287,6 +3358,7 @@ c-----------------------------------------------------------------------
 		endif
 		if(allocated(C(i,j)%QHP)) deallocate(C(i,j)%QHP)
 		if(allocated(C(i,j)%LRF)) deallocate(C(i,j)%LRF)
+		if(allocated(C(i,j)%nLRF)) deallocate(C(i,j)%nLRF)
 		if(allocated(C(i,j)%tdistr)) deallocate(C(i,j)%tdistr)
 		if(allocated(C(i,j)%EJvQHP)) deallocate(C(i,j)%EJvQHP)
 		if(allocated(C(i,j)%EviscDirect)) deallocate(C(i,j)%EviscDirect)
@@ -3374,7 +3446,10 @@ c-----------------------------------------------------------------------
 		endif
 		if(use_qhp) then
 			C(i,j)%EJvQHP(1:nqhp)=0d0
+		endif
+		if(computeLRF) then
 			C(i,j)%LRF(1:nlam)=0d0
+			C(i,j)%nLRF(1:nlam)=0
 		endif
 		C(i,j)%FradR=0d0
 		C(i,j)%FradZ=0d0

@@ -215,7 +215,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		else
 			emis(i,j)=0d0
 		endif
-		if(useTgas) then
+		if(useTgas.and.tracegas) then
 			iT=C(i,j)%Tgas/dT
 			wT1=real(iT+1)-C(i,j)%Tgas/dT
 			wT2=C(i,j)%Tgas/dT-real(iT)
@@ -642,8 +642,6 @@ c		enddo
 	enddo
 
 	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,vismass)
-
-	makeangledependence=.false.
 	
 	call MakeStarScatter(Estar,NphotStar)
 
@@ -815,7 +813,7 @@ c				endif
 				EmisDis(i,j)=0d0
 			endif
 			EmisDis(i,j)=EmisDis(i,j)*C(i,j)%dens*C(i,j)%V
-			if(useTgas) then
+			if(useTgas.and.tracegas) then
 				iT=C(i,j)%Tgas/dT
 				wT1=real(iT+1)-C(i,j)%Tgas/dT
 				wT2=C(i,j)%Tgas/dT-real(iT)

@@ -350,11 +350,14 @@ c		call PAHMCMax(niter)
 				allocate(Cprev(i,j)%EJvP(ngrains))
 			endif
 			if(use_qhp) then
-				allocate(Cprev(i,j)%LRF(nlam))
 				allocate(Cprev(i,j)%QHP(nqhp,nlam))
 				allocate(Cprev(i,j)%tdistr(nqhp,NTQHP))
 				allocate(Cprev(i,j)%Tqhp(nqhp))
 				allocate(Cprev(i,j)%EJvQHP(nqhp))
+			endif
+			if(computeLRF) then
+				allocate(Cprev(i,j)%LRF(nlam))
+				allocate(Cprev(i,j)%nLRF(nlam))
 			endif
 		enddo
 		enddo
@@ -495,6 +498,7 @@ c
 	enddo
 	close(unit=20)
 
+	if(exportProDiMo) call DoExportProdimo()
 
 	if(Nphot.gt.0.or.forcediff) then
 	write(*,'("--------------------------------------------------------")')
@@ -959,11 +963,14 @@ c	call denstempFits(1000,D%R(D%nR))
 				deallocate(Cprev(i,j)%EJvP)
 			endif
 			if(use_qhp) then
-				deallocate(Cprev(i,j)%LRF)
 				deallocate(Cprev(i,j)%QHP)
 				deallocate(Cprev(i,j)%tdistr)
 				deallocate(Cprev(i,j)%Tqhp)
 				deallocate(Cprev(i,j)%EJvQHP)
+			endif
+			if(computeLRF) then
+				deallocate(Cprev(i,j)%LRF)
+				deallocate(Cprev(i,j)%nLRF)
 			endif
 		enddo
 		enddo
