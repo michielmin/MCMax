@@ -1264,9 +1264,21 @@ C	End
 	      write(*,'("Vertical gap")')
 	   endif
 	   
-	   !  replicate with * -> 9
-	   !
-
+	   write(9,'("Gap in the disk from: ",f14.3," AU")') gap1(i)
+	   write(9,'("to:                   ",f14.3," AU")') gap2(i)
+	   write(9,'("Density decrease:     ",e14.3)') gap(i)
+	   if (gapshape(i).ne.0) then
+	      write(9,'("Shape of the gap:     ",f14.3)') gapshape(i)
+	   else if (gaproundtype(i).eq.'softedge') then
+	      write(9,'("Gap with soft edge ")')
+	   else if (gaproundtype(i).eq.'powerlaw') then
+	      write(9,'("Round off gap with p: ",f14.3)') gaproundpow(i)
+	   else if (gaproundtype(i).eq.'hydro') then
+	      write(9,'("Hydro gap with width: ",f14.3)') gaproundpow(i)
+	   else
+	      write(9,'("Vertical gap")')
+	   endif
+	   
 	enddo
 
 	write(*,'("--------------------------------------------------------")')
@@ -4195,8 +4207,8 @@ c
 c   + roundtype='powerlaw': a powerlaw surface density between rmin and rmax,
 c                           proportional to r^-roundpow.
 c
-c   + roundtype='hydro':    a gaussian like shape that fits Fargo simulations
-c                           of embedded planets well.
+c   + roundtype='hydro':    a gaussian like shape that fits hydro simulations
+c                           of embedded planets well (Lubow & D'Angelo 2006)
 c
 c
 c   OUPUT:  scaling factor at radius r
@@ -4218,20 +4230,19 @@ c-----------------------------------------------------------------------
 	if(type.eq.'softedge') then
 	   scale=       (2.3 * amu)/(kb*C(i,D%nTheta-1)%T)* (GG * D%Mstar)/D%R_av(i)
 	   scale=scale* (1d0 - 0.5d0*(rmax/r - r/rmax))
-	   scale=exp(scale)
+	   scale=exp(scale) * ((r/rmax)**(D%denspow)) 
 	
         !  use a shape from Hydrodynamic smulations
 	else if (type.eq.'hydro') then
-!	   scale=exp( -(((rmax-r)/pow)**4d0))
-	   scale=exp( -(((1-r/rmax)/pow)**4d0))
+	   scale=exp( -(((1-r/rmax)/pow)**3d0))
 
 	!  use a powerlaw
 	else if (type.eq.'powerlaw') then
 	   scale=(rmax/r)**(-pow)
+
+	   ! scale from Sigma=r^-p (not robust for p =!= 1)
+	   scale=scale* ((r/rmax)**(D%denspow)) 
 	endif
-	
-	! scale from Sigma=r^-p (not robust for p =!= 1)
-	scale=scale* ((r/rmax)**(D%denspow)) 
 
 	!  return gap depth
 	RoundOff=max(scale,scalemin)

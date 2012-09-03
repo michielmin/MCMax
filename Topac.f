@@ -114,25 +114,3 @@ c-----------------------------------------------------------------------
 
       return
       end
-
-      real*8 function lininterpol(x,x1,x2,y1,y2)
-      IMPLICIT NONE
-      real*8 x1,x2,y1,y2,x,rc
-      rc=(y2-y1)/(x2-x1)
-      lininterpol=y1+(x-x1)*rc
-
-c$$$      write(*,*)
-c$$$      write(*,*) x
-c$$$      write(*,*)
-c$$$      write(*,*) x1,x2
-c$$$      write(*,*) y1,y2
-c$$$      write(*,*)
-c$$$      write(*,*) rc
-c$$$      write(*,*)
-c$$$      write(*,*) lininterpol
-c$$$      write(*,*)
-c$$$
-
-      return
-      end
-

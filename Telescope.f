@@ -5,6 +5,7 @@
 	type(Telescope) tel
 	type(RPhiImage) image
 	real*8 spec(nlam),scatspec(nlam),flux,scatflux,R0,angle,FWHM1,FWHM2
+	real*8 arrinterpol,fstar1,fstar2
 	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam),clight,Resolution
 	real*8 basegrid(100),V2(100,100),phase(100),phase2(100,100)	!Gijsexp : nbase=100
 	integer nbase		!Gijsexp
@@ -92,29 +93,40 @@
 		open(unit=30,file=specfile,RECL=6000)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
+		fstar1=arrinterpol(tel%lam1,lam(nlam),D%Fstar,nlam,1)
+		fstar2=arrinterpol(tel%lam2,lam(nlam),D%Fstar,nlam,1)
 		if(scat_how.ne.2) then
-			write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2
+		   write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,
+     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2
 		else
-			write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2,1d23*fluxQ*ExtISM/D%distance**2
+		   write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,
+     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2,
+     &                         1d23*fluxQ*ExtISM/D%distance**2
 		endif
 		do j=1,nlam
-			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle)
-				ExtISM=Reddening(lam(j),compute_dlam(lam(j)),D%Av)
-				if(scat_how.ne.2) then
-					write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,1d23*scatspec(j)*ExtISM/D%distance**2
-				else
-					write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,1d23*scatspec(j)*ExtISM/D%distance**2,1d23*specQ(j)*ExtISM/D%distance**2
-				endif
-				call flush(30)
-			endif
+		   if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
+		      call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle)
+		      ExtISM=Reddening(lam(j),compute_dlam(lam(j)),D%Av)
+		      if(scat_how.ne.2) then
+			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
+     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*D%Fstar(j)/D%distance**2
+		      else
+			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
+     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*D%Fstar(j)/D%distance**2,
+     &                               1d23*specQ(j)*ExtISM/D%distance**2
+		      endif
+		      call flush(30)
+		   endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle)
 		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		if(scat_how.ne.2) then
-			write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2
+		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
+     &          	       1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2
 		else
-			write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,1d23*scatflux*ExtISM/D%distance**2,1d23*fluxQ*ExtISM/D%distance**2
+		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
+     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2,
+     &                         1d23*fluxQ*ExtISM/D%distance**2
 		endif
 		close(unit=30)
 	else if(tel%kind(1:5).eq.'IMAGE') then

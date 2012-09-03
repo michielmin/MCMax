@@ -827,13 +827,3 @@ c			C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)/C(i,j)%mass
 	return
 	end
 	
-
-	real*8 function powinterpol(x,x1,x2,y1,y2)
-	IMPLICIT NONE
-	real*8 x1,x2,y1,y2,x,pow
-	pow=log10(y2/y1)/log10(x2/x1)
-	powinterpol=y1*(x/x1)**pow
-	return
-	end
-
-

@@ -2831,11 +2831,66 @@ C     close the file and free the unit number
 	end
 
 
+c-----------------------------------------------------------------------
+c  Linear interpolation of value x between x1 and x2
+c-----------------------------------------------------------------------
 
+      real*8 function lininterpol(x,x1,x2,y1,y2)
+      IMPLICIT NONE
+      real*8 x1,x2,y1,y2,x,rc
+      rc=(y2-y1)/(x2-x1)
+      lininterpol=y1+(x-x1)*rc
 
+      return
+      end
 
+c-----------------------------------------------------------------------
+c  Logarithmic interpolation of value x between x1 and x2
+c-----------------------------------------------------------------------
 
+	real*8 function loginterpol(x,x1,x2,y1,y2)
+	IMPLICIT NONE
+	real*8 x1,x2,y1,y2,x,pow
+	pow=log10(y2/y1)/log10(x2/x1)
+	loginterpol=y1*(x/x1)**pow
+	return
+	end
 
+c-----------------------------------------------------------------------
+c  Linear/Log interpolation of value x in array arr of dimension n
+c  log=0 is linear, log=1 is log
+c-----------------------------------------------------------------------
+
+	real*8 function arrinterpol(x,xarr,yarr,n,log)
+	IMPLICIT NONE
+	integer i,ix,n,log
+	real*8 x,xarr(1:n),yarr(1:n)
+	real*8 lininterpol,loginterpol
+	
+	! x smaller than array
+	if (x.le.xarr(1)) then
+	   arrinterpol=xarr(1)
+
+	! x larger than array
+	else if (x.ge.xarr(n)) then
+	   arrinterpol=xarr(n)
+
+	! x inside array
+	else
+
+	   do i=2,n
+	      if (x.le.xarr(i)) ix=i 
+	   enddo
+
+	   if (log.eq.0) then
+	      arrinterpol=lininterpol(x,xarr(ix-1),xarr(ix),yarr(ix-1),yarr(ix))
+	   else
+	      arrinterpol=loginterpol(x,xarr(ix-1),xarr(ix),yarr(ix-1),yarr(ix))
+	   endif
+	endif
+
+	return
+	end
 
 
 
