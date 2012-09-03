@@ -35,6 +35,9 @@ OBJS	      = Modules.o \
 		RegridR.o \
 		Init.o \
 		ImportProdimo.o \
+		ExportProdimo.o \
+		Keywordlist.o \
+		CreateLRF.o \
 		MCRadiation.o \
 		Subroutines.o \
 		Radiation.o \
