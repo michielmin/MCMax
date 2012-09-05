@@ -91,12 +91,12 @@ c				delta-Eddington approximation.
 	phot%y=phot%y+dmin*phot%vy
 	phot%z=phot%z+dmin*phot%vz
 
-	EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
+	EJv=phot%E*v*AU*C(phot%i,phot%j)%dens
 
-	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
+	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs!*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
 	if(.not.tcontact.or.tdes_iter) then
 		do i=1,ngrains
-			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
+			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs!*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
 		enddo
 	endif
 
@@ -143,8 +143,8 @@ c==============================================================================
 	real*8 lr,Kext
 	nmax=1000
 	
-	write(*,'("Initializing Random Walk")')
-	write(9,'("Initializing Random Walk")')
+	write(*,'("Initializing Diffusion/Random Walk")')
+	write(9,'("Initializing Diffusion/Random Walk")')
 	y(1)=1d0
 	phi(1)=1d0
 	do i=2,NY
