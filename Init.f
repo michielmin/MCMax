@@ -2932,7 +2932,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 	endif
 
 	if(tdes_iter.and.Nphot.ne.0.and.(iter0.le.nBW.or.nBW.lt.0)) then
-		if(RNDW) call InitRandomWalk()
+		if(RNDW.or.nphotdiffuse.gt.0) call InitRandomWalk()
 		do iter=1,6	!15
 		write(*,'("Iteration ",i2," of 6")') iter
 		RmaxRefine=D%Rout

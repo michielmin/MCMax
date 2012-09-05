@@ -41,7 +41,7 @@ c celi(i),celj(i) are the cell-coordinates of array element i
 	do i=2,D%nR-2
 		do j=2,D%nTheta-1
 			if(C(i,j)%Ni.lt.NphotMin.or.(C(i,j)%dT/C(i,j)%T).gt.dTMax) then
-c			if((RNDW.and.C(i,j)%thick).or.C(i,j)%Ni.le.1) then
+			if(C(i,j)%thick.or.C(i,j)%Ni.le.1) then
 				ncor=ncor+1
 				C(i,j)%diff=.true.
 				if(.not.assigned(i,j)) then
@@ -69,7 +69,7 @@ c			if((RNDW.and.C(i,j)%thick).or.C(i,j)%Ni.le.1) then
 					number(i,j+1)=N
 					assigned(i,j+1)=.true.
 				endif
-c			endif
+			endif
 			endif
 		enddo
 	enddo
