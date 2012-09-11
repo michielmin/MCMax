@@ -519,7 +519,31 @@ c------------------------------------------------------------------------
 				enddo
 			endif
 		enddo
-		if(kp0.lt.E1.and.kp1.gt.E1) then
+		if(kp0.le.E1.and.kp1.ge.E1) then
+			increaseT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			return
+		endif
+		kp0=kp1
+	enddo
+	j=1
+	kp0=0d0
+	do ii=1,ngrains
+		if(.not.Grain(ii)%qhp) then
+			do iopac=1,Grain(ii)%nopac
+				kp0=kp0+(Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
+			enddo
+		endif
+	enddo
+	do i=j,TMAX-1
+		kp1=0d0
+		do ii=1,ngrains
+			if(.not.Grain(ii)%qhp) then
+				do iopac=1,Grain(ii)%nopac
+					kp1=kp1+(Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
+				enddo
+			endif
+		enddo
+		if(kp0.le.E1.and.kp1.ge.E1) then
 			increaseT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
@@ -548,7 +572,23 @@ c------------------------------------------------------------------------
 		do iopac=1,Grain(ii)%nopac
 			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
 		enddo
-		if(kp0.lt.E1.and.kp1.gt.E1) then
+		if(kp0.le.E1.and.kp1.ge.E1) then
+			increaseTP=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			return
+		endif
+		kp0=kp1
+	enddo
+	j=1
+	kp0=0d0
+	do iopac=1,Grain(ii)%nopac
+		kp0=kp0+Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%wopac(ii,iopac)
+	enddo
+	do i=j,TMAX-1
+		kp1=0d0
+		do iopac=1,Grain(ii)%nopac
+			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
+		enddo
+		if(kp0.le.E1.and.kp1.ge.E1) then
 			increaseTP=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
@@ -584,7 +624,7 @@ c------------------------------------------------------------------------
 				enddo
 			endif
 		enddo
-		if(kp0.le.E1.and.kp1.gt.E1) then
+		if(kp0.le.E1.and.kp1.ge.E1) then
 			determineT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
@@ -611,7 +651,7 @@ c------------------------------------------------------------------------
 		do iopac=1,Grain(ii)%nopac
 			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
 		enddo
-		if(kp0.le.E1.and.kp1.gt.E1) then
+		if(kp0.le.E1.and.kp1.ge.E1) then
 			determineTP=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif

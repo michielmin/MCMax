@@ -767,21 +767,17 @@ c		endif
 		phot%z=phot%z+phot%vz*v
 		tautot=tautot+(tau0-tau)
 		phot%onEdge=.false.
-		if(multiwav) then
-			do ii=1,ngrains
-			do iopac=1,Grain(ii)%nopac
-				column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
-     &					*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*AU
-			enddo
-			enddo
-		endif
 		if(locfield.and..not.etrace) then
 			EJv=phot%E*v*AU  !*C(phot%i,phot%j)%dens
 			if(computeLRF) then
-				C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-				C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-				C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-				C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+				if(multiwav) then
+					call addLRF_multiwav(phot,EJv)
+				else
+					C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+					C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+					C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+					C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+				endif
 				if(use_qhp) then
 					do ii=1,ngrains
 						if(Grain(ii)%qhp) then
@@ -811,6 +807,14 @@ c ------------------------------------------------
 				C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      		endif
 		endif
+		if(multiwav) then
+			do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
+     &					*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*AU
+			enddo
+			enddo
+		endif
 		iRWinter=iRWinter+1
 		return
 	endif
@@ -822,21 +826,17 @@ c ------------------------------------------------
 	phot%x=phot%x+phot%vx*v
 	phot%y=phot%y+phot%vy*v
 	phot%z=phot%z+phot%vz*v
-	if(multiwav) then
-		do ii=1,ngrains
-			do iopac=1,Grain(ii)%nopac
-				column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
-     &						*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*AU
-			enddo
-		enddo
-	endif
 	if(locfield.and..not.etrace) then
 		EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
 		if(computeLRF) then
-			C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-			C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-			C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-			C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+			if(multiwav) then
+				call addLRF_multiwav(phot,EJv)
+			else
+				C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+				C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+				C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+				C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+			endif
 			if(use_qhp) then
 				do ii=1,ngrains
 					if(Grain(ii)%qhp) then
@@ -867,6 +867,14 @@ c ------------------------------------------------
 			C(phot%i,phot%j)%KextLRF=C(phot%i,phot%j)%KextLRF+EJv*Kext
 			C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      	endif
+	endif
+	if(multiwav) then
+		do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
+     &						*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*AU
+			enddo
+		enddo
 	endif
 	phot%onEdge=.true.
 	tau=tau+tau1
@@ -1293,3 +1301,41 @@ c-----------------------------------------------------------------------
 	return
 	end
 
+
+
+
+	subroutine addLRF_multiwav(phot,EJv)
+	use Parameters
+	IMPLICIT NONE
+	real*8 spectemp(nlam),tot,EJv
+	integer ii,j,iopac
+	type(photon) phot
+	
+	spectemp(1:nlam)=0d0
+	do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
+		enddo
+	enddo
+	do j=1,nlam
+		if(spectemp(j).lt.10d0) then
+			spectemp(j)=specemit(j)*exp(-spectemp(j))
+		else
+			spectemp(j)=0d0
+		endif
+	enddo
+	call integrate(spectemp,tot)
+	if(tot.gt.1d-100) then
+		spectemp=spectemp*EJv/tot
+		C(phot%i,phot%j)%LRF(1:nlam)=C(phot%i,phot%j)%LRF(1:nlam)+spectemp(1:nlam)
+		C(phot%i,phot%j)%nLRF(1:nlam)=C(phot%i,phot%j)%nLRF(1:nlam)+1
+	else
+		C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+		C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+		C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+		C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+	endif
+	
+	return
+	end
+	

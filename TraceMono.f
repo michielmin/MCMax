@@ -834,7 +834,7 @@ c eliminating 'dark-zone'
 				C(i,j)%tauexit=0d0
 			else
 				phot2=phot
-				do k=1,nexits
+				do k=1,abs(nexits)
 					Rad=0.5d0
 					Rad=sqrt(D%R(i)**2*Rad+D%R(i+1)**2*(1d0-Rad))
 					Theta=0.5d0
@@ -856,7 +856,11 @@ c eliminating 'dark-zone'
 				C(i,j)%tauexit=taumin
 			endif
 
-			vismass(i,j)=dexp(-C(i,j)%tauexit)
+			if(nexits.ge.0) then
+				vismass(i,j)=dexp(-C(i,j)%tauexit)
+			else
+				vismass(i,j)=(1d0-dexp(-C(i,j)%tauexit))
+			endif
 
 			EnergyTot=EnergyTot+EmisDis(i,j)
 			EmisDis(i,j)=EmisDis(i,j)*vismass(i,j)
@@ -1294,6 +1298,8 @@ c-----------------------------------------------------------------------
 1		continue
 		call Trace2edgeRG(phot,v,inext,jnext,irgnext)
 		tau=C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
+
+		if(phot%E.gt.(1d-3*Estar/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
 
 		if((tau*v).gt.1d-5) then
 			w=(1d0-exp(-tau*v))/tau
