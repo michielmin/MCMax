@@ -309,6 +309,12 @@ c	Interstellar Radiation Field (IRF)
 	endif
 	open(unit=20,file=input,RECL=1000)
 
+	write(line,'("cp ",a," ",a,"input.dat")') trim(input),trim(outdir)
+	call system(line)
+	write(line,'(a,"input.dat")') trim(outdir)
+	open(unit=21,file=line,RECL=1000,access='APPEND')
+	write(21,'("*** command line keywords ***")')
+
 	ia=1
 10	if(ia.eq.1) then
 		call ignorestar(20)
@@ -321,6 +327,7 @@ c	Interstellar Radiation Field (IRF)
 		ia=ia+1
 		call get_command_argument(2+ia,line)
 		print*,line(1:len_trim(line))
+		write(21,'(a)') trim(line)
 		ia=ia+1
 		goto 30
 	endif
@@ -937,6 +944,7 @@ C       End
 
 	goto 10
 40	close(unit=20)
+	close(unit=21)
 
 	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(viscous) computeTgas=.true.
