@@ -48,7 +48,7 @@ c     --------------------------------------------------------------
       doubleprecision, PARAMETER :: ageoftheuniverse=13.73d9
       character*100 outputfile, rdisk
       logical makeplot, condition
-      logical hitbottom, nosettle
+      logical hitbottom, do_settling, do_settle(1:ns)
 
       !  Debugging/testing only
       logical stupid_test, print_dust, print_disk, print_time
@@ -61,15 +61,15 @@ c-------------------------------------------------------------------
 c     Here starts the initialisation
 c-------------------------------------------------------------------
 
-      !  Skip routine if there are no disk particles or abundances are zero
-      nosettle=.true.
+      !  Check which grains need to be settled
+      !    (disk particle, not a wedge, abundance not zero)
       do is=1,ns
-         if(Grain(is)%shtype.eq.'DISK'.and.Grain(is)%shscale(ir).gt.0d0
-     &      .and.C(ir,nz)%w(is).ne.0d0) then
-            nosettle=.false.
-         endif
+         do_settle(is)=(Grain(is)%shtype.eq.'DISK'.and.
+     1        Grain(is)%shscale(ir).gt.0d0.and.C(ir,nz)%w(is).ne.0d0 )
+         if (do_settle(is)) do_settling=.true.
       enddo
-      if (nosettle) goto 333
+*      if (.not.do_settling) print*,' dont settle anything'
+      if (.not.do_settling) goto 333     ! skip entire routine
 
       !  Debugging/testing only
       stupid_test=.false.        ! test leveling of at low densities
@@ -269,9 +269,8 @@ c-------------------------------------------------------------------
 
          !  Check if particle need to be settled
          !
-         if(Grain(is)%shtype.eq.'DISK'.and.Grain(is)%shscale(ir).gt.0d0
-     &      .and. C(ir,nz)%w(is).eq.0d0) then
-c            write(*,*) "Species", is, "is zero!"
+         if(.not.do_settle(is)) then
+!            print*,' dont settle ',is,' at r= ',radius/AU
             settletime(is)=0d0
             goto 222
          endif
