@@ -71,6 +71,24 @@ c		call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
 		enddo
 	enddo
 
+	if(scattering.and.Nphot.ne.0) then
+		do i=0,D%nR
+		do j=1,D%nTheta-1
+			deallocate(C(i,j)%scattfield)
+			if(scat_how.eq.2) then
+				deallocate(C(i,j)%scattQ)
+				deallocate(C(i,j)%scattU)
+				deallocate(C(i,j)%scattV)
+			endif
+		enddo
+		enddo
+	endif
+	do i=0,D%nR
+	do j=1,D%nTheta-1
+		if(allocated(C(i,j)%thetrg)) deallocate(C(i,j)%thetrg)
+	enddo
+	enddo
+
 	return
 	end
 	
