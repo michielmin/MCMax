@@ -137,7 +137,7 @@ c fill the T4 vector with zeros, except when suff. photon statistics
 			if(celi(i).eq.1.or.celi(i).eq.D%nR-1.or.celj(i).eq.1) then
 				ok(i)=.true.
 			endif
-			if(RNDW.and..not.C(celi(i),celj(i))%thick.and.C(celi(i),celj(i))%Ni.gt.1) then
+			if(.not.C(celi(i),celj(i))%thick.and.C(celi(i),celj(i))%Ni.gt.1) then
 				ok(i)=.true.
 			endif
 		else

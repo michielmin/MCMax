@@ -94,7 +94,7 @@ c regridding with the optical depth
 
 	taustart=0.1d0
 	dtaumax=0.5d0
-	tauend=10d0
+	tauend=1000d0
 	dtaumaxabs=200d0
 
 	nrefine=nlev*nspan-nspan

@@ -305,6 +305,8 @@
 	keyword(i)='f_irf'
 	i=i+1
 	keyword(i)='exportprodimo'
+	i=i+1
+	keyword(i)='tsmooth'
 	
 	Nnormal=i
 c from here on keywords with numbers

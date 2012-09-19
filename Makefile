@@ -58,7 +58,8 @@ OBJS	      = Modules.o \
 		MRN.o \
 		GasOpacity.o \
 		ComputeLTE.o \
-		Reddening.o
+		Reddening.o \
+		Smooth.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

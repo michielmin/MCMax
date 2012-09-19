@@ -46,7 +46,7 @@
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
-	integer ntau1
+	integer ntau1,NUV,N1UV
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -280,6 +280,8 @@
 	MeixRsw=1800d0
 	MeixRin=-1d0
 	timeshift=0d0
+	
+	Tsmooth=.false.
 	
 c	Interstellar Radiation Field (IRF)
 	T_IRF=20000d0
@@ -939,6 +941,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'f_irf') read(value,*) F_IRF
 
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
+	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
 C       End 
 
@@ -1775,41 +1778,34 @@ c first setup the wavelength grid
 
 	if(exportProDiMo) then
 
-	allocate(spec(nlam+1))
-	spec(1)=0.0912d0
-	spec(2)=0.1110d0
-	spec(3)=0.150847605217981
-	spec(4)=0.2050d0
+	allocate(spec(0:nlam))
 
-	lam1=spec(1)
+c	NLAM  = 70
+	N1UV  = 3
+	NUV   = 9
+c	lmax  = 4000.0
 
-	lam(1)=spec(1)
-	do i=2,4
-		lam(i)=spec(i)**2/lam(i-1)
+	spec(0)    = 0.0912                !  912 Angstroem
+	spec(N1UV) = 0.1110                ! 1010 Angstroem
+	spec(NUV)  = 0.2050                ! 2050 Angstroem
+	lam1=spec(0)
+
+	do i=1,N1UV
+		spec(i) = exp(log(spec(0))+REAL(i)/REAL(N1UV)*log(spec(N1UV)/spec(0)))
 	enddo
-
-	if(nzlam.le.0) then
-		do i=5,nlam
-			lam(i)=10d0**(log10(lam(4))+(log10(lam2)-log10(lam(4)))*real(i-4)/real(nlam-4))
-		enddo
-	else
-		nl=(nlam-nzlam)*(log10(zlam1/lam(4))/log10(lam2*zlam1/(zlam2*lam(4))))
-		do i=5,nl
-			lam(i)=10d0**(log10(lam(4))+(log10(zlam1)-log10(lam(4)))*real(i-4)/real(nl-4))
-		enddo
-		j=i-1
-		nl=(nlam-nzlam)-nl
-		do i=1,nl
-			lam(i+j)=10d0**(log10(zlam2)+(log10(lam2)-log10(zlam2))*real(i-1)/real(nl-1))
-		enddo
-		j=j+i-1
-		do i=1,nzlam
-			lam(i+j)=10d0**(log10(zlam1)+(log10(zlam2)-log10(zlam1))*real(i)/real(nzlam+1))
-		enddo
-		call sort(lam,nlam)
-	endif
-
-	call sort(lam,nlam)
+	do i=N1UV+1,NUV
+		spec(i) = exp(log(spec(N1UV))+REAL(i-N1UV)/REAL(NUV-N1UV)*log(spec(NUV)/spec(N1UV)))
+	enddo
+	do i=NUV+1,NLAM-nzlam                    ! interval boundaries
+		spec(i) = EXP(LOG(spec(NUV))+REAL(i-NUV)/REAL(NLAM-NUV)*LOG(lam2/spec(NUV)))
+	enddo
+	do i=nlam-nzlam+1,NLAM                    ! interval boundaries
+		spec(i) = EXP(LOG(zlam1)+REAL(i-(nlam-nzlam))/REAL(nzlam)*LOG(zlam2/zlam1))
+	enddo
+	call sort(spec(0:nlam),nlam+1)
+	do i=1,NLAM
+		lam(i) = sqrt(spec(i)*spec(i-1))
+	enddo
 
 	deallocate(spec)
 
@@ -3256,7 +3252,7 @@ c		f_weight=f_weight_backup
 		Grain(ii)%trace=trace(ii)
 	enddo
 
-	if(RNDW.and.Nphot.ne.0) call InitRandomWalk()
+	if((RNDW.or.nphotdiffuse.gt.0).and.Nphot.ne.0) call InitRandomWalk()
 
 	if(reprocess.gt.0d0.and.Nphot.gt.0) then
 	write(*,'("Scaling density structure to reprocessing: ",f10.3)') reprocess

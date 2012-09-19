@@ -33,7 +33,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav
 	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac,computeLRF
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
-	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat
+	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat,Tsmooth
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
