@@ -74,7 +74,6 @@ C	 create the new empty FITS file
 	fUV=0d0
 	call integrate(D%Fstar,tot)
 	call integrate(spec,fUV)
-	print*,fUV
 	fUV=fUV/tot
 	deallocate(spec)
 
@@ -102,12 +101,12 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'H0',real(D%sh1au/sqrt(2.0)),-8,'[AU]',status)
 	call ftpkye(unit,'edge',real(D%Rout),-8,'[AU]',status)
 	call ftpkye(unit,'beta',real(D%shpow),-8,'',status)
-	call ftpkye(unit,'alpha',real(D%denspow),-8,'',status)
+	call ftpkye(unit,'alpha',real(-D%denspow),-8,'',status)
 
-	call ftpkye(unit,'amin',real(mrn_rmin),-8,'[micron]',status)
-	call ftpkye(unit,'amax',real(mrn_rmax),-8,'[micron]',status)
+	call ftpkye(unit,'amin',real(mrn_rmin*1d4),-8,'[micron]',status)
+	call ftpkye(unit,'amax',real(mrn_rmax*1d4),-8,'[micron]',status)
 	call ftpkye(unit,'aexp',real(mrn_index),-8,'slope of grain size distribution',status)
-	call ftpkye(unit,'strat',real(1.0),-8,'stratification exponent',status)
+	call ftpkye(unit,'strat',real(0.0),-8,'stratification exponent',status)
 	call ftpkye(unit,'a_settle',real(0.0),-8,'[micron]',status)
 	call ftpkye(unit,'rho_grain',real(Grain(1)%rho),-8,'[g.cm^-3]',status)
 	call ftpkys(unit,'optical_indices','DHS','',status)
@@ -130,7 +129,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 		  grid(ri,D%nTheta-zj,2) = grid(ri,D%nTheta-zj,1)*cos(D%theta_av(zj)) !z_grid(ri,zj)
 	   enddo
 	enddo
-
+	
 	call ftpprd(unit,group,fpixel,nelements,grid,status)
 
 	!------------------------------------------------------------------------------
@@ -218,7 +217,11 @@ c		 / (4 * pi * (etoile(1)%r * AU_to_m)**2) / pi
 
 	do lambda=1,nlam
 c	   wl = tab_lambda(lambda) * 1e-6
-	   spectre(lambda) = 0d0	!(chi_ISM * 1.71 * Wdil * Blambda(wl,T_ISM_stars) + Blambda(wl,TCmb)) * wl  
+		if(use_irf) then
+		   spectre(lambda) = IRF(lambda) * 1d-3 * 2.998e14/lam(lambda) /(pi*(D%R(D%nR)*AU)**2)  
+		else
+			spectre(lambda) = 0d0
+		endif
 	enddo
  
 	!  Write the array to the FITS file.
@@ -410,25 +413,29 @@ c	   wl = tab_lambda(lambda) * 1e-6
 		  ! Nbre total de grain : le da est deja dans densite_pouss
 			N=0d0
 		  do l=1,ngrains
-		  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)/(4d0*pi*(Grain(l)%rv*1d-4)**3*Grain(l)%rho/3d0)
+		  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
 		  enddo
 		  N_grains(ri,zj,0) = N
 		  if (N.gt.1d-40) then
 			N1=0d0
 			do l=1,ngrains
-				N1 = N1 + 1d6*Grain(l)%rv*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)/(4d0*pi*(Grain(l)%rv*1d-4)**3*Grain(l)%rho/3d0)
+			  	N1 = N1 + 1d6*Grain(l)%dust_moment1*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
 			enddo
 			N_grains(ri,zj,1) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
-				N1 = N1 + 1d6*Grain(l)%rv**2*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)/(4d0*pi*(Grain(l)%rv*1d-4)**3*Grain(l)%rho/3d0)
+			  	N1 = N1 + 1d6*Grain(l)%dust_moment2*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
 			enddo
 			N_grains(ri,zj,2) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
-				N1 = N1 + 1d6*Grain(l)%rv**3*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)/(4d0*pi*(Grain(l)%rv*1d-4)**3*Grain(l)%rho/3d0)
+			  	N1 = N1 + 1d6*Grain(l)%dust_moment3*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
 			enddo
 			N_grains(ri,zj,3) = N1 / N
 		  else
