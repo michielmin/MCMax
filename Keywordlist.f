@@ -300,6 +300,7 @@
 	keyword(i)='timeshift'
 	i=i+1
 	keyword(i)='irf'
+	i=i+1
 	keyword(i)='t_irf'
 	i=i+1
 	keyword(i)='f_irf'
@@ -326,6 +327,8 @@ c from here on keywords with numbers
 	keyword(i)='mat'
 	i=i+1
 	keyword(i)='part'
+	i=i+1
+	keyword(i)='fitspart'
 	i=i+1
 	keyword(i)='opac'
 	i=i+1

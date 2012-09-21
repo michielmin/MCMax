@@ -539,6 +539,15 @@ c			endif
 			parttype(i)=1
 		endif
 	endif
+	if(key(1:8).eq.'fitspart') then
+		opacity_set=.true.
+		read(key(9:len_trim(key)),*) i
+		if(i.le.100) then
+			partarg(i)=value
+			if(i.gt.ngrains) ngrains=i
+			parttype(i)=6
+		endif
+	endif
 	if(key(1:4).eq.'opac'.and.key.ne.'opacity') then
 		opacity_set=.true.
 		read(key(5:len_trim(key)),*) i
@@ -1569,6 +1578,9 @@ c	else
 	else if(parttype(i).eq.5) then
 	write(*,'("T dependent opacities:",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
 	write(9,'("T dependent opacities:",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
+	else if(parttype(i).eq.6) then
+	write(*,'("FITS file particle   :",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
+	write(9,'("FITS file particle   :",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
 	endif
 	else
 	if(parttype(i).eq.1) then
@@ -1593,8 +1605,11 @@ c	else
 	write(*,'("Quantum heated part.: ",a)') partarg(i)(1:len_trim(partarg(i)))
 	write(9,'("Quantum heated part.: ",a)') partarg(i)(1:len_trim(partarg(i)))
 	else if(parttype(i).eq.5) then
-	write(*,'("T dependent opacities:",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
-	write(9,'("T dependent opacities:",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
+	write(*,'("T dependent opacities:",a)') partarg(i)(1:len_trim(partarg(i)))
+	write(9,'("T dependent opacities:",a)') partarg(i)(1:len_trim(partarg(i)))
+	else if(parttype(i).eq.6) then
+	write(*,'("FITS file particle   :",a)') partarg(i)(1:len_trim(partarg(i)))
+	write(9,'("FITS file particle   :",a)') partarg(i)(1:len_trim(partarg(i)))
 	endif
 	endif
 	if(settle(i)) then
@@ -2397,6 +2412,12 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			else
 				call readparticle(partarg(ii),Grain(ii),.false.,asym(ii),asym2(ii),wasym2(ii),Pmax(ii),1)
 			endif
+		else if(parttype(ii).eq.6) then
+			if(scattype.eq.'RAYLEIGH') then
+				call ReadParticleFits(partarg(ii),Grain(ii),.true.,asym(ii),asym2(ii),wasym2(ii),Pmax(ii),1)
+			else
+				call ReadParticleFits(partarg(ii),Grain(ii),.false.,asym(ii),asym2(ii),wasym2(ii),Pmax(ii),1)
+			endif
 		else if(parttype(ii).eq.2) then
 			call readopacity(partarg(ii),Grain(ii))
 		else if(parttype(ii).eq.3) then
@@ -2434,6 +2455,12 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				Grain(ii)%Kext(iopac,i)=Grain(ii)%Kabs(iopac,i)+Grain(ii)%Ksca(iopac,i)
 			enddo
 		enddo
+
+		if(parttype(ii).ne.6) then
+			Grain(ii)%dust_moment1=Grain(ii)%rv*1d4
+			Grain(ii)%dust_moment2=(Grain(ii)%rv*1d4)**2
+			Grain(ii)%dust_moment3=(Grain(ii)%rv*1d4)**3
+		endif
 	enddo
 	
 	! Set composition in every grid cell (from keywords, mrn/gsd or file)

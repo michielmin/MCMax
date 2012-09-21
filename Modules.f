@@ -68,12 +68,14 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		character*20 material,shtype,roundtype
 		integer nopac,parttype
 		real*8 Rcryst,Tcryst,powcryst,maxtau,maxrad,minrad,shaperad
+		real dust_moment1,dust_moment2,dust_moment3
 		real*8 roundwidth,roundpow !Gijsexp, roundoff
 ! parttype=1	Normal particle
 ! parttype=2	Opacity file
 ! parttype=3	Mixed aggregates (still in beta)
 ! parttype=4	Quantum heated particle
 ! parttype=5	T dependent opacities
+! parttype=6	Fits file particle
 	end type Particle
 
 	type Cell

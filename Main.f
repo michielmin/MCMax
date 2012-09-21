@@ -37,7 +37,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	integer i,j,ii,Nphot,ncor,niter,ntau1,l,iT,NphotFirst,NFirst,iopac
 	integer number_invalid
 	integer,allocatable :: icor(:),jcor(:)
-	logical finaliter,prevalloc,coralloc,truefalse,lastiter
+	logical finaliter,prevalloc,coralloc,truefalse,lastiter,ComputeLRF_backup
 	type(Photon) phot
 	type(Cell),allocatable :: Cprev(:,:)
 	type(Telescope) tel(MAXOBS)
@@ -367,6 +367,11 @@ c		call PAHMCMax(niter)
 
 	if(Nphot.gt.0) then
 
+	ComputeLRF_backup=ComputeLRF
+	if(((struct_iter.or.tdes_iter.or.use_topac).and.Nphot.gt.0.and..not.lastiter.and.maxiter.gt.0).and..not.use_qhp) then
+		ComputeLRF=.false.
+	endif
+
 	if(niter.eq.int(NFirst/2+1)) overflow=.false.
 	if(niter.le.NFirst) then
 		call MCRadiation(NphotFirst,niter,.true.)
@@ -375,6 +380,7 @@ c		call PAHMCMax(niter)
 	else
 		call MCRadiation(Nphot,niter,fastviscous)
 	endif
+	ComputeLRF=ComputeLRF_backup
 
 	if(.not.coralloc) then
 		allocate(icor((D%nTheta+1)*(D%nR+1)))
