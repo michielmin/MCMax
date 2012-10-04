@@ -308,6 +308,8 @@
 	keyword(i)='exportprodimo'
 	i=i+1
 	keyword(i)='tsmooth'
+	i=i+1
+	keyword(i)='outputfits'
 	
 	Nnormal=i
 c from here on keywords with numbers

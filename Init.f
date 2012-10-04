@@ -283,6 +283,8 @@
 	
 	Tsmooth=.false.
 	
+	outputfits=.false.
+	
 c	Interstellar Radiation Field (IRF)
 	T_IRF=20000d0
 	F_IRF=1d-16
@@ -951,6 +953,8 @@ C       Gijsexp, read in parameters for s.c. settling
 
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
+
+	if(key.eq.'outputfits') read(value,*) outputfits
 
 C       End 
 

@@ -1310,6 +1310,14 @@ c-----------------------------------------------------------------------
 	real*8 spectemp(nlam),tot,EJv
 	integer ii,j,iopac
 	type(photon) phot
+
+	if(.not.exportProDiMo) then
+		C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+		C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+		C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+		C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
+		return
+	endif
 	
 	spectemp(1:nlam)=0d0
 	do ii=1,ngrains

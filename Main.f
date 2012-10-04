@@ -72,18 +72,6 @@ c The version number (please update frequently!)
 		write(*,*) comm(1:len_trim(comm))
 		call system(comm)
 	endif
-c		open(unit=9,file=logfile,RECL=6000,position='append')
-c		write(*,'("Appending log file: ",a)') logfile(1:len_trim(logfile))
-c		write(*,'("--------------------------------------------------------")')
-c		write(9,'("********************************************************")')
-c		write(9,'("**        Starting new run, appending log file        **")')
-c		write(9,'("********************************************************")')
-c		write(9,'("--------------------------------------------------------")')
-c		write(*,'("Date: ",a2,"/",a2,"/",a4)') date(7:8),date(5:6),date(1:4)
-c		write(*,'("Time: ",a2,":",a2,":",a6)') time(1:2),time(3:4),time(5:10)
-c		write(9,'("Date: ",a2,"/",a2,"/",a4)') date(7:8),date(5:6),date(1:4)
-c		write(9,'("Time: ",a2,":",a2,":",a6)') time(1:2),time(3:4),time(5:10)
-c	else
 		open(unit=9,file=logfile,RECL=6000)
 		write(*,'("Creating log file:  ",a)') logfile(1:len_trim(logfile))
 		write(*,'("--------------------------------------------------------")')
@@ -229,31 +217,52 @@ c	endif
 
 	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.gt.0.and..not.lastiter.and.maxiter.gt.0) then
 		if(niter.lt.100) then
-		write(denstempfile,'(a,"denstemp",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
-		write(denstempfileND,'(a,"denstempND",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
-		write(gasdenstempfile,'(a,"denstempGas",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+		if(outputfits) then
+			write(denstempfile,'(a,"denstemp",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(denstempfileND,'(a,"denstempND",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(gasdenstempfile,'(a,"denstempGas",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(photfile,'(a,"Nphotons",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(errfile,'(a,"errors",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+		else
+			write(denstempfile,'(a,"denstemp",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(denstempfileND,'(a,"denstempND",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(gasdenstempfile,'(a,"denstempGas",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(photfile,'(a,"Nphotons",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+			write(errfile,'(a,"errors",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+		endif
 		write(radgridfile,'(a,"radgrid",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(tau1file,'(a,"height",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(tau1fileR,'(a,"heightR",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
-		write(photfile,'(a,"Nphotons",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
-		write(errfile,'(a,"errors",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		else
-		write(denstempfile,'(a,"denstemp",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+		if(outputfits) then
+			write(denstempfile,'(a,"denstemp",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
-		write(denstempfileND,'(a,"denstempND",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+			write(denstempfileND,'(a,"denstempND",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
-		write(gasdenstempfile,'(a,"denstempGas",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+			write(gasdenstempfile,'(a,"denstempGas",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
+			write(photfile,'(a,"Nphotons",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+			write(errfile,'(a,"errors",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+		else
+			write(denstempfile,'(a,"denstemp",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+			write(denstempfileND,'(a,"denstempND",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+			write(gasdenstempfile,'(a,"denstempGas",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+			write(photfile,'(a,"Nphotons",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+			write(errfile,'(a,"errors",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+		endif
 		write(radgridfile,'(a,"radgrid",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
 		write(tau1file,'(a,"height",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
 		write(tau1fileR,'(a,"heightR",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
-     &																,niter-10*(niter/10)
-		write(photfile,'(a,"Nphotons",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
-     &																,niter-10*(niter/10)
-		write(errfile,'(a,"errors",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
@@ -274,14 +283,22 @@ c	endif
 			write(9,'("Iterating disk structure (",i4,"/",i4,")")') niter,maxiter
 		endif
 	else
-		write(denstempfile,'(a,"denstemp.dat")')outdir(1:len_trim(outdir))
-		write(denstempfileND,'(a,"denstempND.dat")')outdir(1:len_trim(outdir))
-		write(gasdenstempfile,'(a,"denstempGas.dat")')outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(denstempfile,'(a,"denstemp.fits.gz")')outdir(1:len_trim(outdir))
+			write(denstempfileND,'(a,"denstempND.fits.gz")')outdir(1:len_trim(outdir))
+			write(gasdenstempfile,'(a,"denstempGas.fits.gz")')outdir(1:len_trim(outdir))
+			write(photfile,'(a,"Nphotons.fits.gz")')outdir(1:len_trim(outdir))
+			write(errfile,'(a,"errors.fits.gz")')outdir(1:len_trim(outdir))
+		else
+			write(denstempfile,'(a,"denstemp.dat")')outdir(1:len_trim(outdir))
+			write(denstempfileND,'(a,"denstempND.dat")')outdir(1:len_trim(outdir))
+			write(gasdenstempfile,'(a,"denstempGas.dat")')outdir(1:len_trim(outdir))
+			write(photfile,'(a,"Nphotons.dat")')outdir(1:len_trim(outdir))
+			write(errfile,'(a,"errors.dat")')outdir(1:len_trim(outdir))
+		endif
 		write(radgridfile,'(a,"radgrid.dat")') outdir(1:len_trim(outdir))
 		write(tau1file,'(a,"height.dat")')outdir(1:len_trim(outdir))
 		write(tau1fileR,'(a,"heightR.dat")')outdir(1:len_trim(outdir))
-		write(photfile,'(a,"Nphotons.dat")')outdir(1:len_trim(outdir))
-		write(errfile,'(a,"errors.dat")')outdir(1:len_trim(outdir))
 		write(pshfile,'(a,"scaleheight.dat")')outdir(1:len_trim(outdir))
 		write(*,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
 		write(9,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
@@ -411,9 +428,6 @@ c		call PAHMCMax(niter)
 			C(i,j)%EJv=C(i,j)%EJv/C(i,j)%V
 c
 c  changed by AJ van Marle
-c
-c	C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
-c
 c   was not allocated if use_qhp == .false.		
 			if( use_qhp ) C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
 c
@@ -525,273 +539,58 @@ c
 	if(exportProDiMo) call DoExportProdimo()
 
 	if(Nphot.gt.0.or.forcediff) then
-	write(*,'("--------------------------------------------------------")')
-	write(9,'("--------------------------------------------------------")')
-	write(*,'("Writing density and temperature structure to: ",a)') denstempfile(1:len_trim(denstempfile))
-	write(9,'("Writing density and temperature structure to: ",a)') denstempfile(1:len_trim(denstempfile))
-	open(unit=20,file=denstempfile,RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 5 ! including composition and gas density (including gas2dust ratio) and ngrains!
-                           ! including ngrains2 for temperature dependent opacities
-	write(20,'("# NR, NT, NGRAINS, NGRAINS2")')
-	write(20,'(4(i6))') D%nR-1,D%nTheta-1,ngrains,ngrains2
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dens
-		enddo
-	enddo
-	write(20,'("# Temperature array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%T
-		enddo
-	enddo
-	write(20,'("# Composition array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) (C(i,j)%w(ii),ii=1,ngrains)
-			if(ngrains2.gt.1) then
-				do ii=1,ngrains
-					write(20,*) C(i,j)%wopac(ii,1:ngrains2)
-				enddo
-			endif
-		enddo
-	enddo
-	write(20,'("# Gas density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%gasdens*gas2dust
-		enddo
-	enddo
-	write(20,'("# Density0 array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dens0
-		enddo
-	enddo
-	close(unit=20)
+		write(*,'("--------------------------------------------------------")')
+		write(9,'("--------------------------------------------------------")')
+		write(*,'("Writing density and temperature structure to: ",a)') denstempfile(1:len_trim(denstempfile))
+		write(9,'("Writing density and temperature structure to: ",a)') denstempfile(1:len_trim(denstempfile))
+		call outputstruct(denstempfile,(/'DENS   ','TEMP   ','COMP   ','GASDENS','DENS0  '/),5,0)
+	
+		if(useTgas.or.viscous) then
+			write(*,'("--------------------------------------------------------")')
+			write(9,'("--------------------------------------------------------")')
+			write(*,'("Writing gas density and temperature structure to: ",a)') gasdenstempfile(1:len_trim(gasdenstempfile))
+			write(9,'("Writing gas density and temperature structure to: ",a)') gasdenstempfile(1:len_trim(gasdenstempfile))
+			call outputstruct(gasdenstempfile,(/'GASDENS','GASTEMP'/),2,0)
+		endif
 
-	if(useTgas.or.viscous) then
-	write(*,'("--------------------------------------------------------")')
-	write(9,'("--------------------------------------------------------")')
-	write(*,'("Writing gas density and temperature structure to: ",a)') gasdenstempfile(1:len_trim(gasdenstempfile))
-	write(9,'("Writing gas density and temperature structure to: ",a)') gasdenstempfile(1:len_trim(gasdenstempfile))
-	open(unit=20,file=gasdenstempfile,RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 2 
-	write(20,'("# NR, NT")')
-	write(20,'(4(i6))') D%nR-1,D%nTheta-1
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%gasdens*gas2dust
-		enddo
-	enddo
-	write(20,'("# Temperature array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%Tgas
-		enddo
-	enddo
-	close(unit=20)
-	endif
+		if(NphotDiffuse.gt.0.or.dTDiffuse.lt.1d0) then
+			write(*,'("--------------------------------------------------------")')
+			write(9,'("--------------------------------------------------------")')
+			write(*,'("Writing density and MC temp. structure to:    ",a)') denstempfileND(1:len_trim(denstempfileND))
+			write(9,'("Writing density and MC temp. structure to: ",a)') denstempfileND(1:len_trim(denstempfileND))
+			call outputstruct(denstempfileND,(/'DENS   ','TEMPMC ','COMP   ','GASDENS'/),4,0)
+		endif
 
-	if(NphotDiffuse.gt.0.or.dTDiffuse.lt.1d0) then
-	write(*,'("--------------------------------------------------------")')
-	write(9,'("--------------------------------------------------------")')
-	write(*,'("Writing density and MC temp. structure to:    ",a)') denstempfileND(1:len_trim(denstempfileND))
-	write(9,'("Writing density and MC temp. structure to: ",a)') denstempfileND(1:len_trim(denstempfileND))
-	open(unit=20,file=denstempfileND,RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 5 ! including composition and gas density (including gas2dust ratio) and ngrains!
-					   ! including ngrains2 for temperature dependent opacities
-	write(20,'("# NR, NT, NGRAINS")')
-	write(20,'(i6,i6,i6,i6)') D%nR-1,D%nTheta-1,ngrains,ngrains2
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dens
-		enddo
-	enddo
-	write(20,'("# Temperature array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%TMC
-		enddo
-	enddo
-	write(20,'("# Composition array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) (C(i,j)%w(ii),ii=1,ngrains)
-			if(ngrains2.gt.1) then
-				do ii=1,ngrains
-					write(20,*) C(i,j)%wopac(ii,1:ngrains2)
-				enddo
-			endif
-		enddo
-	enddo
-	write(20,'("# Gas density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%gasdens*gas2dust
-		enddo
-	enddo
-	close(unit=20)
-	endif
-	if(.not.tcontact) then
-	do ii=1,ngrains
-	write(*,'("Writing density and temperature structure to: ",a)') denstempfileP(ii)(1:len_trim(denstempfileP(ii)))
-	write(9,'("Writing density and temperature structure to: ",a)') denstempfileP(ii)(1:len_trim(denstempfileP(ii)))
-	open(unit=20,file=denstempfileP(ii),RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 1
-	write(20,'("# NR, NT")')
-	write(20,'(i6,i6)') D%nR-1,D%nTheta-1
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Density array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dens*C(i,j)%w(ii)
-		enddo
-	enddo
-	write(20,'("# Temperature array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%TP(ii)
-		enddo
-	enddo
-	close(unit=20)
-	enddo
-	endif
-
-	write(*,'("Writing photon statistics to:     ",a)') photfile(1:len_trim(photfile))
-	write(9,'("Writing photon statistics to:     ",a)') photfile(1:len_trim(photfile))
-	open(unit=20,file=photfile,RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 1
-	write(20,'("# NR, NT")')
-	write(20,'(i6,i6)') D%nR-1,D%nTheta-1
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Number of photons (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%Ni
-		enddo
-	enddo
-	write(20,'("# Volume of the cell (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%V
-		enddo
-	enddo
-	close(unit=20)
-
-
-	write(*,'("Writing errors to:                ",a)') errfile(1:len_trim(errfile))
-	write(9,'("Writing errors to:                ",a)') errfile(1:len_trim(errfile))
-	open(unit=20,file=errfile,RECL=6000)
-	write(20,'("# Format number")')
-	write(20,'(i6)') 1
-	write(20,'("# NR, NT")')
-	write(20,'(i6,i6)') D%nR-1,D%nTheta-1
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Number of photons (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dT/C(i,j)%T
-		enddo
-	enddo
-	write(20,'("# Volume of the cell (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%dEJv/C(i,j)%EJv
-		enddo
-	enddo
-	close(unit=20)
-
-	if(use_qhp) then
-	do ii=1,ngrains
-	if(Grain(ii)%qhp) then
-	write(qhpfile,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
-	write(*,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
-	write(9,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
-	open(unit=20,file=qhpfile,RECL=1000)
-	write(20,'("# Format number QHP emission file")')
-	write(20,'(i6)') 1
-	write(20,'("# NR, NT, NLAM")')
-	write(20,'(i6,i6,i6)') D%nR-1,D%nTheta-1,nlam
-	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		write(20,*) D%R_av(i)
-	enddo
-	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		write(20,*) D%theta_av(i)
-	enddo
-	write(20,'("# Wavelength grid")')
-	do i=1,nlam
-		write(20,*) lam(i)
-	enddo
-	write(20,'("# QHP emission (for ir=0,nr-1 do for it=0,nt-1 do for ilam=0,nlam-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			write(20,*) C(i,j)%EJvQHP(Grain(ii)%qhpnr)
-			do l=1,nlam
-				write(20,*) C(i,j)%QHP(Grain(ii)%qhpnr,l)
+		if(.not.tcontact) then
+			do ii=1,ngrains
+				write(*,'("Writing density and temperature structure to: ",a)') denstempfileP(ii)(1:len_trim(denstempfileP(ii)))
+				write(9,'("Writing density and temperature structure to: ",a)') denstempfileP(ii)(1:len_trim(denstempfileP(ii)))
+				call outputstruct(denstempfileP(ii),(/'DENSP  ','TEMPP  '/),2,ii)
 			enddo
-		enddo
-	enddo
-	close(unit=20)
-	endif
-	enddo
-	endif
+		endif
 
+		write(*,'("Writing photon statistics to:     ",a)') photfile(1:len_trim(photfile))
+		write(9,'("Writing photon statistics to:     ",a)') photfile(1:len_trim(photfile))
+		call outputstruct(photfile,(/'NPHOT  ','VOLUME '/),2,0)
+
+		write(*,'("Writing errors to:                ",a)') errfile(1:len_trim(errfile))
+		write(9,'("Writing errors to:                ",a)') errfile(1:len_trim(errfile))
+		call outputstruct(errfile,(/'dTEMP  ','dEJv   '/),2,0)
+
+		if(use_qhp) then
+			do ii=1,ngrains
+				if(Grain(ii)%qhp) then
+					if(outputfits) then
+						write(qhpfile,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+					else
+						write(qhpfile,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+					endif
+					write(*,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
+					write(9,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
+					call outputstruct(qhpfile,(/'LAM    ','QHPEJv ','QHPRF  '/),3,ii)
+				endif
+			enddo
+		endif
 	endif
 	
 	write(*,'("--------------------------------------------------------")')
@@ -811,48 +610,6 @@ c -------------------------------------------------------------
 	call ShakuraSunyaev()
 c -------------------------------------------------------------
 c -------------------------------------------------------------
-
-
-
-c	open(unit=20,file='KappaGas.dat',RECL=6000)
-c	write(20,'("# Format number")')
-c	write(20,'(i6)') 1
-c	write(20,'("# NR, NT")')
-c	write(20,'(i6,i6)') D%nR-1,D%nTheta-1
-c	write(20,'("# Spherical radius grid [cm] (middle of cell)")')
-c	do i=1,D%nR-1
-c		write(20,*) D%R_av(i)
-c	enddo
-c	write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-c	do i=1,D%nTheta-1
-c		write(20,*) D%theta_av(i)
-c	enddo
-c	write(20,'("# Number of photons (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-c	do i=1,D%nR-1
-c		do j=1,D%nTheta-1
-c			write(20,*) C(i,j)%gasdens*gas2dust*KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%T)
-c		enddo
-c		if(i.eq.30) then
-c			do j=1,D%nTheta-1
-c				print*,C(i,j)%T,C(i,j)%gasdens*gas2dust,KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%T)
-c			enddo
-c		endif
-c	enddo
-c	write(20,'("# Volume of the cell (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-c	do i=1,D%nR-1
-c		do j=1,D%nTheta-1
-c			iT=C(i,j)%T/dT+1
-c			C(i,j)%Kext=0d0
-c			do ii=1,ngrains
-c				do iopac=1,Grain(ii)%nopac
-c					C(i,j)%Kext=C(i,j)%Kext+(Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac))
-c				enddo
-c			enddo
-c			write(20,*) C(i,j)%dens*C(i,j)%Kext/BBint(iT)+C(i,j)%gasdens*gas2dust*KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%T)
-c		enddo
-c	enddo
-c	close(unit=20)
-
 
 	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.ne.0.and..not.lastiter.and.maxiter.gt.0) then
 		niter=niter+1
@@ -952,10 +709,6 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 			call Observe(tel(i))
 		enddo
 	endif
-
-c	call denstempFits(1000,1d0)
-c	call denstempFits(1000,10d0)
-c	call denstempFits(1000,D%R(D%nR))
 
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0
