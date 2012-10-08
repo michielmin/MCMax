@@ -25,7 +25,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer*8 nemit,ninteract,maxinteract,nmaxinteract
 	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal
 	integer nspan,nlev,ntspan,ntlev,nexits,nruns,iTD(0:TMAX),NsigDiskstructure,nBW,nqhp
-	integer nplanets,niter0,nspike,ngrains2
+	integer nplanets,niter0,nspike,ngrains2,nzones
 	integer gsd_diag !Gijsexp
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp
@@ -39,7 +39,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical mrn		!Gijsexp
 	logical deadzone	!Gijsexp
 	logical topac_interpol	!Gijsexp
-	logical,allocatable :: scattcomputed(:)
+	logical,allocatable :: scattcomputed(:),fix_struct(:)
 	integer,allocatable :: nscattcomputed(:)
 	character*500 outdir
 	real*8,allocatable :: coolingtime(:)
@@ -111,6 +111,16 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: gaproundpow(:)
 		character*20,allocatable :: gaproundtype(:)
 	end type Disk
+
+	type DiskZone
+		real*8 Rin,Rout,Mdust,denspow,shpow,sh,Rsh
+		real*8 a_min,a_max,a_pow
+		logical fix_struct,sizedis
+		real*8,allocatable :: abun(:)
+		logical,allocatable :: inc_grain(:)
+	end type DiskZone
+	
+	type(DiskZone),allocatable :: Zone(:)
 
 	type(Cell),allocatable :: C(:,:)
 

@@ -409,6 +409,8 @@ c from here on keywords with numbers
 	keyword(i)='rgrain'
 	i=i+1
 	keyword(i)='rhograin'
+	i=i+1
+	keyword(i)='zone'
 
 	Nkey=i
 	

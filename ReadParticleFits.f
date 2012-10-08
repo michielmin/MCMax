@@ -7,7 +7,7 @@
 	integer*4 :: status,stat2,stat3,readwrite,unit,blocksize,nfound,group
 	integer*4 :: firstpix,nbuffer,npixels,hdunum,hdutype,ix,iz,ilam
 	integer*4 :: istat,stat4,tmp_int,stat5,stat6
-	real*4  :: nullval,rho_gr,tmp
+	real*8  :: nullval,rho_gr,tmp
 	logical*4 :: anynull
 	integer*4, dimension(4) :: naxes
 

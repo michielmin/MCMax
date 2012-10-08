@@ -32,7 +32,7 @@
 	character*20 shtype(100)
 	character*20 gaproundtype(100),roundtype(100)
 	character*1000 line
-	character*500 key,value,file
+	character*500 key,value,file,keyzone
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(100)
 	logical mdustscale,settle(100),trace(100)
 	integer coupledabun(100),coupledfrac(100),info,nrhs,nl,parttype(100),nRfix,iopac
@@ -41,12 +41,13 @@
 	real*8 powmix(100),radmix(100),DiffCoeff,Tmix(100),Rfix(100),rimscale,rimwidth
 	real*8 rgrain(100),rgrain_edges(101),rhograin(100) ! Gijsexp
 	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
-	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:)
+	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:),zonedens(:,:,:,:)
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
-	integer ntau1,NUV,N1UV
+	integer ntau1,NUV,N1UV,iz
+	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -284,6 +285,20 @@
 	Tsmooth=.false.
 	
 	outputfits=.false.
+
+c	Initialize the 10 temp zones with defaults
+	do i=1,10
+		ZoneTemp(i)%fix_struct=.false.
+		ZoneTemp(i)%sizedis=.false.
+		allocate(ZoneTemp(i)%abun(100))
+		allocate(ZoneTemp(i)%inc_grain(100))
+		ZoneTemp(i)%inc_grain(1:100)=.true.
+		ZoneTemp(i)%abun(1:100)=1d0
+		ZoneTemp(i)%Rsh=1d0
+		ZoneTemp(i)%sh=0.01d0
+		ZoneTemp(i)%shpow=1.1
+	enddo
+	nzones=0
 	
 c	Interstellar Radiation Field (IRF)
 	T_IRF=20000d0
@@ -294,7 +309,7 @@ c	Interstellar Radiation Field (IRF)
 	do i=1,100
 	   tau1_lam(i)=0.55
 	enddo
-	
+
 	do i=1,100
 		material(i)='UNKNOWN'
 		rgrain(i)=1d-5 ! Gijsexp, default grain size in cm, 0.1 micron
@@ -956,11 +971,73 @@ C       Gijsexp, read in parameters for s.c. settling
 
 	if(key.eq.'outputfits') read(value,*) outputfits
 
+	if(key(1:4).eq.'zone') then
+		read(key(5:5),*) i
+		if(i.gt.nzones) nzones=i
+		write(keyzone,'(a)') key(7:len_trim(key))
+		if(keyzone.eq.'rin') then
+			read(value,*) ZoneTemp(i)%Rin
+		else if(keyzone.eq.'rout') then
+			read(value,*) ZoneTemp(i)%Rout
+		else if(keyzone.eq.'denspow') then
+			read(value,*) ZoneTemp(i)%denspow
+		else if(keyzone.eq.'sh') then
+			read(value,*) ZoneTemp(i)%sh
+		else if(keyzone.eq.'shpow') then
+			read(value,*) ZoneTemp(i)%shpow
+		else if(keyzone.eq.'rsh') then
+			read(value,*) ZoneTemp(i)%Rsh
+		else if(keyzone.eq.'mdust') then
+			read(value,*) ZoneTemp(i)%Mdust
+		else if(keyzone.eq.'amin') then
+			read(value,*) ZoneTemp(i)%a_min
+		else if(keyzone.eq.'amax') then
+			read(value,*) ZoneTemp(i)%a_max
+		else if(keyzone.eq.'apow') then
+			read(value,*) ZoneTemp(i)%a_pow
+		else if(keyzone.eq.'fix') then
+			read(value,*) ZoneTemp(i)%fix_struct
+		else if(keyzone.eq.'sizedis') then
+			read(value,*) ZoneTemp(i)%sizedis
+		else if(keyzone(1:4).eq.'abun') then
+			read(keyzone(5:len_trim(keyzone)),*) j
+			read(value,*) ZoneTemp(i)%abun(j)
+		else if(keyzone(1:4).eq.'incl') then
+			read(keyzone(4:len_trim(keyzone)),*) j
+			read(value,*) ZoneTemp(i)%inc_grain(j)
+		else
+			write(*,'("Zone keyword not understood:",a)') trim(keyzone)
+			write(9,'("Zone keyword not understood:",a)') trim(keyzone)
+			stop
+		endif
+	endif
+
 C       End 
 
 	goto 10
 40	close(unit=20)
 	close(unit=21)
+
+	if(nzones.ne.0) then
+		D%Mtot=0d0
+		write(denstype,'("ZONES")')
+		allocate(Zone(nzones))
+		do i=1,nzones
+			allocate(Zone(i)%abun(ngrains))
+			allocate(Zone(i)%inc_grain(ngrains))
+			Zone(i)=ZoneTemp(i)
+			D%Mtot=D%Mtot+Zone(i)%Mdust
+			if(Zone(i)%Rin.gt.D%Rin.and.Zone(i)%Rin.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rin)).ne.0d0) then
+				nRfix=nRfix+1
+				Rfix(nRfix)=Zone(i)%Rin
+			endif
+			if(Zone(i)%Rout.gt.D%Rin.and.Zone(i)%Rout.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rout)).ne.0d0) then
+				nRfix=nRfix+1
+				Rfix(nRfix)=Zone(i)%Rout
+			endif
+		enddo
+	endif
+	print*,nRfix
 
 	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(viscous) computeTgas=.true.
@@ -971,7 +1048,11 @@ C       End
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.
 	if(Nphot.eq.0) then
 		denstype='FILE'
-		write(densfile,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(densfile,'(a,"denstemp.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(densfile,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
+		endif
 		mdustscale=.false.
 		struct_iter=.false.
 	endif
@@ -1266,6 +1347,45 @@ C	End
 	else if(denstype.eq.'PRODIMO') then
 	write(*,'("File (ProDiMo):       ",a)') densfile(1:len_trim(densfile))
 	write(9,'("File (ProDiMo):       ",a)') densfile(1:len_trim(densfile))
+	else if(denstype.eq.'ZONES') then
+	do i=1,nzones
+		write(*,'("Zone      ",i4,":")') i
+		write(9,'("Zone      ",i4,":")') i
+		write(*,'("Inner radius:         ",f14.3," AU")') ZoneTemp(i)%Rin
+		write(9,'("Inner radius:         ",f14.3," AU")') ZoneTemp(i)%Rin
+		write(*,'("Outer radius:         ",f14.3," AU")') ZoneTemp(i)%Rout
+		write(9,'("Outer radius:         ",f14.3," AU")') ZoneTemp(i)%Rout
+		write(*,'("Dust mass:            ",e18.3," Msun")') ZoneTemp(i)%Mdust
+		write(9,'("Dust mass:            ",e18.3," Msun")') ZoneTemp(i)%Mdust
+		write(*,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
+		write(9,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
+		if(Zone(i)%fix_struct) then
+			write(*,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
+			write(9,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
+			write(*,'("Scaleheight:          ",f14.5," AU")') ZoneTemp(i)%sh
+			write(9,'("Scaleheight:          ",f14.5," AU")') ZoneTemp(i)%sh
+			write(*,'("Scaleheight powerlaw: ",f14.3," Msun")') ZoneTemp(i)%shpow
+			write(9,'("Scaleheight powerlaw: ",f14.3," Msun")') ZoneTemp(i)%shpow
+		else
+			write(*,'("Solving vertical structure")')
+			write(9,'("Solving vertical structure")')
+		endif
+		if(Zone(i)%sizedis) then
+			write(*,'(a26,f12.4)') "Lower bound size grid:",Zone(i)%a_min
+			write(9,'(a26,f12.4)') "Lower bound size grid:",Zone(i)%a_min
+			write(*,'(a26,f12.4)') "Upper bound size grid:",Zone(i)%a_max
+			write(9,'(a26,f12.4)') "Upper bound size grid:",Zone(i)%a_max
+			write(*,'(a26,f12.2)') "Index for size powerlaw:",Zone(i)%a_pow
+			write(9,'(a26,f12.2)') "Index for size powerlaw:",Zone(i)%a_pow
+		else
+			do j=1,ngrains
+				if(Zone(i)%inc_grain(j)) then
+					write(*,'("Abundance:            ",f14.3)') Zone(i)%abun(j)
+					write(9,'("Abundance:            ",f14.3)') Zone(i)%abun(j)
+				endif
+			enddo
+		endif
+	enddo
 	else
 	write(*,'("Error in density type")')
 	write(9,'("Error in density type")')
@@ -1946,7 +2066,6 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		call readstruct(densfile,(/'DENS   '/),1,0,.true.)
 
 		D%nR=D%nR-1
-
 		D%R(1)=D%Rin
 		do i=2,D%nR
 			D%R(i)=10d0**((2d0*log10(D%R_av(i-1)/AU)-log10(D%R(i-1))))
@@ -1990,6 +2109,7 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		allocate(D%R_av(0:D%nR+1))
 		allocate(D%R(0:D%nR+1))
 		allocate(shscale(0:D%nR+1))
+		allocate(fix_struct(0:D%nR+1))
 	endif
 
 	D%R(0)=D%Rstar/AU
@@ -2177,6 +2297,53 @@ c in the theta grid we actually store cos(theta) for convenience
 		endif
 		call ImportProdimo(densfile)
 		mdustscale=.false.
+	endif
+
+	if(denstype.eq.'ZONES') then
+		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1))
+		zonedens=0d0
+		do iz=1,nzones
+			tot=0d0
+			do ii=1,ngrains
+				if(Zone(iz)%inc_grain(ii)) tot=tot+Zone(iz)%abun(ii)
+			enddo
+			Zone(iz)%abun(1:ngrains)=Zone(iz)%abun(1:ngrains)/tot
+			tot=0d0
+			do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				r=D%R_av(i)*sin(D%theta_av(j))/AU
+				if(r.ge.Zone(iz)%Rin.and.r.le.Zone(iz)%Rout) then
+					z=D%R_av(i)*cos(D%theta_av(j))/AU
+					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+					f1=r**(-Zone(iz)%denspow)
+					f2=exp(-(z/hr)**2)
+					do ii=1,ngrains
+						if(Zone(iz)%inc_grain(ii)) then
+							zonedens(iz,ii,i,j)=Zone(iz)%abun(ii)*f1*f2/hr
+						else
+							zonedens(iz,ii,i,j)=0d0
+						endif
+						tot=tot+zonedens(iz,ii,i,j)
+					enddo
+				else
+					do ii=1,ngrains
+						zonedens(iz,ii,i,j)=0d0
+					enddo
+				endif
+			enddo
+			enddo
+			zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%Mdust*Msun/tot
+		enddo
+		do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%dens=1d-60
+			do iz=1,nzones
+				do ii=1,ngrains
+					if(Zone(iz)%inc_grain(ii)) C(i,j)%dens=C(i,j)%dens+zonedens(iz,ii,i,j)
+				enddo
+			enddo
+		enddo
+		enddo
 	endif
 
 	do i=1,D%nR-1
@@ -2490,6 +2657,38 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 	   endif
 	enddo
+
+	if(denstype.eq.'ZONES') then
+		do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%w(1:ngrains)=0d0
+		enddo
+		enddo
+		do iz=1,nzones
+			if(Zone(iz)%sizedis) then
+				mrn_rmin=Zone(iz)%a_min*1d-4
+				mrn_rmax=Zone(iz)%a_max*1d-4
+				mrn_index=Zone(iz)%a_pow
+				call gsd_MRN(rgrain(1:ngrains),Zone(iz)%abun(1:ngrains))
+			endif
+			do i=1,D%nR-1
+				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
+					do j=1,D%nTheta-1
+						do ii=1,ngrains
+							if(Zone(iz)%inc_grain(ii)) C(i,j)%w(ii)=Zone(iz)%abun(ii)
+						enddo
+					enddo
+				endif
+			enddo
+		enddo
+		do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			tot=sum(C(i,j)%w(1:ngrains))
+			if(tot.lt.1d-50) C(i,j)%w(1:ngrains)=1d0/real(ngrains)
+		enddo
+		enddo
+	endif			
+
 
 	MassTot0=0d0
 	do i=1,D%nR-1
@@ -4351,12 +4550,6 @@ c-----------------------------------------------------------------------
 
 	   call readparticle(partfile,p,.false.,2d0,2d0,0d0,1d0,iopac)
 	   
-c$$$	   Grain(MixAgg(jj)%nr(i))%TdesA=Grain(ii)%TdesA
-c$$$	   Grain(MixAgg(jj)%nr(i))%TdesB=Grain(ii)%TdesB
-c$$$	   Grain(MixAgg(jj)%nr(i))%force_vert_gf=Grain(ii)%force_vert_gf
-c$$$	   Grain(MixAgg(jj)%nr(i))%tdes_fast=Grain(ii)%tdes_fast
-c$$$	   Grain(MixAgg(jj)%nr(i))%settle=Grain(ii)%settle
-c$$$	   Grain(MixAgg(jj)%nr(i))%shscale=Grain(ii)%shscale
 	enddo
 2	close(unit=50)
 

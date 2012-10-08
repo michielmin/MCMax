@@ -758,9 +758,17 @@ c-----------------------------------------------------------------------
 	real*8 tot,KappaGas
 
 	if(use_obs_TMC.and.(NphotDiffuse.gt.0.or.dTDiffuse.lt.1d0).and..not.forcediff) then
-		write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(file,'(a,"denstempND.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
+		endif
 	else
-		write(file,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(file,'(a,"denstemp.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(file,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
+		endif
 	endif
 	write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 	write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
@@ -773,7 +781,11 @@ c-----------------------------------------------------------------------
 	enddo
 
 	if(forcediff) then
-		write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(file,'(a,"denstempND.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
+		endif
 		write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 		write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 		call readstruct(file,(/'SKIP   ','TEMPMC '/),2,0,.false.)
@@ -782,7 +794,11 @@ c-----------------------------------------------------------------------
 
 	if(.not.tcontact) then
 		do ii=1,ngrains
-			write(file,'(a,"denstempP",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+			if(outputfits) then
+				write(file,'(a,"denstempP",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+			else
+				write(file,'(a,"denstempP",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+			endif
 			write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 			write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 			call readstruct(file,(/'DENSP  ','TEMPP  '/),2,ii,.false.)
@@ -797,7 +813,11 @@ c-----------------------------------------------------------------------
 		enddo
 	endif
 
-	write(file,'(a,"Nphotons.dat")') outdir(1:len_trim(outdir))
+	if(outputfits) then
+		write(file,'(a,"Nphotons.fits.gz")') outdir(1:len_trim(outdir))
+	else
+		write(file,'(a,"Nphotons.dat")') outdir(1:len_trim(outdir))
+	endif
 	inquire(file=file,exist=truefalse)
 	if(.not.truefalse) then
 		write(*,'("File ",a," not found")') file(1:len_trim(file))
@@ -815,7 +835,11 @@ c-----------------------------------------------------------------------
 		call readstruct(file,(/'NPHOT  '/),1,0,.false.)
 	endif
 
-3	write(file,'(a,"errors.dat")') outdir(1:len_trim(outdir))
+3	if(outputfits) then
+		write(file,'(a,"errors.fits.gz")') outdir(1:len_trim(outdir))
+	else
+		write(file,'(a,"errors.dat")') outdir(1:len_trim(outdir))
+	endif
 	inquire(file=file,exist=truefalse)
 	if(.not.truefalse) then
 		write(*,'("File ",a," not found")') file(1:len_trim(file))
@@ -838,7 +862,11 @@ c-----------------------------------------------------------------------
 	if(use_qhp) then
 		do ii=1,ngrains
 			if(Grain(ii)%qhp) then
-				write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				if(outputfits) then
+					write(file,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				else
+					write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				endif
 				write(*,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
 				write(9,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
 				call readstruct(file,(/'LAM    ','QHPEJv '/),2,ii,.false.)
@@ -859,7 +887,11 @@ c-----------------------------------------------------------------------
 
 
 	if(useTgas) then
-		write(file,'(a,"denstempGas.dat")') outdir(1:len_trim(outdir))
+		if(outputfits) then
+			write(file,'(a,"denstempGas.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(file,'(a,"denstempGas.dat")') outdir(1:len_trim(outdir))
+		endif
 		write(*,'("Reading gas temperatures from:      ",a)') file(1:len_trim(file))
 		write(9,'("Reading gas temperatures from:      ",a)') file(1:len_trim(file))
 		call readstruct(file,(/'GASDENS','GASTEMP'/),2,0,.false.)

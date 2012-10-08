@@ -204,15 +204,15 @@ C	 create the new empty FITS file
 	naxes(2)=D%nTheta-1
 	naxes(3)=2
 	naxes(4)=1
-	nelements=naxes(1)*naxes(2)
+	nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
 
 	! Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
 	! Write optional keywords to the header
 
-	call ftpkyd(unit,'Rin',real(D%Rin),8,'[AU]',status)
-	call ftpkyd(unit,'Rout',real(D%Rout),8,'[AU]',status)
+	call ftpkyd(unit,'Rin',D%Rin,8,'[AU]',status)
+	call ftpkyd(unit,'Rout',D%Rout,8,'[AU]',status)
 
 	call ftpkyj(unit,'nR',D%nR-1,' ',status)
 	call ftpkyj(unit,'nTheta',D%nTheta-1,' ',status)
@@ -231,7 +231,7 @@ C	 create the new empty FITS file
 	do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			array(i,j,1,1)=D%R_av(i)/AU
-			array(i,j,2,1)=D%theta_av(i)
+			array(i,j,2,1)=D%theta_av(j)
 		enddo
 	enddo
 
@@ -421,10 +421,10 @@ C	 create the new empty FITS file
 	character*500 filename
 	logical doalloc,truefalse
 
-c	if(outputfits) then
-c		call readstruct_fits(filename,vars,nvars,ipart)
-c		return
-c	endif
+	if(outputfits) then
+		call readstruct_fits(filename,vars,nvars,ipart,doalloc)
+		return
+	endif
 
 	inquire(file=filename,exist=truefalse)
 	if(.not.truefalse) then
@@ -451,7 +451,7 @@ c	endif
 	if(doalloc) then
 		D%nR=nr+1
 		D%nTheta=nt+1
-		if(.not.arraysallocated) then
+		if(.not.arraysallocated.and..not.allocated(C)) then
 			allocate(C(0:D%nR+1,0:D%nTheta+1))
 			allocate(D%theta_av(0:D%nTheta+1))
 			allocate(D%Theta(0:D%nTheta+1))
@@ -460,11 +460,6 @@ c	endif
 			allocate(D%R_av(0:D%nR+1))
 			allocate(D%R(0:D%nR+1))
 			allocate(shscale(0:D%nR+1))
-		endif
-		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-			write(*,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
-			write(9,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
-			stop
 		endif
 	endif
 	read(20,*) ! comments
@@ -622,6 +617,283 @@ c	endif
 	close(unit=20)
 
 3	continue
+
+	return
+	end
+
+
+
+
+
+
+
+	subroutine readstruct_fits(filename,vars,nvars,ipart,doalloc)
+	use Parameters
+	IMPLICIT NONE
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,iopac,naxis
+	character*7 vars(nvars)
+	character*500 filename
+	logical doalloc,truefalse
+	real*8,allocatable :: array(:,:,:,:)
+	integer*4 :: status,stat2,stat3,readwrite,unit,blocksize,nfound,group
+	integer*4 :: firstpix,nbuffer,npixels,hdunum,hdutype,ix,iz,ilam
+	integer*4 :: istat,stat4,tmp_int,stat5,stat6
+	real*8  :: nullval
+	logical*4 :: anynull
+	integer*4, dimension(4) :: naxes
+	character*80 comment,errmessage
+	character*30 errtext
+
+	! Get an unused Logical Unit Number to use to open the FITS file.
+	status=0
+
+	call ftgiou (unit,status)
+	! Open file
+	readwrite=0
+	call ftopen(unit,filename,readwrite,blocksize,status)
+	if (status /= 0) then
+		write(*,'("Density file not found")')
+		write(9,'("Density file not found")')
+		print*,trim(filename)
+		write(*,'("--------------------------------------------------------")')
+		write(9,'("--------------------------------------------------------")')
+		stop
+	endif
+	group=1
+	firstpix=1
+	nullval=-999
+
+
+	!------------------------------------------------------------------------
+	! HDU0 : grid
+	!------------------------------------------------------------------------
+	! Check dimensions
+	call ftgknj(unit,'NAXIS',1,3,naxes,nfound,status)
+
+	npixels=naxes(1)*naxes(2)*naxes(3)
+
+	! Read model info
+
+	call ftgkyd(unit,'Rin',D%Rin,comment,status)
+	call ftgkyd(unit,'Rout',D%Rout,comment,status)
+
+	call ftgkyj(unit,'nR',D%nR,comment,status)
+	call ftgkyj(unit,'nTheta',D%nTheta,comment,status)
+	call ftgkyj(unit,'ngrains',ngrains,comment,status)
+	call ftgkyj(unit,'ngrains2',ngrains2,comment,status)
+	call ftgkyj(unit,'nlam',nlam,comment,status)
+
+	D%nR=D%nR+1
+	D%nTheta=D%nTheta+1
+	if(doalloc) then
+		if(.not.arraysallocated.and..not.allocated(C)) then
+			allocate(C(0:D%nR+1,0:D%nTheta+1))
+			allocate(D%theta_av(0:D%nTheta+1))
+			allocate(D%Theta(0:D%nTheta+1))
+			allocate(D%thet(0:D%nTheta+1))
+			allocate(D%SinTheta(0:D%nTheta+1))
+			allocate(D%R_av(0:D%nR+1))
+			allocate(D%R(0:D%nR+1))
+			allocate(shscale(0:D%nR+1))
+		endif
+	endif
+ 
+	! read_image
+	allocate(array(D%nR-1,D%nTheta-1,2,1))
+
+	call ftgpvd(unit,group,firstpix,npixels,nullval,array,anynull,status)
+
+	do i=1,D%nR-1
+		D%R_av(i)=array(i,1,1,1)*AU
+		
+	enddo
+	do j=1,D%nTheta-1
+		D%theta_av(j)=array(1,j,2,1)
+	enddo
+
+	deallocate(array)
+
+	do ivars=1,nvars
+		!  move to next hdu
+		call ftmrhd(unit,1,hdutype,status)
+		if(status.ne.0) then
+			select case(vars(ivars))
+				case ('COMP')
+					goto 3
+				case ('GASDENS')
+					goto 3
+				case ('DENS0')
+					goto 2
+				case default
+					stop
+			end select
+		endif
+		select case (vars(ivars))
+			case ('COMP')
+				naxis=4
+			case ('LAM')
+				naxis=1
+			case ('QHPRF')
+				naxis=3
+			case default
+				naxis=2
+		end select
+
+		! Check dimensions
+		call ftgknj(unit,'NAXIS',1,naxis,naxes,nfound,status)
+
+		do i=naxis+1,4
+			naxes(i)=1
+		enddo
+		npixels=naxes(1)*naxes(2)*naxes(3)*naxes(4)
+
+		! read_image
+		allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+
+		call ftgpvd(unit,group,firstpix,npixels,nullval,array,anynull,status)
+   
+		select case (vars(ivars))
+			case ('DENS')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%dens=array(i,j,1,1)
+					enddo
+				enddo
+			case ('TEMP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%T=array(i,j,1,1)
+					enddo
+				enddo
+			case ('TEMPMC')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%TMC=array(i,j,1,1)
+					enddo
+				enddo
+			case ('COMP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						do ii=1,ngrains
+							C(i,j)%w(ii)=array(i,j,ii,1)
+							do iopac=1,ngrains2
+								C(i,j)%wopac(ii,iopac)=array(i,j,ii,iopac+1)
+							enddo
+						enddo
+					enddo
+				enddo
+			case ('GASDENS')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%gasdens=array(i,j,1,1)/gas2dust
+					enddo
+				enddo
+			case ('DENS0')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%dens0=array(i,j,1,1)
+					enddo
+				enddo
+			case ('GASTEMP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%Tgas=array(i,j,1,1)
+					enddo
+				enddo
+			case ('DENSP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%w(ipart)=array(i,j,1,1)
+					enddo
+				enddo
+			case ('TEMPP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%TP(ipart)=array(i,j,1,1)
+					enddo
+				enddo
+			case ('NPHOT')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%Ni=array(i,j,1,1)
+					enddo
+				enddo
+			case ('VOLUME')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%V=array(i,j,1,1)
+					enddo
+				enddo
+			case ('dTEMP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%dT=array(i,j,1,1)*C(i,j)%T
+					enddo
+				enddo
+			case ('dEJv')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%dEJv=array(i,j,1,1)*C(i,j)%EJv
+					enddo
+				enddo
+			case ('LAM')
+				do i=1,nlam
+					lam(i)=array(i,1,1,1)
+				enddo
+			case ('QHPEJv')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%EJvQHP(Grain(ipart)%qhpnr)=array(i,j,1,1)
+					enddo
+				enddo
+			case ('QHPRF')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						do l=1,nlam
+							C(i,j)%QHP(Grain(ipart)%qhpnr,l)=array(i,j,l,1)
+						enddo
+					enddo
+				enddo
+			case default
+				write(9,'("Error in output file specification")')
+				write(*,'("Error in output file specification")')
+				print*,vars(ivars)
+				stop
+		end select
+		deallocate(array)
+	enddo
+	
+	goto 3
+
+2	continue
+
+	write(*,'("** Assuming gasdens=dens0 ! **")')
+	write(9,'("** Assuming gasdens=dens0 ! **")')
+	do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%dens0=C(i,j)%gasdens
+		enddo
+	enddo
+
+3	continue
+
+	!  Close the file and free the unit number.
+	call ftclos(unit, status)
+	call ftfiou(unit, status)
+
+	!  Check for any error, and if so print out error messages
+	!  Get the text string which describes the error
+	if (status > 0) then
+	   call ftgerr(status,errtext)
+	   print *,'FITSIO Error Status =',status,': ',errtext
+
+	   !  Read and print out all the error messages on the FITSIO stack
+	   call ftgmsg(errmessage)
+	   do while (errmessage .ne. ' ')
+		  print *,errmessage
+		  call ftgmsg(errmessage)
+	   end do
+	endif
 
 	return
 	end
