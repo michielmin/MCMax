@@ -23,7 +23,7 @@
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
 	character*500 specfile,pressurefile,timefile
 	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
-	logical scatbackup,emitted,dofastvisc
+	logical scatbackup,emitted,dofastvisc,phot_irf
 	integer nsplit,isplit,iter
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
@@ -225,6 +225,7 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 
 
 		where_emit=ran2(idum)
+		phot_irf=.false.
 		if(where_emit.gt.(FracVis+FracIRF)) then
 c emit from the star
 			phot%viscous=.false.
@@ -294,6 +295,7 @@ c emit the viscous photon
 		else
 c emit from the interstellar radiation field
 			phot%viscous=.false.
+			phot_irf=.true.
 			call randomdirection(phot%x,phot%y,phot%z)
 			phot%x=D%R(D%nR)*phot%x
 			phot%y=D%R(D%nR)*phot%y
@@ -381,6 +383,7 @@ c			else
 		endif
 		if(escape) goto 2
 		ninteract=ninteract+1
+		phot_irf=.false.
 		call interact(phot)
 		if(overflow) then
 			if(ran2(idum).lt.(1d0/real(maxinteract))) goto 4
@@ -391,6 +394,7 @@ c			else
 		goto 1
 
 2		continue
+		if(phot_irf) goto 4
 !c-----------------------------------------
 !c this is for the output MC spectrum
 !c-----------------------------------------

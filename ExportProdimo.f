@@ -11,7 +11,7 @@
 	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:)
 	real N,N1,Mdust
-	real*8 fUV,tot
+	real*8 fUV,tot,pUV
 	real*8,allocatable :: spec(:)
 
 	allocate(grid(D%nR-1,D%nTheta-1,2))
@@ -75,6 +75,19 @@ C	 create the new empty FITS file
 	call integrate(D%Fstar,tot)
 	call integrate(spec,fUV)
 	fUV=fUV/tot
+	spec(1)=D%Fstar(1)
+	spec(3)=lam(1)
+	do l=2,nlam-1
+		if(lam(l).ge.0.091.and.lam(l-1).le.0.091) then
+			spec(1)=D%Fstar(l)
+			spec(3)=lam(l)
+		endif
+		if(lam(l).le.0.250.and.lam(l+1).ge.0.250) then
+			spec(2)=D%Fstar(l)
+			spec(4)=lam(l)
+		endif
+	enddo
+	pUV=log10(spec(2)/spec(1))/log10(spec(4)/spec(3))
 	deallocate(spec)
 
 	call RenormalizeLRF()
@@ -93,7 +106,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'Rstar',real(D%Rstar/Rsun),-8,'[Rsun]',status)
 	call ftpkye(unit,'Mstar',real(D%Mstar/Msun),-8,'[Msun]',status)
 	call ftpkye(unit,'fUV',real(fUV),-3,'',status)
-	call ftpkye(unit,'slope_UV',1.0+2.0,-3,'',status)
+	call ftpkye(unit,'slope_UV',real(pUV),-3,'',status)
 	call ftpkye(unit,'distance',real(D%distance/parsec),-8,'[pc]',status)
 	
 	call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)

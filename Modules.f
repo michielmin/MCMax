@@ -39,7 +39,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical mrn		!Gijsexp
 	logical deadzone	!Gijsexp
 	logical topac_interpol	!Gijsexp
-	logical,allocatable :: scattcomputed(:),fix_struct(:)
+	logical,allocatable :: scattcomputed(:)
 	integer,allocatable :: nscattcomputed(:)
 	character*500 outdir
 	real*8,allocatable :: coolingtime(:)

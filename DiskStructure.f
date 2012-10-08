@@ -90,7 +90,8 @@ c-----------------------------------------------------------------------
 	real*8 ystart(2),eps,h1,hmin,gasdev,rhosig(D%nTheta),Rcyl,x,y
 	doubleprecision errtot
 	external derivs
-	integer ii
+	integer ii,fix,iz
+	real*8 rr,zz,hr,f1,f2
 	
 	write(*,'("Solving vertical structure")')
 	write(9,'("Solving vertical structure")')
@@ -135,6 +136,20 @@ c       end
 			endif
 			z(j)=D%R_av(i)*cos(D%theta_av(j))
 		enddo
+		fix=0
+		do iz=1,nzones
+			if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
+				if(Zone(iz)%fix_struct) then
+					if(ii.eq.0) then
+						fix=iz
+					else if(Zone(iz)%inc_grain(ii)) then
+						fix=iz
+					endif
+				endif
+			endif
+		enddo
+		if(fix.eq.0) then
+c	go ahead, no zones with fixed structure
 		if(ii.eq.0) then
 			if(scale.gt.0d0) then
 				rho(D%nTheta-1,ii)=0d0
@@ -258,6 +273,19 @@ c				endif
 			enddo
 c			stop
 		endif
+		else
+c	fix scaleheight to the one defined in Zone(fix)
+			do j=1,D%nTheta-1
+				rr=D%R_av(i)*sin(D%theta_av(j))/AU
+				zz=D%R_av(i)*cos(D%theta_av(j))/AU
+				hr=scale*Zone(fix)%sh*(rr/Zone(fix)%Rsh)**Zone(fix)%shpow
+				f1=rr**(-Zone(fix)%denspow)
+				f2=exp(-(zz/hr)**2)
+				if(j.eq.D%nTheta-1) f2=1d0
+				rho(j,ii)=log(f1*f2/hr)
+			enddo
+		endif
+		
 		M1(ii)=0d0
 		do j=1,D%nTheta-1
 			M1(ii)=M1(ii)+exp(rho(j,ii))*C(i,j)%V

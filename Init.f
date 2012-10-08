@@ -1035,6 +1035,7 @@ C       End
 				nRfix=nRfix+1
 				Rfix(nRfix)=Zone(i)%Rout
 			endif
+			if(mpset.or.scset.or..not.Zone(i)%fix_struct) struct_iter=.true.
 		enddo
 	endif
 	print*,nRfix
@@ -2109,7 +2110,6 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		allocate(D%R_av(0:D%nR+1))
 		allocate(D%R(0:D%nR+1))
 		allocate(shscale(0:D%nR+1))
-		allocate(fix_struct(0:D%nR+1))
 	endif
 
 	D%R(0)=D%Rstar/AU
@@ -2311,8 +2311,10 @@ c in the theta grid we actually store cos(theta) for convenience
 			tot=0d0
 			do i=1,D%nR-1
 			do j=1,D%nTheta-1
-				r=D%R_av(i)*sin(D%theta_av(j))/AU
-				if(r.ge.Zone(iz)%Rin.and.r.le.Zone(iz)%Rout) then
+				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
+     &					(D%Theta(j)-D%Theta(j+1))*AU**3
+				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
+					r=D%R_av(i)*sin(D%theta_av(j))/AU
 					z=D%R_av(i)*cos(D%theta_av(j))/AU
 					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
 					f1=r**(-Zone(iz)%denspow)
@@ -2323,7 +2325,7 @@ c in the theta grid we actually store cos(theta) for convenience
 						else
 							zonedens(iz,ii,i,j)=0d0
 						endif
-						tot=tot+zonedens(iz,ii,i,j)
+						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
 				else
 					do ii=1,ngrains
@@ -2882,7 +2884,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	if(denstype.eq.'POW'.or.denstype.eq.'DOUBLEPOW'.or.
      &     denstype.eq.'SURFFILE'.or.denstype.eq.'SIMILARITY'.or.
      &     denstype.eq.'DOUBLEPOWSIM'.or. ! Gijsexp
-     &     struct_iter.or.mpset.or.scset.or.gsd) then ! Gijsexp
+     &     struct_iter.or.mpset.or.scset.or.gsd.or.nzones.ne.0) then ! Gijsexp
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%dens0=C(i,j)%dens
