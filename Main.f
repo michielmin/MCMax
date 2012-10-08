@@ -33,7 +33,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	character*10 date,time
 	real*8 determineT,tottime,errT,errRho,radialtau,tau,radtau,Rmax,Mass,tau0
 	real*8 starttime,stoptime,starttime0,determineTP,errE,Rdes,Rmin
-	real*8,allocatable :: DustMass(:),T1(:),T2(:),dT1(:)
+	real*8,allocatable :: DustMass(:)
 	integer i,j,ii,Nphot,ncor,niter,ntau1,l,iT,NphotFirst,NFirst,iopac
 	integer number_invalid
 	integer,allocatable :: icor(:),jcor(:)
@@ -428,6 +428,9 @@ c		call PAHMCMax(niter)
 			C(i,j)%EJv=C(i,j)%EJv/C(i,j)%V
 c
 c  changed by AJ van Marle
+c
+c	C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
+c
 c   was not allocated if use_qhp == .false.		
 			if( use_qhp ) C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
 c
@@ -475,24 +478,7 @@ c
 	if(convection.and.niter.gt.NFirst) call MakeAdiabatic(2d0/7d0)
 	endif
 
-	if(Tsmooth) then
-		allocate(T1(D%nR-1))
-		allocate(dT1(D%nR-1))
-		allocate(T2(D%nR-1))
-		do j=1,D%nTheta-1
-			do i=1,D%nR-1
-				T1(i)=C(i,j)%T
-				dT1(i)=C(i,j)%dT
-			enddo
-			call Smooth(T1,dT1,T2,D%nR-1)
-			do i=1,D%nR-1
-				if(T2(i).gt.dT) C(i,j)%T=T2(i)
-			enddo
-		enddo
-		deallocate(T1)
-		deallocate(dT1)
-		deallocate(T2)
-	endif
+	if(Tsmooth) call do_smooth()
 
 	do j=1,D%nTheta-1
 		do i=1,D%nR-1
@@ -535,8 +521,6 @@ c
 		write(20,*) lam(i),(Grain(j)%Kabs(1,i),j=1,ngrains),(Grain(j)%Ksca(1,i),j=1,ngrains)
 	enddo
 	close(unit=20)
-
-	if(exportProDiMo) call DoExportProdimo()
 
 	if(Nphot.gt.0.or.forcediff) then
 		write(*,'("--------------------------------------------------------")')
@@ -709,6 +693,8 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 			call Observe(tel(i))
 		enddo
 	endif
+
+	if(exportProDiMo) call DoExportProdimo()
 
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0

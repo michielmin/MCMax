@@ -1932,47 +1932,22 @@ c	write(*,*) "Rfix, ",D%Rfix(1:D%nRfix)
 c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 
 	if(denstype.eq.'FILE'.or.denstype.eq.'PREVIOUS'.or.startiter.ne.' ') then
-		if(startiter.ne.' ') write(densfile,'(a,"denstemp",a,".dat")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
-		if(denstype.eq.'PREVIOUS') write(densfile,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
-		inquire(file=densfile,exist=truefalse)
-		if(.not.truefalse) then
-			write(*,'("Density file not found")')
-			write(9,'("Density file not found")')
-			write(*,'("--------------------------------------------------------")')
-			write(9,'("--------------------------------------------------------")')
-			stop
+		if(outputfits) then
+			if(startiter.ne.' ') write(densfile,'(a,"denstemp",a,".fits.gz")') 
+     &				outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
+			if(denstype.eq.'PREVIOUS') write(densfile,'(a,"denstemp.fits.gz")') 
+     &				outdir(1:len_trim(outdir))
+		else
+			if(startiter.ne.' ') write(densfile,'(a,"denstemp",a,".dat")') 
+     &				outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
+			if(denstype.eq.'PREVIOUS') write(densfile,'(a,"denstemp.dat")') 
+     &				outdir(1:len_trim(outdir))
 		endif
-		open(unit=20,file=densfile,RECL=6000)
-		read(20,*) ! comments
-		read(20,*) ! format number
-		read(20,*) ! comments
-		read(20,*) D%nR,D%nTheta
+		call readstruct(densfile,(/'DENS   '/),1,0,.true.)
+
 		if(.not.arraysallocated) then
-			allocate(C(0:D%nR+1,0:D%nTheta+1))
-			allocate(D%theta_av(0:D%nTheta+1))
-			allocate(D%Theta(0:D%nTheta+1))
-			allocate(D%thet(0:D%nTheta+1))
-			allocate(D%SinTheta(0:D%nTheta+1))
-			allocate(D%R_av(0:D%nR+1))
-			allocate(D%R(0:D%nR+1))
 			allocate(shscale(0:D%nR+1))
 		endif
-		read(20,*) ! comments
-		do i=1,D%nR
-			read(20,*) D%R_av(i)
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nTheta
-			read(20,*) D%theta_av(i)
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nR
-		do j=1,D%nTheta
-			read(20,*) C(i,j)%dens
-		enddo
-		enddo
-	
-		close(unit=20)
 
 		D%R(1)=D%Rin
 		do i=2,D%nR
@@ -2526,22 +2501,6 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	enddo
 	enddo
 
-c	do ii=1,ngrains
-c		if(minrad(ii).gt.D%R(1)) then
-c			do i=1,D%nR-1
-c				if(minrad(ii).gt.(D%R_av(i)/AU)) then
-c					do j=1,D%nTheta-1
-c						tot=(1d0-C(i,j)%w(ii))
-c						if(tot.ne.0d0) then
-c							C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
-c							C(i,j)%w(ii)=0d0
-c						endif
-c						C(i,j)%dens=C(i,j)%dens*tot
-c					enddo
-c				endif
-c			enddo
-c		endif
-c	enddo
 	do ii=1,ngrains
 		Grain(ii)%maxrad=maxrad(ii)
 		Grain(ii)%minrad=minrad(ii)
@@ -2550,20 +2509,6 @@ c	enddo
 		Grain(ii)%roundpow=roundpow(ii)
 		Grain(ii)%roundwidth=roundwidth(ii)
 		Grain(ii)%roundtype=roundtype(ii)
-c		if(maxrad(ii).lt.D%R(D%nR)) then
-c			do i=1,D%nR-1
-c				if(maxrad(ii).lt.(D%R_av(i)/AU)) then
-c					do j=1,D%nTheta-1
-c						tot=(1d0-C(i,j)%w(ii))
-c						if(tot.ne.0d0) then
-c							C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
-c							C(i,j)%w(ii)=0d0
-c						endif
-c						C(i,j)%dens=C(i,j)%dens*tot
-c					enddo
-c				endif
-c			enddo
-c		endif
 	enddo
 
 	MassTot=0d0
@@ -3087,119 +3032,31 @@ c		f_weight=f_weight_backup
 
 	iter0=0
 	if(startiter.ne.' '.or.denstype.eq.'PREVIOUS') then
-
-		write(file,'(a,"denstemp",a,".dat")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
-		if(denstype.eq.'PREVIOUS') write(file,'(a)') densfile(1:len_trim(densfile))
-		inquire(file=file,exist=truefalse)
-		if(.not.truefalse) then
-			write(*,'("File ",a," not found")') file(1:len_trim(file))
-			write(9,'("File ",a," not found")') file(1:len_trim(file))
-			stop
+		if(outputfits) then
+			write(file,'(a,"denstemp",a,".fits.gz")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
+		else
+			write(file,'(a,"denstemp",a,".dat")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
 		endif
 		write(*,'("Reading starting iteration from: ",a)') file(1:len_trim(file))
 		write(9,'("Reading starting iteration from: ",a)') file(1:len_trim(file))
-
-		open(unit=20,file=file,RECL=6000)
-		read(20,*) ! comments
-		read(20,*) ! format number
-		read(20,*) ! comments
-		read(20,*) nr,nt
-		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-			write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			stop
-		endif
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			read(20,*) D%R_av(i)
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nTheta-1
-			read(20,*) D%theta_av(i)
-		enddo
-		read(20,*) ! comments
+		call readstruct(file,(/'DENS   ','TEMP   ','COMP   ','GASDENS','DENS0  '/),5,0,.false.)
 		do i=1,D%nR-1
 			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%dens
-			enddo
-		enddo
-		read(20,*) !comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%T
 				C(i,j)%TMC=C(i,j)%T
 			enddo
 		enddo
-		read(20,*) !comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) (C(i,j)%w(ii),ii=1,ngrains)
-			enddo
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%gasdens
-			enddo
-		enddo
-		read(20,*,end=500) ! comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*,end=500) C(i,j)%dens0
-			enddo
-		enddo
-
-		goto 501
-500		continue
-		write(*,'("** Assuming gasdens=dens0 ! **")')
-		write(9,'("** Assuming gasdens=dens0 ! **")')
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				C(i,j)%dens0=C(i,j)%gasdens
-			enddo
-		enddo
-501		close(unit=20)
 
 		if(computeTgas) then
-			write(file,'(a,"denstempGas",a,".dat")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
-			inquire(file=file,exist=truefalse)
-			if(.not.truefalse) then
-				write(*,'("File ",a," not found")') file(1:len_trim(file))
-				write(9,'("File ",a," not found")') file(1:len_trim(file))
-				stop
+			if(outputfits) then
+				write(file,'(a,"denstempGas",a,".fits.gz")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
+			else
+				write(file,'(a,"denstempGas",a,".dat")') outdir(1:len_trim(outdir)),startiter(1:len_trim(startiter))
 			endif
 			write(*,'("Reading gas temperatures from:   ",a)') file(1:len_trim(file))
 			write(9,'("Reading gas temperatures from:   ",a)') file(1:len_trim(file))
-
-			open(unit=20,file=file,RECL=6000)
-			read(20,*) ! comments
-			read(20,*) ! format number
-			read(20,*) ! comments
-			read(20,*) nr,nt
-			if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-				write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-				write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-				stop
-			endif
-			read(20,*) ! comments
-			do i=1,D%nR-1
-				read(20,*) D%R_av(i)
-			enddo
-			read(20,*) ! comments
-			do i=1,D%nTheta-1
-				read(20,*) D%theta_av(i)
-			enddo
-			read(20,*) ! comments
+			call readstruct(file,(/'GASDENS','GASTEMP'/),2,0,.false.)
 			do i=1,D%nR-1
 				do j=1,D%nTheta-1
-					read(20,*) C(i,j)%gasdens
-					C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
-				enddo
-			enddo
-			read(20,*) !comments
-			do i=1,D%nR-1
-				do j=1,D%nTheta-1
-					read(20,*) C(i,j)%Tgas
 					C(i,j)%KappaGas=KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%Tgas)
 				enddo
 			enddo

@@ -77,6 +77,8 @@ C	 create the new empty FITS file
 	fUV=fUV/tot
 	deallocate(spec)
 
+	call RenormalizeLRF()
+
 	! Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
@@ -471,4 +473,51 @@ c	   wl = tab_lambda(lambda) * 1e-6
 
 	return
 	end
+
+
+
+	subroutine RenormalizeLRF()
+	use Parameters
+	IMPLICIT NONE
+	integer i,j,iT1,iT2,ii,iopac,ilam
+	real*8 kp,epsT1,epsT2
+	real*8,allocatable :: Kabs(:),spec(:)
+	
+	allocate(Kabs(nlam))
+	allocate(spec(nlam))
+
+	do i=1,D%nR-1
+	do j=1,D%nTheta-1
+		iT1=C(i,j)%T/dT
+		iT2=iT1+1
+		epsT1=1d0-(C(i,j)%T-real(iT1)*dT)
+		epsT2=1d0-epsT1	
+		kp=0d0
+		Kabs(1:nlam)=0d0
+		do ii=1,ngrains
+			if(.not.Grain(ii)%qhp) then
+				do iopac=1,Grain(ii)%nopac
+					kp=kp+((epsT1*Grain(ii)%Kp(iopac,iT1)+epsT2*Grain(ii)%Kp(iopac,iT2))
+     &						*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac))
+					do ilam=1,nlam
+						Kabs(ilam)=Kabs(ilam)+(Grain(ii)%Kabs(iopac,ilam)
+     &						*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac))
+					enddo
+				enddo
+			endif
+		enddo
+		C(i,j)%EJv=kp
+		spec(1:nlam)=C(i,j)%LRF(1:nlam)*Kabs(1:nlam)
+		call integrate(spec,kp)
+		C(i,j)%LRF(1:nlam)=C(i,j)%LRF(1:nlam)*C(i,j)%EJv/kp
+	enddo
+	enddo
+
+	deallocate(Kabs)
+	deallocate(spec)
+	return
+	end
+	
+
+
 

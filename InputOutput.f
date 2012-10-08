@@ -411,3 +411,221 @@ C	 create the new empty FITS file
 	end
 
 
+
+
+	subroutine readstruct(filename,vars,nvars,ipart,doalloc)
+	use Parameters
+	IMPLICIT NONE
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt
+	character*7 vars(nvars)
+	character*500 filename
+	logical doalloc,truefalse
+
+c	if(outputfits) then
+c		call readstruct_fits(filename,vars,nvars,ipart)
+c		return
+c	endif
+
+	inquire(file=filename,exist=truefalse)
+	if(.not.truefalse) then
+		write(*,'("Density file not found")')
+		write(9,'("Density file not found")')
+		write(*,'("--------------------------------------------------------")')
+		write(9,'("--------------------------------------------------------")')
+		stop
+	endif
+
+	open(unit=20,file=filename,RECL=6000)
+	read(20,*) ! comments
+	read(20,*) ! format number
+	read(20,*) ! comments
+	do i=1,nvars
+		if(vars(i)(1:3).eq.'QHP') then	
+			read(20,*) nr,nt,nlam
+			goto 1
+		endif
+	enddo
+	read(20,*,end=1) nr,nt,ngrains,ngrains2
+
+1	continue
+	if(doalloc) then
+		D%nR=nr+1
+		D%nTheta=nt+1
+		if(.not.arraysallocated) then
+			allocate(C(0:D%nR+1,0:D%nTheta+1))
+			allocate(D%theta_av(0:D%nTheta+1))
+			allocate(D%Theta(0:D%nTheta+1))
+			allocate(D%thet(0:D%nTheta+1))
+			allocate(D%SinTheta(0:D%nTheta+1))
+			allocate(D%R_av(0:D%nR+1))
+			allocate(D%R(0:D%nR+1))
+			allocate(shscale(0:D%nR+1))
+		endif
+	else if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
+		write(*,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
+		write(9,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
+		stop
+	endif
+	read(20,*) ! comments
+	do i=1,D%nR-1
+		read(20,*) D%R_av(i)
+	enddo
+	read(20,*) ! comments
+	do i=1,D%nTheta-1
+		read(20,*) D%theta_av(i)
+	enddo
+
+	do ivars=1,nvars
+		select case (vars(ivars))
+			case ('DENS')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%dens
+					enddo
+				enddo
+			case ('TEMP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%T
+					enddo
+				enddo
+			case ('TEMPMC')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%TMC
+					enddo
+				enddo
+			case ('COMP')
+				read(20,*,end=3) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*,end=3) (C(i,j)%w(ii),ii=1,ngrains)
+						if(ngrains2.gt.1) then
+							do ii=1,ngrains
+								read(20,*,end=3) C(i,j)%wopac(ii,1:ngrains2)
+							enddo
+						endif
+					enddo
+				enddo
+			case ('GASDENS')
+				read(20,*,end=3) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*,end=3) C(i,j)%gasdens
+						C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
+					enddo
+				enddo
+			case ('DENS0')
+				read(20,*,end=2) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*,end=2) C(i,j)%dens0
+					enddo
+				enddo
+			case ('GASTEMP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%Tgas
+					enddo
+				enddo
+			case ('DENSP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%w(ipart)
+					enddo
+				enddo
+			case ('TEMPP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%TP(ipart)
+					enddo
+				enddo
+			case ('NPHOT')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%Ni
+					enddo
+				enddo
+			case ('VOLUME')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%V
+					enddo
+				enddo
+			case ('dTEMP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%dT
+						C(i,j)%dT=C(i,j)%dT*C(i,j)%T
+					enddo
+				enddo
+			case ('dEJv')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%dEJv
+						C(i,j)%dEJv=C(i,j)%dEJv*C(i,j)%EJv
+					enddo
+				enddo
+			case ('LAM')
+				read(20,*) ! comments
+				do i=1,nlam
+					read(20,*) lam(i)
+				enddo
+			case ('QHPEJv')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*) C(i,j)%EJvQHP(Grain(ipart)%qhpnr)
+						do l=1,nlam
+							read(20,*) C(i,j)%QHP(Grain(ipart)%qhpnr,l)
+						enddo
+					enddo
+				enddo
+			case ('SKIP')
+				read(20,*) ! comments
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						read(20,*)
+					enddo
+				enddo
+			case default
+				write(9,'("Error in input file specification")')
+				write(*,'("Error in input file specification")')
+				close(unit=20)
+				stop
+		end select
+	enddo
+
+	close(unit=20)
+	
+	return
+2	continue
+
+	write(*,'("** Assuming gasdens=dens0 ! **")')
+	write(9,'("** Assuming gasdens=dens0 ! **")')
+	do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%dens0=C(i,j)%gasdens
+		enddo
+	enddo
+	close(unit=20)
+
+3	continue
+
+	return
+	end
+
+
+
+
+

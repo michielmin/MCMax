@@ -1,3 +1,30 @@
+	subroutine do_smooth()
+	use Parameters
+	IMPLICIT NONE
+	real*8,allocatable :: T1(:),T2(:),dT1(:)
+	integer i,j
+	
+	allocate(T1(D%nR-1))
+	allocate(dT1(D%nR-1))
+	allocate(T2(D%nR-1))
+	do j=1,D%nTheta-1
+		do i=1,D%nR-1
+			T1(i)=C(i,j)%T
+			dT1(i)=C(i,j)%dT
+		enddo
+		call Smooth(T1,dT1,T2,D%nR-1)
+		do i=1,D%nR-1
+			if(T2(i).gt.dT) C(i,j)%T=T2(i)
+		enddo
+	enddo
+	deallocate(T1)
+	deallocate(dT1)
+	deallocate(T2)
+
+	return
+	end
+
+
 	subroutine Smooth(y,dy,z,n)
 	IMPLICIT NONE
 	integer m,n,MAXM,MAXITER

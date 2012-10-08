@@ -762,180 +762,39 @@ c-----------------------------------------------------------------------
 	else
 		write(file,'(a,"denstemp.dat")') outdir(1:len_trim(outdir))
 	endif
-	inquire(file=file,exist=truefalse)
-	if(.not.truefalse) then
-		write(*,'("File ",a," not found")') file(1:len_trim(file))
-		write(9,'("File ",a," not found")') file(1:len_trim(file))
-		stop
-	endif
 	write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 	write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
 
-	open(unit=20,file=file,RECL=6000)
-	read(20,*) ! comments
-	read(20,*) ! format number
-	read(20,*) ! comments
-	read(20,*) nr,nt
-	if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-		write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		stop
-	endif
-	read(20,*) ! comments
-	do i=1,D%nR-1
-		read(20,*) ! radial grid
-	enddo
-	read(20,*) ! comments
-	do i=1,D%nTheta-1
-		read(20,*) ! angular grid
-	enddo
-	read(20,*) ! comments
+	call readstruct(file,(/'DENS   ','TEMP   ','COMP   ','GASDENS','DENS0  '/),5,0,.false.)
 	do i=1,D%nR-1
 		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%dens
-		enddo
-	enddo
-	read(20,*) !comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%T
 			C(i,j)%TMC=C(i,j)%T
 		enddo
 	enddo
-	read(20,*,end=1) !comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*,end=1) (C(i,j)%w(ii),ii=1,ngrains)
-			C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
-			if(ngrains2.gt.1) then
-			do ii=1,ngrains
-				read(20,*,end=1) (C(i,j)%wopac(ii,iopac),iopac=1,ngrains2)
-			enddo
-			endif
-		enddo
-	enddo
-	read(20,*,end=4) !comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*,end=1) C(i,j)%gasdens
-			C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
-		enddo
-	enddo
-	goto 2
-1	continue
-	write(*,'("** No composition info found ! **")')
-	write(*,'("** Using standard composition  **")')
-	write(9,'("** No composition info found ! **")')
-	write(9,'("** Using standard composition  **")')
-	goto 2
-4	continue
-	write(*,'("** No gas density ! **")')
-	write(*,'("** Using dust density  **")')
-	write(9,'("** No gas density ! **")')
-	write(9,'("** Using dust density  **")')
-2	close(unit=20)
 
 	if(forcediff) then
-	write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
-	inquire(file=file,exist=truefalse)
-	if(.not.truefalse) then
-		write(*,'("File ",a," not found")') file(1:len_trim(file))
-		write(9,'("File ",a," not found")') file(1:len_trim(file))
-		stop
+		write(file,'(a,"denstempND.dat")') outdir(1:len_trim(outdir))
+		write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
+		write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
+		call readstruct(file,(/'SKIP   ','TEMPMC '/),2,0,.false.)
 	endif
-	write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
-	write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
-
-	open(unit=20,file=file,RECL=6000)
-	read(20,*) ! comments
-	read(20,*) ! format number
-	read(20,*) ! comments
-	read(20,*) nr,nt
-	if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-		write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		stop
-	endif
-	read(20,*) ! comments
-	do i=1,D%nR-1
-		read(20,*) ! radial grid
-	enddo
-	read(20,*) ! comments
-	do i=1,D%nTheta-1
-		read(20,*) ! angular grid
-	enddo
-	read(20,*) ! comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) !density
-		enddo
-	enddo
-	read(20,*) !comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%TMC
-		enddo
-	enddo
-	close(unit=20)
-	endif
-
 
 
 	if(.not.tcontact) then
-	do ii=1,ngrains
-
-	write(file,'(a,"denstempP",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
-	inquire(file=file,exist=truefalse)
-	if(.not.truefalse) then
-		write(*,'("File ",a," not found")') file(1:len_trim(file))
-		write(9,'("File ",a," not found")') file(1:len_trim(file))
-		stop
-	endif
-	write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
-	write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
-
-	open(unit=20,file=file,RECL=6000)
-	read(20,*) ! comments
-	read(20,*) ! format number
-	read(20,*) ! comments
-	read(20,*) nr,nt
-	if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-		write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-		stop
-	endif
-	read(20,*) ! comments
-	do i=1,D%nR-1
-		read(20,*) ! radial grid
-	enddo
-	read(20,*) ! comments
-	do i=1,D%nTheta-1
-		read(20,*) ! angular grid
-	enddo
-	read(20,*) ! comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%w(ii)
+		do ii=1,ngrains
+			write(file,'(a,"denstempP",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+			write(*,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
+			write(9,'("Reading temperature structure from: ",a)') file(1:len_trim(file))
+			call readstruct(file,(/'DENSP  ','TEMPP  '/),2,ii,.false.)
 		enddo
-	enddo
-	read(20,*) !comments
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%TP(ii)
+
+		do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				tot=sum(C(i,j)%w(1:ngrains))
+				C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
+				C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
+			enddo
 		enddo
-	enddo
-	close(unit=20)
-
-	enddo
-
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			tot=sum(C(i,j)%w(1:ngrains))
-			C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
-			C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
-		enddo
-	enddo
-
 	endif
 
 	write(file,'(a,"Nphotons.dat")') outdir(1:len_trim(outdir))
@@ -953,40 +812,7 @@ c-----------------------------------------------------------------------
 	else
 		write(*,'("Reading photon statistics from:     ",a)') file(1:len_trim(file))
 		write(9,'("Reading photon statistics from:     ",a)') file(1:len_trim(file))
-
-		open(unit=20,file=file,RECL=6000)
-		read(20,*) ! comments
-		read(20,*) ! format number
-		read(20,*) ! comments
-		read(20,*) nr,nt
-		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-			write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(*,'("Assuming high foton statistics")')
-			write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(9,'("Assuming high foton statistics")')
-			do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				C(i,j)%Ni=1000000
-			enddo
-			enddo
-			close(unit=20)
-			goto 3
-		endif
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			read(20,*) ! radial grid
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nTheta-1
-			read(20,*) ! angular grid
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%Ni
-			enddo
-		enddo
-		close(unit=20)
+		call readstruct(file,(/'NPHOT  '/),1,0,.false.)
 	endif
 
 3	write(file,'(a,"errors.dat")') outdir(1:len_trim(outdir))
@@ -1004,151 +830,45 @@ c-----------------------------------------------------------------------
 	else
 		write(*,'("Reading errors from:                ",a)') file(1:len_trim(file))
 		write(9,'("Reading errors from:                ",a)') file(1:len_trim(file))
-
-		open(unit=20,file=file,RECL=6000)
-		read(20,*) ! comments
-		read(20,*) ! format number
-		read(20,*) ! comments
-		read(20,*) nr,nt
-		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-			write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(*,'("Assuming perfect temperatures")')
-			write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(9,'("Assuming perfect temperatures")')
-			do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				C(i,j)%dT=1d-8*C(i,j)%T
-			enddo
-			enddo
-			close(unit=20)
-			goto 100
-		endif
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			read(20,*) ! radial grid
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nTheta-1
-			read(20,*) ! angular grid
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%dT
-				C(i,j)%dT=C(i,j)%dT*C(i,j)%T
-				C(i,j)%T=C(i,j)%TMC
-			enddo
-		enddo
-		close(unit=20)
+		call readstruct(file,(/'dTEMP  '/),1,0,.false.)
 	endif
 	
 100	continue
 
 	if(use_qhp) then
+		do ii=1,ngrains
+			if(Grain(ii)%qhp) then
+				write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				write(*,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
+				write(9,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
+				call readstruct(file,(/'LAM    ','QHPEJv '/),2,ii,.false.)
 
-	do ii=1,ngrains
-	if(Grain(ii)%qhp) then
-	write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
-	write(*,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
-	write(9,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
-	open(unit=20,file=file,RECL=6000)
-	read(20,*)!'("# Format number QHP emission file")')
-	read(20,*)!'(i6)') 1
-	read(20,*)!'("# NR, NT, NLAM")')
-	read(20,*) nr,nt,nl
-	if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1.or.nl.ne.nlam) then
-		write(*,'("File ",a," incompatible with grid")') file(1:len_trim(file))
-		write(*,'("Assuming no QHP emission")')
-		write(9,'("File ",a," incompatible with grid")') file(1:len_trim(file))
-		write(9,'("Assuming no QHP emission")')
-		do i=1,D%nR-1
-		do j=1,D%nTheta-1
-		do l=1,nlam
-			C(i,j)%QHP(Grain(ii)%qhpnr,l)=0d0
-		enddo
-		enddo
-		enddo
-		close(unit=20)
-		return
-	endif
-	read(20,*)!'("# Spherical radius grid [cm] (middle of cell)")')
-	do i=1,D%nR-1
-		read(20,*) !D%R_av(i)
-	enddo
-	read(20,*)!'("# Theta grid [rad, from pole] (middle of cell)")')
-	do i=1,D%nTheta-1
-		read(20,*) !D%theta_av(i)
-	enddo
-	read(20,*)!'("# Wavelength grid")')
-	do i=1,nlam
-		read(20,*) !lam(i)
-	enddo
-	read(20,*)!'("# QHP emission (for ir=0,nr-1 do for it=0,nt-1 do for ilam=0,nlam-1 do ...)")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			read(20,*) C(i,j)%EJvQHP(Grain(ii)%qhpnr)
-			do l=1,nlam
-				read(20,*) C(i,j)%QHP(Grain(ii)%qhpnr,l)
-			enddo
-			call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
-			if(tot.gt.1d-200) then
-				C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
-			else
-				C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=0d0
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
+						if(tot.gt.1d-200) then
+							C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
+						else
+							C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=0d0
+						endif
+					enddo
+				enddo
 			endif
 		enddo
-	enddo
-	close(unit=20)
-	endif
-	enddo
 	endif
 
 
 	if(useTgas) then
 		write(file,'(a,"denstempGas.dat")') outdir(1:len_trim(outdir))
-		inquire(file=file,exist=truefalse)
-		if(.not.truefalse) then
-			write(*,'("File ",a," not found")') file(1:len_trim(file))
-			write(9,'("File ",a," not found")') file(1:len_trim(file))
-			stop
-		endif
 		write(*,'("Reading gas temperatures from:      ",a)') file(1:len_trim(file))
 		write(9,'("Reading gas temperatures from:      ",a)') file(1:len_trim(file))
-
-		open(unit=20,file=file,RECL=6000)
-		read(20,*) ! comments
-		read(20,*) ! format number
-		read(20,*) ! comments
-		read(20,*) nr,nt
-		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-			write(*,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			write(9,'("File ",a," incompatible with spatial grid")') file(1:len_trim(file))
-			stop
-		endif
-		read(20,*) ! comments
-		do i=1,D%nR-1
-			read(20,*) D%R_av(i)
-		enddo
-		read(20,*) ! comments
-		do i=1,D%nTheta-1
-			read(20,*) D%theta_av(i)
-		enddo
-		read(20,*) ! comments
+		call readstruct(file,(/'GASDENS','GASTEMP'/),2,0,.false.)
 		do i=1,D%nR-1
 			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%gasdens
-				C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
-			enddo
-		enddo
-		read(20,*) !comments
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				read(20,*) C(i,j)%Tgas
 				C(i,j)%KappaGas=KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%Tgas)
 			enddo
 		enddo
 	endif
-
 
 	return
 	end

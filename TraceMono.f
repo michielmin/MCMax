@@ -5,10 +5,10 @@ c					 increase the accuracy of the determination of
 c					 the diffuse field.
 c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
-	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar)
+	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening)
 	use Parameters
 	IMPLICIT NONE
-	real*8 lam0,tau,phi,flux
+	real*8 lam0,tau,phi,flux,opening
 	integer i,j,k,ii,jj,Nphot,NphotStar
 	type(RPhiImage) image
 	real*8 tau_e,tau_s,tau_a,w1,w2,nu0,exptau_e
@@ -20,7 +20,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	real*8,allocatable :: scatim(:,:),fluxcontr(:,:,:)
 	character*500 fluxfile
 	integer il10,il100,il1000,il10000,i10
-	real*8 i1,il1,Planck
+	real*8 i1,il1,Planck,frac_opening
 
 	tau_max=1d8
 
@@ -322,6 +322,18 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)*Ksca
 			scatU(kp,ip,jp)=scatU(kp,ip,jp)*Ksca
 			scatV(kp,ip,jp)=scatV(kp,ip,jp)*Ksca
+		endif
+
+		if(real(image%p(i,j)%jphi2(k)).lt.opening.and.real(image%p(i,j)%jphi1(k)).gt.opening) then
+			frac_opening=(real(image%p(i,j)%jphi1(k))-opening)
+     &				/abs(real(image%p(i,j)%jphi1(k)-image%p(i,j)%jphi2(k)))
+			tau_e=tau_e*frac_opening
+		else if(real(image%p(i,j)%jphi1(k)).lt.opening.and.real(image%p(i,j)%jphi2(k)).gt.opening) then
+			frac_opening=(real(image%p(i,j)%jphi2(k))-opening)
+     &				/abs(real(image%p(i,j)%jphi1(k)-image%p(i,j)%jphi2(k)))
+			tau_e=tau_e*frac_opening
+		else if(real(image%p(i,j)%jphi1(k)).lt.opening.and.real(image%p(i,j)%jphi2(k)).lt.opening) then
+			tau_e=0d0
 		endif
 
 		if(ip.ne.0) then
