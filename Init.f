@@ -1945,9 +1945,7 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		endif
 		call readstruct(densfile,(/'DENS   '/),1,0,.true.)
 
-		if(.not.arraysallocated) then
-			allocate(shscale(0:D%nR+1))
-		endif
+		D%nR=D%nR-1
 
 		D%R(1)=D%Rin
 		do i=2,D%nR
@@ -1960,7 +1958,6 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		D%R(0)=D%Rstar/AU
 		call sort(D%R(1:D%nR),D%nR)
 		D%nR=D%nR+1
-		D%nTheta=D%nTheta+1
 
 		shscale(0:D%nR)=1d0
 		if(scalesh.eq.'FILE') then

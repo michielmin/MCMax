@@ -428,9 +428,6 @@ c		call PAHMCMax(niter)
 			C(i,j)%EJv=C(i,j)%EJv/C(i,j)%V
 c
 c  changed by AJ van Marle
-c
-c	C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
-c
 c   was not allocated if use_qhp == .false.		
 			if( use_qhp ) C(i,j)%EJvQHP=C(i,j)%EJvQHP/C(i,j)%V
 c

@@ -461,10 +461,11 @@ c	endif
 			allocate(D%R(0:D%nR+1))
 			allocate(shscale(0:D%nR+1))
 		endif
-	else if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
-		write(*,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
-		write(9,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
-		stop
+		if(nr.ne.D%nR-1.or.nt.ne.D%nTheta-1) then
+			write(*,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
+			write(9,'("File ",a," incompatible with spatial grid")') filename(1:len_trim(filename))
+			stop
+		endif
 	endif
 	read(20,*) ! comments
 	do i=1,D%nR-1
