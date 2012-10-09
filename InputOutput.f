@@ -636,7 +636,7 @@ C	 create the new empty FITS file
 	subroutine readstruct_fits(filename,vars,nvars,ipart,doalloc)
 	use Parameters
 	IMPLICIT NONE
-	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,iopac,naxis
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,iopac,naxis,nhdu
 	character*7 vars(nvars)
 	character*500 filename
 	logical doalloc,truefalse
@@ -688,6 +688,11 @@ C	 create the new empty FITS file
 	call ftgkyj(unit,'ngrains',ngrains,comment,status)
 	call ftgkyj(unit,'ngrains2',ngrains2,comment,status)
 	call ftgkyj(unit,'nlam',nlam,comment,status)
+	call ftgkyj(unit,'nHDU',nhdu,comment,status)
+	if(status.ne.0) then
+		nhdu=nvars
+		status=0
+	endif
 
 	D%nR=D%nR+1
 	D%nTheta=D%nTheta+1
@@ -719,20 +724,13 @@ C	 create the new empty FITS file
 
 	deallocate(array)
 
-	do ivars=1,nvars
+	do ivars=1,minval((/nhdu,nvars/))
 		!  move to next hdu
 		call ftmrhd(unit,1,hdutype,status)
 		if(status.ne.0) then
-			select case(vars(ivars))
-				case ('COMP')
-					goto 3
-				case ('GASDENS')
-					goto 3
-				case ('DENS0')
-					goto 2
-				case default
-					stop
-			end select
+			nhdu=ivars
+			status=0
+			goto 1
 		endif
 		select case (vars(ivars))
 			case ('COMP')
@@ -868,20 +866,26 @@ C	 create the new empty FITS file
 		end select
 		deallocate(array)
 	enddo
+
+1	continue
 	
-	goto 3
-
-2	continue
-
-	write(*,'("** Assuming gasdens=dens0 ! **")')
-	write(9,'("** Assuming gasdens=dens0 ! **")')
-	do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			C(i,j)%dens0=C(i,j)%gasdens
+	if(nvars.gt.nhdu) then
+		do ivars=nhdu+1,nvars
+			select case(vars(ivars))
+				case ('DENS0')
+					write(*,'("** Assuming gasdens=dens0 ! **")')
+					write(9,'("** Assuming gasdens=dens0 ! **")')
+					do i=1,D%nR-1
+						do j=1,D%nTheta-1
+							C(i,j)%dens0=C(i,j)%gasdens
+						enddo
+					enddo
+				case default
+					stop
+			end select
 		enddo
-	enddo
+	endif
 
-3	continue
 
 	!  Close the file and free the unit number.
 	call ftclos(unit, status)

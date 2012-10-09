@@ -411,7 +411,7 @@ c			else
 				enddo
 			enddo
 			do j=1,nlam
-				if(spectemp(j).lt.20d0) then
+				if(spectemp(j).lt.1000d0) then
 					spectemp(j)=specemit(j)*exp(-spectemp(j))
 				else
 					spectemp(j)=0d0
