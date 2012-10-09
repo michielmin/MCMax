@@ -167,7 +167,7 @@
 	use Parameters
 	IMPLICIT NONE
 	integer nvars,ivars,i,j,ii,ipart,iopac,l
-	character*7 vars(nvars)
+	character*7 vars(nvars),hdu
 	character*500 filename
 	real*8,allocatable :: array(:,:,:,:)
 	integer status,unit,blocksize,bitpix,naxis,naxes(4)
@@ -219,6 +219,12 @@ C	 create the new empty FITS file
 	call ftpkyj(unit,'ngrains',ngrains,' ',status)
 	call ftpkyj(unit,'ngrains2',ngrains2,' ',status)
 	call ftpkyj(unit,'nlam',nlam,' ',status)
+
+	call ftpkyj(unit,'nHDU',nvars,' ',status)	
+	do i=1,nvars
+		write(hdu,'("HDU",i2)') i
+		call ftpkys(unit,hdu,trim(vars(i)),'',status)
+	enddo
 
 	!  Write the array to the FITS file.
 
