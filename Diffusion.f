@@ -198,16 +198,7 @@ c absolute value
 		if(ok(i)) then
 			M(i,1:N)=0d0
 			M(i,i)=1d0
-			iT=(C(celi(i),celj(i))%T)/dT
-			if(iT.le.1) iT=1
-			if(iT.ge.(TMAX-1)) iT=TMAX-1 
-			Etot=0d0
-			do ii=1,ngrains
-			   do iopac=1,Grain(ii)%nopac
-			      Etot=Etot+C(celi(i),celj(i))%w(ii)*C(celi(i),celj(i))%wopac(ii,iopac)*Grain(ii)%Kp(iopac,iT)
-			   enddo
-			enddo
-			T4(i)=Etot
+			T4(i)=C(celi(i),celj(i))%T**4
 		else
 c the radial part
 			M(i,1:N)=0d0
@@ -265,14 +256,22 @@ c the theta part
 
 	do i=1,N
 		if(.not.ok(i)) then
-			phot%i=celi(i)
-			phot%j=celj(i)
-			phot%E=T4(i)
-			C(celi(i),celj(i))%T=determineT(phot)
+			if(T4(i).gt.0d0) C(celi(i),celj(i))%T=T4(i)**0.25
+			if(T4(i).lt.0d0) C(celi(i),celj(i))%T=dT
 			C(celi(i),celj(i))%FradR=0d0
 			C(celi(i),celj(i))%FradZ=0d0
-			if(T4(i).lt.0d0) C(celi(i),celj(i))%T=dT
-			if(T4(i).gt.0d0) C(celi(i),celj(i))%EJv=T4(i)
+
+			iT=(C(celi(i),celj(i))%T)/dT
+			if(iT.le.1) iT=1
+			if(iT.ge.(TMAX-1)) iT=TMAX-1 
+			Etot=0d0
+			do ii=1,ngrains
+			   do iopac=1,Grain(ii)%nopac
+			      Etot=Etot+C(celi(i),celj(i))%w(ii)*C(celi(i),celj(i))%wopac(ii,iopac)*Grain(ii)%Kp(iopac,iT)
+			   enddo
+			enddo
+			C(celi(i),celj(i))%EJv=Etot
+
 			if(C(celi(i),celj(i))%T.gt.(real(TMAX-1)*dT)) C(celi(i),celj(i))%T=real(TMAX-1)*dT
 			if(C(celi(i),celj(i))%T.lt.1d0) then
 				C(celi(i),celj(i))%T=1d0
