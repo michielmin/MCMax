@@ -104,6 +104,7 @@ c==============================================================================
 c Change 15-02-2012, do not use the random walk module to compute the EJv's
 c
 	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs/C(phot%i,phot%j)%dens
+	nEJv=nEJv+EJv*Kabs/C(phot%i,phot%j)%dens
 c	if(use_qhp) then
 c		do ii=1,ngrains
 c			if(Grain(ii)%qhp) then

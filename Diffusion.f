@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
 	real*8 Krjm,rhojm,rjm,tjm,Krjp,rhojp,rjp,tjp,T4jm,T4jp,T4j0,prgopt(4),ErrorE,Error0
 	logical,allocatable :: ok(:)
 	type(photon) phot
-	real*8 Rrad,Rthet,Ra
+	real*8 Rrad,Rthet,Ra,kp
 
 	niter=3
 	if(FLD) niter=10
@@ -108,6 +108,7 @@ c celi(i),celj(i) are the cell-coordinates of array element i
 			endif
 		enddo
 	enddo
+
 
 c*****************************************************
 c*****************************************************
@@ -271,12 +272,27 @@ c the theta part
 			C(celi(i),celj(i))%FradR=0d0
 			C(celi(i),celj(i))%FradZ=0d0
 			if(T4(i).lt.0d0) C(celi(i),celj(i))%T=dT
+			if(T4(i).gt.0d0) C(celi(i),celj(i))%EJv=T4(i)
 			if(C(celi(i),celj(i))%T.gt.(real(TMAX-1)*dT)) C(celi(i),celj(i))%T=real(TMAX-1)*dT
 			if(C(celi(i),celj(i))%T.lt.1d0) then
 				C(celi(i),celj(i))%T=1d0
 			endif
 			if(number_invalid(C(celi(i),celj(i))%T).ne.0) C(celi(i),celj(i))%T=1d0
 			if(.not.tcontact) C(celi(i),celj(i))%TP(1:ngrains)=C(celi(i),celj(i))%T
+			if(computeLRF) then
+				iT=(C(celi(i),celj(i))%T/dT+0.5d0)
+				if(iT.le.1) iT=1
+				if(iT.ge.(TMAX-1)) iT=TMAX-1
+				kp=0d0
+				do ii=1,ngrains
+					if(.not.Grain(ii)%qhp) then
+						do iopac=1,Grain(ii)%nopac
+							kp=kp+(Grain(ii)%Kp(iopac,iT)*C(celi(i),celj(i))%w(ii)*C(celi(i),celj(i))%wopac(ii,iopac))
+						enddo
+					endif
+				enddo
+				C(celi(i),celj(i))%LRF(1:nlam)=BB(1:nlam,iT)*C(celi(i),celj(i))%EJv/kp
+			endif
 		endif
 	enddo
 	

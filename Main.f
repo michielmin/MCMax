@@ -691,7 +691,7 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 		enddo
 	endif
 
-	if(exportProDiMo) call DoExportProdimo()
+	if(exportProDiMo.and.Nphot.gt.0) call DoExportProdimo()
 
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0
