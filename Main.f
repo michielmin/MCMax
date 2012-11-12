@@ -475,13 +475,13 @@ c
 	if(convection.and.niter.gt.NFirst) call MakeAdiabatic(2d0/7d0)
 	endif
 
-	if(Tsmooth) call do_smooth()
-
 	do j=1,D%nTheta-1
 		do i=1,D%nR-1
 			C(i,j)%TMC=C(i,j)%T
 		enddo
 	enddo
+	if(Tsmooth) call do_smooth()
+
 	if((NphotDiffuse.gt.0.or.dTDiffuse.lt.1d0).and.(Nphot.ne.0.or.forcediff)) then
 		call Diffuse(NPhotDiffuse,dTDiffuse)
 	endif
@@ -679,6 +679,7 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 !c -------------------------------------------------------------
 !c Make the observations
 !c -------------------------------------------------------------
+		if(exportProDiMo.and.Nphot.gt.0) call DoExportProdimo()
 		if(use_obs_TMC) then
 		do j=1,D%nTheta-1
 			do i=1,D%nR-1
@@ -691,7 +692,6 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 		enddo
 	endif
 
-	if(exportProDiMo.and.Nphot.gt.0) call DoExportProdimo()
 
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0

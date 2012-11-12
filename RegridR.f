@@ -410,7 +410,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 		enddo
 4		continue
 		do k=1,D%nR-1
-			if(Rnew(i+1).gt.D%R(k).and.Rnew(i+1).le.D%R(k+1)) then
+			if(Rnew(i+1).ge.D%R(k).and.Rnew(i+1).lt.D%R(k+1)) then
 				i2=k
 				goto 5
 			endif

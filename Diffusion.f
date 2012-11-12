@@ -13,12 +13,12 @@ c-----------------------------------------------------------------------
 	integer number(0:D%nR,0:D%nTheta),N,i,j,jm,jp,j0,INFO,l,ia
 	integer ii,iT,NPhotMin,NRHS,ncor,iter,niter,iopac,number_invalid
 	integer,allocatable :: celi(:),celj(:),IWORK(:)
-	real*8,allocatable :: Dc(:),T4(:),M(:,:),r(:),t(:)
+	real*8,allocatable :: Dc(:),T4(:),M(:,:),r(:),t(:),cooling(:)
 	real*8 dx0,dx1,dx2,f1,f2,Rr,Rt,Rabs,dTMax,determineT,Etot,Dav,pow,gasdev,Kext,dens
 	real*8 Krjm,rhojm,rjm,tjm,Krjp,rhojp,rjp,tjp,T4jm,T4jp,T4j0,prgopt(4),ErrorE,Error0
 	logical,allocatable :: ok(:)
 	type(photon) phot
-	real*8 Rrad,Rthet,Ra,kp
+	real*8 Rrad,Rthet,Ra,kp,ComputeCoolingFraction
 
 	niter=3
 	if(FLD) niter=10
@@ -96,6 +96,7 @@ c celi(i),celj(i) are the cell-coordinates of array element i
 	allocate(M(N,N))
 	allocate(ok(0:N))
 	allocate(Dc(N))
+	allocate(cooling(N))
 
 
 	do i=1,D%nR-1
@@ -132,6 +133,7 @@ c fill the T4 vector with zeros, except when suff. photon statistics
 			if(.not.Grain(ii)%qhp) dens=dens+C(celi(i),celj(i))%w(ii)*C(celi(i),celj(i))%dens
 		enddo
 		Dc(i)=1d0/(Kext*dens)
+		if(((D%R(D%nR)-D%R(celi(i)))*AU/Dc(i)).lt.2d0) C(celi(i),celj(i))%thick=.false.
 		if(C(celi(i),celj(i))%Ni.lt.NPhotMin
      &		.or.(C(celi(i),celj(i))%dT/C(celi(i),celj(i))%T).gt.dTMax) then
 			ok(i)=.false.
@@ -144,7 +146,11 @@ c fill the T4 vector with zeros, except when suff. photon statistics
 		else
 			ok(i)=.true.
 		endif
-
+c		cooling(i)=0d0
+c		if(iter.ne.1) then
+c			call tellertje(i,N)
+c			cooling(i)=ComputeCoolingFraction(celi,celj,ok,i,N)
+c		endif
 	enddo
 
 	if(FLD) then
@@ -211,7 +217,6 @@ c the radial part
 			dx2=log(r(j0)/r(jm))
 
 			f1=Dc(jp)*r(jp)
-
 			f2=Dc(jm)*r(jm)
 
 			M(i,jm)=M(i,jm)+f2/(dx2*dx0*r(j0)**3)
@@ -219,6 +224,7 @@ c the radial part
 
 			M(i,jp)=M(i,jp)+f1/(dx1*dx0*r(j0)**3)
 			M(i,j0)=M(i,j0)-f1/(dx1*dx0*r(j0)**3)
+
 c the theta part
 			j0=number(celi(i),celj(i))
 			if(celj(i).ne.(D%nTheta-1)) then
@@ -229,12 +235,12 @@ c the theta part
 				tjm=pi-t(jm)
 			endif
 			jp=number(celi(i),celj(i)-1)
+
 			dx0=t(jp)-tjm
 			dx1=t(jp)-t(j0)
 			dx2=t(j0)-tjm
 
 			f1=Dc(jp)*sin(t(jp))
-
 			f2=Dc(jm)*sin(tjm)
 
 			M(i,jm)=M(i,jm)+f2/(dx2*dx0*r(j0)**2*sin(t(j0)))
@@ -306,6 +312,81 @@ c the theta part
 	deallocate(M)
 	deallocate(ok)
 	deallocate(Dc)
+	deallocate(cooling)
 
 	return
 	end
+
+
+
+	real*8 function ComputeCoolingFraction(celi,celj,ok,i0,N)
+	use Parameters
+	IMPLICIT NONE
+	integer N
+	integer celi(N),celj(N),i,ilam,nexit,iexit
+	integer inext,jnext,iT,i0,ii,iopac,j
+	logical ok(N)
+	type(photon) phot
+	real*8 ran2,Rad,Theta,phi,tau,v,f,Kext,tot
+	real*8,allocatable :: spec(:)
+	
+	nexit=4
+	allocate(spec(nlam))
+	spec=0d0
+	do iexit=1,nexit
+		do ilam=1,nlam
+			phot%i=celi(i0)
+			phot%j=celj(i0)
+			Rad=ran2(idum)
+			Rad=sqrt(D%R(phot%i)**2*Rad+D%R(phot%i+1)**2*(1d0-Rad))
+			Theta=ran2(idum)
+			Theta=D%Theta(phot%j)*Theta+D%Theta(phot%j+1)*(1d0-Theta)
+			phot%z=Rad*Theta
+			phi=1d-4
+			phot%x=Rad*sqrt(1d0-Theta**2)*sin(phi)
+			phot%y=Rad*sqrt(1d0-Theta**2)*cos(phi)
+			phi=pi*ran2(idum)
+			phot%vx=0d0
+			phot%vy=cos(phi)
+			phot%vz=sin(phi)
+			phot%onEdge=.false.
+			i=i0
+			tau=0d0
+1			do while(phot%i.gt.0.and.phot%i.lt.D%nR)
+				call Trace2edge(phot,v,inext,jnext)
+				Kext=0d0
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						Kext=Kext+Grain(ii)%Kext(iopac,ilam)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+					enddo
+				enddo
+				tau=tau+v*Kext*AU*C(phot%i,phot%j)%dens
+				phot%i=inext
+				phot%j=jnext
+				phot%x=phot%x+phot%vx*v
+				phot%y=phot%y+phot%vy*v
+				phot%z=phot%z+phot%vz*v
+				phot%onEdge=.true.
+			enddo
+			spec(ilam)=spec(ilam)+exp(-tau)/real(nexit)
+		enddo
+	enddo
+
+	iT=C(celi(i0),celj(i0))%T/dT
+	if(iT.le.1) iT=1
+	if(iT.ge.(TMAX-1)) iT=TMAX-1
+
+	spec(1:nlam)=spec(1:nlam)*BB(1:nlam,iT)
+	call integrate(spec,f)
+	spec(1:nlam)=BB(1:nlam,iT)
+	call integrate(spec,tot)
+	f=f/tot
+
+	ComputeCoolingFraction=f
+
+	deallocate(spec)
+	
+	return
+	end
+	
+	

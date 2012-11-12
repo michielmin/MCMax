@@ -369,6 +369,9 @@ c			else
 		if(forcefirst) then
 			if(isplit.eq.1) then
 				tau=1d200
+				do ii=1,D%nR-1
+					C(ii,phot%j)%Ni=C(ii,phot%j)%Ni-1
+				enddo
 			else
 				tau=-log(ran2(idum)*split(2)+split(1))
 			endif
@@ -636,8 +639,8 @@ c	close(unit=20)
 
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
-		C(i,j)%FradZ=C(i,j)%FradZ/(-(cos(D%theta_av(j))*C(i,j)%gasdens*C(i,j)%V*6.67300d-8*D%Mstar/D%R_av(i)**2))
-		C(i,j)%FradR=C(i,j)%FradR/(-(sin(D%theta_av(j))*C(i,j)%gasdens*C(i,j)%V*6.67300d-8*D%Mstar/D%R_av(i)**2))
+		C(i,j)%FradZ=C(i,j)%FradZ/(-(cos(D%theta_av(j))*C(i,j)%dens*C(i,j)%V*6.67300d-8*D%Mstar/D%R_av(i)**2))
+		C(i,j)%FradR=C(i,j)%FradR/(-(sin(D%theta_av(j))*C(i,j)%dens*C(i,j)%V*6.67300d-8*D%Mstar/D%R_av(i)**2))
 		C(i,j)%FradZ=C(i,j)%FradZ/gas2dust
 		C(i,j)%FradR=C(i,j)%FradR/gas2dust
 	enddo
@@ -902,8 +905,17 @@ c ------------------------------------------------
 	phot%j=jnext
 
 	ntrace=ntrace+1
+
+	if(tau.lt.0d0) then
+		escape=.true.
+		hitstar=.true.
+		return
+	endif
+
 	if(ntrace.gt.D%nR*D%nTheta*2) then
 		print*,'raar!',phot%i,phot%j,phot%x,phot%y,phot%z,sqrt(phot%vx**2+phot%vy**2+phot%vz**2),v,tau,tau0
+		escape=.true.
+		hitstar=.true.
 		return
 	endif
 

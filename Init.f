@@ -331,8 +331,10 @@ c	Interstellar Radiation Field (IRF)
 	write(line,'("cp ",a," ",a,"input.dat")') trim(input),trim(outdir)
 	call system(line)
 	write(line,'(a,"input.dat")') trim(outdir)
-	open(unit=21,file=line,RECL=1000,access='APPEND')
-	write(21,'("*** command line keywords ***")')
+	if(Nphot.gt.0) then
+		open(unit=21,file=line,RECL=1000,access='APPEND')
+		write(21,'("*** command line keywords ***")')
+	endif
 
 	ia=1
 10	if(ia.eq.1) then
@@ -346,7 +348,7 @@ c	Interstellar Radiation Field (IRF)
 		ia=ia+1
 		call get_command_argument(2+ia,line)
 		print*,line(1:len_trim(line))
-		write(21,'(a)') trim(line)
+		if(Nphot.gt.0) write(21,'(a)') trim(line)
 		ia=ia+1
 		goto 30
 	endif
@@ -1036,11 +1038,15 @@ C       End
 				Rfix(nRfix)=Zone(i)%Rout
 			endif
 			if(mpset.or.scset.or..not.Zone(i)%fix_struct) struct_iter=.true.
+			if(Zone(i)%Rin.lt.D%Rin) D%Rin=Zone(i)%Rin
+			if(Zone(i)%Rout.gt.D%Rout) D%Rout=Zone(i)%Rout
 		enddo
 	endif
-	print*,nRfix
+
 
 	if(MeixRin.le.0d0) MeixRin=D%Rin
+	if(MeixD.le.0d0) MeixD=MeixE
+	if(MeixE.le.0d0) MeixE=MeixD
 	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
@@ -1937,7 +1943,7 @@ c	lmax  = 4000.0
 		spec(i) = exp(log(spec(N1UV))+REAL(i-N1UV)/REAL(NUV-N1UV)*log(spec(NUV)/spec(N1UV)))
 	enddo
 	do i=NUV+1,NLAM-nzlam                    ! interval boundaries
-		spec(i) = EXP(LOG(spec(NUV))+REAL(i-NUV)/REAL(NLAM-NUV)*LOG(lam2/spec(NUV)))
+		spec(i) = EXP(LOG(spec(NUV))+REAL(i-NUV)/REAL(NLAM-nzlam-NUV)*LOG(lam2/spec(NUV)))
 	enddo
 	do i=nlam-nzlam+1,NLAM                    ! interval boundaries
 		spec(i) = EXP(LOG(zlam1)+REAL(i-(nlam-nzlam))/REAL(nzlam)*LOG(zlam2/zlam1))

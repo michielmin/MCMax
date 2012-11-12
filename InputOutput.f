@@ -858,6 +858,8 @@ C	 create the new empty FITS file
 						enddo
 					enddo
 				enddo
+			case ('SKIP')
+c	just skip this hdu
 			case default
 				write(9,'("Error in output file specification")')
 				write(*,'("Error in output file specification")')
