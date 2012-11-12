@@ -90,7 +90,7 @@ c	call ftgkyj(unit,'mcfost2prodimo',mcfost(1)%mcfost2ProDiMo,comment,stat4)
 	! read_image
 	allocate(matrix(nl_read,6,180))
 
-	call ftgpve(unit,group,firstpix,npixels,nullval,matrix,anynull,status)
+	call ftgpvd(unit,group,firstpix,npixels,nullval,matrix,anynull,status)
    
 				 
 	!  Close the file and free the unit number.

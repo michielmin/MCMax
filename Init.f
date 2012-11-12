@@ -2240,6 +2240,24 @@ c in the theta grid we actually store cos(theta) for convenience
 
 
 
+	shscale(0:D%nR)=1d0
+	if(scalesh.eq.'FILE') then
+		call regrid(shscalefile,D%R_av/AU,shscale,D%nR)
+	else if(scalesh.eq.'VALUE') then
+		shscale(0:D%nR)=shscalevalue
+	else if(scalesh.eq.'RADIALPOW') then
+		shscale(0:D%nR-1)=shscalevalue*(D%R_av(0:D%nR-1)/D%R_av(1))**(-shpow)
+	else if(scalesh.eq.'POW') then
+		shscale(0:D%nR-1)=1d0+(shscalevalue-1d0)*(D%R_av(0:D%nR-1)/AU)**(-shpow)
+	else
+		shscale(0:D%nR)=1d0
+	endif
+
+	do i=0,D%nR-1
+		shscale(i)=shscale(i)*(1d0+rimscale*exp(-((D%R(1)-D%R(i))/rimwidth)**2))
+	enddo
+
+
 	MassTot=0d0
 	D%Vtot=0d0
 
@@ -2377,7 +2395,7 @@ c			f2=exp(-0.5*(z/hr)**2)
 			r=D%R_av(i)*sin(D%theta_av(j))/AU
 			z=D%R_av(i)*cos(D%theta_av(j))/AU
 			hr=D%sh1AU*r**D%shpow
-			hr=hr*(1d0+rimscale*exp(-((D%R(1)-D%R(i))/rimwidth)**2))
+			hr=hr*shscale(i)
 			f1=r**(-D%denspow)
 			f2=exp(-(z/hr)**2)
 			scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
@@ -2455,24 +2473,6 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 	enddo
 	enddo
 	if(.not.mdustscale) D%Mtot=MassTot
-
-
-	shscale(0:D%nR)=1d0
-	if(scalesh.eq.'FILE') then
-		call regrid(shscalefile,D%R_av/AU,shscale,D%nR)
-	else if(scalesh.eq.'VALUE') then
-		shscale(0:D%nR)=shscalevalue
-	else if(scalesh.eq.'RADIALPOW') then
-		shscale(0:D%nR-1)=shscalevalue*(D%R_av(0:D%nR-1)/D%R_av(1))**(-shpow)
-	else if(scalesh.eq.'POW') then
-		shscale(0:D%nR-1)=1d0+(shscalevalue-1d0)*(D%R_av(0:D%nR-1)/AU)**(-shpow)
-	else
-		shscale(0:D%nR)=1d0
-	endif
-
-	do i=0,D%nR-1
-		shscale(i)=shscale(i)*(1d0+rimscale*exp(-((D%R(1)-D%R(i))/rimwidth)**2))
-	enddo
 
 
 	if(denstype.eq.'MIN') then

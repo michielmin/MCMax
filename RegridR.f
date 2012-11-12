@@ -24,7 +24,7 @@ c--------------------------------------------------------------------
 	real*8 taustart,dtaumax,tauend,ct,Rmultmax,dtaumaxabs
 	logical escape,hitstar,locfield,RNDWBackup
 	integer iT,irefine,inormal
-	logical refineR,refining,error
+	logical refineR,refining,error,fix1(D%nR),fix2(D%nR)
 	real*8 taustar(0:D%nTheta),taulocal(0:D%nTheta),shtemp(0:D%nR)
 	real*8 taustarabs(0:D%nTheta),taulocalabs(0:D%nTheta),MaxGasMass(ngrains)
 	real*8 Kpext(ngrains,0:TMAX),Kpabs(ngrains,0:TMAX),Kpstarabs(ngrains)
@@ -307,126 +307,6 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 		endif
 	enddo
 
-C	do i=1,D%nRfix
-C		phot%i=-1
-C		phot%j=D%nTheta-1
-C		r=sqrt(phot%x**2+phot%y**2+phot%z**2)
-C		do j=0,D%nR-1
-C			if(D%Rfix(i).gt.D%R(j).and.D%Rfix(i).le.D%R(j+1)) then
-C				phot%i=j
-C				r=D%R_av(j)/AU
-C				phot%x=r*sin(D%theta_av(phot%j))*cos(0.1)
-C				phot%y=r*sin(D%theta_av(phot%j))*sin(0.1)
-C				phot%z=r*cos(D%theta_av(phot%j))
-C			endif
-C		enddo
-C		if(phot%i.eq.-1) then
-C			phot%i=0
-C			r=D%R_av(phot%i)/AU
-C			phot%x=r*sin(D%theta_av(phot%j))*cos(0.1)
-C			phot%y=r*sin(D%theta_av(phot%j))*sin(0.1)
-C			phot%z=r*cos(D%theta_av(phot%j))
-C		endif
-C		phot%vx=phot%x/r
-C		phot%vy=phot%y/r
-C		phot%vz=phot%z/r
-C		r=sqrt(phot%vx**2+phot%vy**2+phot%vz**2)
-C		phot%vx=phot%vx/r
-C		phot%vy=phot%vy/r
-C		phot%vz=phot%vz/r
-C
-C		tau=0.25
-C		phot%lam=0.55
-C		phot%onEdge=.false.
-C		do j=1,nlam-1
-C			if(phot%lam.ge.lam(j).and.phot%lam.le.lam(j+1)) then
-C				phot%ilam1=j
-C				phot%ilam2=j+1
-C				phot%wl1=(lam(j+1)-phot%lam)/(lam(j+1)-lam(j))
-C				phot%wl2=(phot%lam-lam(j))/(lam(j+1)-lam(j))
-C			endif
-C		enddo
-C		phot%nu=nu(phot%ilam1)*phot%wl1+nu(phot%ilam2)*phot%wl2
-C		phot%E=1d0
-C		do ii=1,ngrains
-C			do iopac=1,Grain(ii)%nopac
-C				Grain(ii)%KabsL(iopac)=Grain(ii)%Kabs(iopac,phot%ilam1)*phot%wl1+
-C     &     Grain(ii)%Kabs(iopac,phot%ilam2)*phot%wl2
-C				Grain(ii)%KextL(iopac)=Grain(ii)%Kext(iopac,phot%ilam1)*phot%wl1+
-C     &     Grain(ii)%Kext(iopac,phot%ilam2)*phot%wl2
-C			enddo
-C		enddo
-C		do j=1,nspan*nlev/2
-C			call trace2d(phot,tau,escape,hitstar,.false.)
-C			if(escape.or.hitstar) goto 91
-C			tau=tau*2d0
-C			if(nused.lt.D%nR) then
-C				nused=nused+1
-C				Rnew(nused)=sqrt(phot%x**2+phot%y**2+phot%z**2)
-C				if(Rnew(nused).le.D%Rin) nused=nused-1
-C			endif
-C		enddo
-C91		continue
-C
-C		phot%i=-1
-C		phot%j=D%nTheta-1
-C		r=sqrt(phot%x**2+phot%y**2+phot%z**2)
-C		do j=0,D%nR-1
-C			if(D%Rfix(i).gt.D%R(j).and.D%Rfix(i).le.D%R(j+1)) then
-C				phot%i=j
-C				r=D%R_av(j)/AU
-C				phot%x=r*sin(D%theta_av(phot%j))*cos(0.1)
-C				phot%y=r*sin(D%theta_av(phot%j))*sin(0.1)
-C				phot%z=r*cos(D%theta_av(phot%j))
-C			endif
-C		enddo
-C		if(phot%i.le.0) then
-C			phot%i=1
-C			r=D%R_av(phot%i)/AU
-C			phot%x=r*sin(D%theta_av(phot%j))*cos(0.1)
-C			phot%y=r*sin(D%theta_av(phot%j))*sin(0.1)
-C			phot%z=r*cos(D%theta_av(phot%j))
-C		endif
-C		phot%vx=-phot%x/r
-C		phot%vy=-phot%y/r
-C		phot%vz=phot%z/r
-C		r=sqrt(phot%vx**2+phot%vy**2+phot%vz**2)
-C		phot%vx=phot%vx/r
-C		phot%vy=phot%vy/r
-C		phot%vz=phot%vz/r
-C		tau=0.25
-C		phot%lam=0.55
-C		phot%onEdge=.false.
-C		do j=1,nlam-1
-C			if(phot%lam.ge.lam(j).and.phot%lam.le.lam(j+1)) then
-C				phot%ilam1=j
-C				phot%ilam2=j+1
-C				phot%wl1=(lam(j+1)-phot%lam)/(lam(j+1)-lam(j))
-C				phot%wl2=(phot%lam-lam(j))/(lam(j+1)-lam(j))
-C			endif
-C		enddo
-C		phot%nu=nu(phot%ilam1)*phot%wl1+nu(phot%ilam2)*phot%wl2
-C		phot%E=1d0
-C		do ii=1,ngrains
-C			do iopac=1,Grain(ii)%nopac
-C				Grain(ii)%KabsL(iopac)=Grain(ii)%Kabs(iopac,phot%ilam1)*phot%wl1+
-C     &     Grain(ii)%Kabs(iopac,phot%ilam2)*phot%wl2
-C				Grain(ii)%KextL(iopac)=Grain(ii)%Kext(iopac,phot%ilam1)*phot%wl1+
-C     &     Grain(ii)%Kext(iopac,phot%ilam2)*phot%wl2
-C			enddo
-C		enddo
-C		do j=1,nspan*nlev/2
-C			call trace2d(phot,tau,escape,hitstar,.false.)
-C			if(escape.or.hitstar.or.phot%x.lt.0d0) goto 92
-C			tau=tau*2d0
-C			if(nused.lt.D%nR) then
-C				nused=nused+1
-C				Rnew(nused)=sqrt(phot%x**2+phot%y**2+phot%z**2)
-C				if(Rnew(nused).le.D%Rin) nused=nused-1
-C			endif
-C		enddo
-C92		continue
-C	enddo
 
 	if(nused.lt.D%nR) then
 		do i=nused+1,D%nR
@@ -463,6 +343,15 @@ C	enddo
 	
 	do i=0,D%nR-1
 		Rav(i)=AU*10d0**((log10(Rnew(i))+log10(Rnew(i+1)))/2d0)
+	enddo
+
+	fix1=.false.
+	fix2=.false.
+	do i=2,D%nR-2
+		do j=1,D%nRfix
+			if((Rav(i-1)/AU).le.D%Rfix(j).and.(Rav(i)/AU).ge.D%Rfix(j)) fix1(i)=.true.
+			if((Rav(i)/AU).le.D%Rfix(j).and.(Rav(i+1)/AU).ge.D%Rfix(j)) fix2(i)=.true.
+		enddo
 	enddo
 
 	do i=0,D%nR
@@ -521,7 +410,7 @@ C	enddo
 		enddo
 4		continue
 		do k=1,D%nR-1
-			if(Rnew(i+1).ge.D%R(k).and.Rnew(i+1).lt.D%R(k+1)) then
+			if(Rnew(i+1).gt.D%R(k).and.Rnew(i+1).le.D%R(k+1)) then
 				i2=k
 				goto 5
 			endif
@@ -649,7 +538,15 @@ C	enddo
 			enddo
 			call CheckMinimumDensity(i,j)
 		else
-			if(Rav(i).gt.D%R_av(i1).or.i1.eq.1) then
+			if(fix1(i)) then
+				C(i,j)%gasdens=Cold(i2)%gasdens
+				C(i,j)%dens0=Cold(i2)%dens0
+				C(i,j)%dens=Cold(i2)%dens
+			else if(fix2(i)) then
+				C(i,j)%gasdens=Cold(i1)%gasdens
+				C(i,j)%dens0=Cold(i1)%dens0
+				C(i,j)%dens=Cold(i1)%dens
+			else if(Rav(i).gt.D%R_av(i1).or.i1.eq.1) then
 				dens=log10(Cold(i1)%gasdens)+
      &					log10(Cold(i1+1)%gasdens/Cold(i1)%gasdens)*
      &					log10(Rav(i)/D%R_av(i1))/log10(D%R_av(i1+1)/D%R_av(i1))
