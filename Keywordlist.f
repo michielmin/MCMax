@@ -310,6 +310,12 @@
 	keyword(i)='tsmooth'
 	i=i+1
 	keyword(i)='outputfits'
+	i=i+1
+	keyword(i)='amin'
+	i=i+1
+	keyword(i)='amax'
+	i=i+1
+	keyword(i)='apow'
 	
 	Nnormal=i
 c from here on keywords with numbers
@@ -411,6 +417,8 @@ c from here on keywords with numbers
 	keyword(i)='rhograin'
 	i=i+1
 	keyword(i)='zone'
+	i=i+1
+	keyword(i)='computepart'
 
 	Nkey=i
 	

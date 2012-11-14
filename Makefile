@@ -61,7 +61,8 @@ OBJS	      = Modules.o \
 		Reddening.o \
 		Smooth.o \
 		ReadParticleFits.o \
-		InputOutput.o
+		InputOutput.o \
+		ComputePart.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

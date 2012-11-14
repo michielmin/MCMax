@@ -778,6 +778,7 @@ C	 create the new empty FITS file
 			case ('COMP')
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
+						if(.not.allocated(C(i,j)%w)) allocate(C(i,j)%w(ngrains))
 						do ii=1,ngrains
 							C(i,j)%w(ii)=array(i,j,ii,1)
 							do iopac=1,ngrains2

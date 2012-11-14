@@ -48,6 +48,10 @@
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
+	real*8 computepart_amin(100),computepart_amax(100),computepart_apow(100),computepart_fmax(100)
+	real*8 computepart_porosity(100)
+	integer computepart_ngrains(100)
+	logical computepart_blend(100)
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -143,7 +147,7 @@
 	mrn=.false.		! Gijsexp: calculate grain size distribution 
 	mrn_index=3.5d0		! Gijsexp
 	mrn_rmin=1d-6		! Gijsexp: 0.01 micron
-        mrn_rmax=1d-1           ! Gijsexp: 1 mm
+	mrn_rmax=1d-1       ! Gijsexp: 1 mm
 	mrn_ngrains=0		! Gijsexp: include grains up to mrn_ngrains (if >0)
 
 	gsd=.false.		! Gijsexp: calculate grain size distribution 
@@ -286,6 +290,14 @@
 	
 	outputfits=.false.
 
+	computepart_amin=-1d0
+	computepart_amax=-1d0
+	computepart_apow=1d5
+	computepart_fmax=0d0
+	computepart_blend=.true.
+	computepart_porosity=0.25d0
+	computepart_ngrains=1
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -298,6 +310,9 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%sh=0.01d0
 		ZoneTemp(i)%shpow=1.1
 		ZoneTemp(i)%Rexp=1d200
+		ZoneTemp(i)%a_min=-1d0
+		ZoneTemp(i)%a_max=-1d0
+		ZoneTemp(i)%a_pow=1d5
 	enddo
 	nzones=0
 	
@@ -596,6 +611,36 @@ c			endif
 		endif
 		use_topac=.true.
 	endif
+
+	if(key(1:11).eq.'computepart') then
+		read(key(12:index(key,":")-1),*) i
+		opacity_set=.true.
+		if(i.gt.ngrains) ngrains=i
+		parttype(i)=7
+		write(keyzone,'(a)') key(index(key,":")+1:len_trim(key))
+		if(keyzone.eq.'file') then
+			partarg(i)=value
+		else if(keyzone.eq.'amin') then
+			read(value,*) computepart_amin(i)
+		else if(keyzone.eq.'amax') then
+			read(value,*) computepart_amax(i)
+		else if(keyzone.eq.'apow') then
+			read(value,*) computepart_apow(i)
+		else if(keyzone.eq.'fmax') then
+			read(value,*) computepart_fmax(i)
+		else if(keyzone.eq.'ngrains') then
+			read(value,*) computepart_ngrains(i)
+		else if(keyzone.eq.'blend') then
+			read(value,*) computepart_blend(i)
+		else if(keyzone.eq.'porosity') then
+			read(value,*) computepart_porosity(i)
+		else
+			write(*,'("ComputePart keyword not understood:",a)') trim(keyzone)
+			write(9,'("ComputePart keyword not understood:",a)') trim(keyzone)
+			stop
+		endif
+	endif
+
 
 	if(key(1:6).eq.'powmix') then
 		read(key(7:len_trim(key)),*) i
@@ -914,12 +959,12 @@ C       Gijsexp, read in parameters for s.c. settling
 	
 	! parameters for grain size distribution
 	if(key.eq.'mrn') read(value,*) mrn	
-	if(key.eq.'mrn_index') read(value,*) mrn_index
-	if(key.eq.'mrn_rmin') then
+	if(key.eq.'mrn_index'.or.key.eq.'apow') read(value,*) mrn_index
+	if(key.eq.'mrn_rmin'.or.key.eq.'amin') then
 	   read(value,*) mrn_rmin
 	   mrn_rmin = mrn_rmin * 1d-4
 	endif
-	if(key.eq.'mrn_rmax') then
+	if(key.eq.'mrn_rmax'.or.key.eq.'amax') then
 	   read(value,*) mrn_rmax
 	   mrn_rmax = mrn_rmax * 1d-4
 	endif
@@ -975,9 +1020,9 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'outputfits') read(value,*) outputfits
 
 	if(key(1:4).eq.'zone') then
-		read(key(5:5),*) i
+		read(key(5:index(key,":")-1),*) i
 		if(i.gt.nzones) nzones=i
-		write(keyzone,'(a)') key(7:len_trim(key))
+		write(keyzone,'(a)') key(index(key,":")+1:len_trim(key))
 		if(keyzone.eq.'rin') then
 			read(value,*) ZoneTemp(i)%Rin
 		else if(keyzone.eq.'rout') then
@@ -1023,6 +1068,113 @@ C       End
 40	close(unit=20)
 	close(unit=21)
 
+57	j=ngrains
+	do ii=1,j
+		if(computepart_amin(ii).le.0d0) computepart_amin(ii)=mrn_rmin*1d4
+		if(computepart_amax(ii).le.0d0) computepart_amax(ii)=mrn_rmax*1d4
+		if(computepart_apow(ii).gt.100d0) computepart_apow(ii)=mrn_index
+		if(parttype(ii).eq.7.and.computepart_ngrains(ii).gt.1) then
+			do i=ngrains,ii+1,-1
+				computepart_amin(i+computepart_ngrains(ii)-1)=computepart_amin(i)
+ 				computepart_amax(i+computepart_ngrains(ii)-1)=computepart_amax(i)
+ 				computepart_apow(i+computepart_ngrains(ii)-1)=computepart_apow(i)
+				computepart_fmax(i+computepart_ngrains(ii)-1)=computepart_fmax(i)
+				computepart_blend(i+computepart_ngrains(ii)-1)=computepart_blend(i)
+				computepart_porosity(i+computepart_ngrains(ii)-1)=computepart_porosity(i)
+				computepart_ngrains(i+computepart_ngrains(ii)-1)=computepart_ngrains(i)
+				warg(i+computepart_ngrains(ii)-1)=warg(i)
+				powslope(i+computepart_ngrains(ii)-1)=powslope(i)
+				powrad0(i+computepart_ngrains(ii)-1)=powrad0(i)
+				TdesA(i+computepart_ngrains(ii)-1)=TdesA(i)
+				TdesB(i+computepart_ngrains(ii)-1)=TdesB(i)
+				asym(i+computepart_ngrains(ii)-1)=asym(i)
+				asym2(i+computepart_ngrains(ii)-1)=asym2(i)
+				wasym2(i+computepart_ngrains(ii)-1)=wasym2(i)
+				Pmax(i+computepart_ngrains(ii)-1)=Pmax(i)
+				tdes_fast(i+computepart_ngrains(ii)-1)=tdes_fast(i)
+				powinner(i+computepart_ngrains(ii)-1)=powinner(i)
+				powclose(i+computepart_ngrains(ii)-1)=powclose(i)
+				powfar(i+computepart_ngrains(ii)-1)=powfar(i)
+				partarg(i+computepart_ngrains(ii)-1)=partarg(i)
+				settlefile(i+computepart_ngrains(ii)-1)=settlefile(i)
+				material(i+computepart_ngrains(ii)-1)=material(i)
+				shtype(i+computepart_ngrains(ii)-1)=shtype(i)
+				settle(i+computepart_ngrains(ii)-1)=settle(i)
+				trace(i+computepart_ngrains(ii)-1)=trace(i)
+				coupledabun(i+computepart_ngrains(ii)-1)=coupledabun(i)
+				coupledfrac(i+computepart_ngrains(ii)-1)=coupledfrac(i)
+				frac(i+computepart_ngrains(ii)-1)=frac(i)
+				parttype(i+computepart_ngrains(ii)-1)=parttype(i)
+				part_shscale(i+computepart_ngrains(ii)-1)=part_shscale(i)
+				minrad(i+computepart_ngrains(ii)-1)=minrad(i)
+				maxrad(i+computepart_ngrains(ii)-1)=maxrad(i)
+				roundwidth(i+computepart_ngrains(ii)-1)=roundwidth(i)
+				roundpow(i+computepart_ngrains(ii)-1)=roundpow(i)
+				roundpeak(i+computepart_ngrains(ii)-1)=roundpeak(i)
+				roundtype(i+computepart_ngrains(ii)-1)=roundtype(i)
+				powmix(i+computepart_ngrains(ii)-1)=powmix(i)
+				radmix(i+computepart_ngrains(ii)-1)=radmix(i)
+				Tmix(i+computepart_ngrains(ii)-1)=Tmix(i)
+				rgrain(i+computepart_ngrains(ii)-1)=rgrain(i)
+				rhograin(i+computepart_ngrains(ii)-1)=rhograin(i)
+			enddo
+			do i=2,computepart_ngrains(ii)
+				computepart_amin(i+ii-1)=10d0**(log10(computepart_amin(ii))
+     &					+log10(computepart_amax(ii)/computepart_amin(ii))
+     &					*real(i-1)/real(computepart_ngrains(ii)))
+				computepart_amax(i+ii-1)=10d0**(log10(computepart_amin(ii))
+     &					+log10(computepart_amax(ii)/computepart_amin(ii))
+     &					*real(i)/real(computepart_ngrains(ii)))
+				computepart_apow(i+ii-1)=computepart_apow(ii)
+				computepart_fmax(i+ii-1)=computepart_fmax(ii)
+				computepart_blend(i+ii-1)=computepart_blend(ii)
+				computepart_porosity(i+ii-1)=computepart_porosity(ii)
+				computepart_ngrains(i+ii-1)=1
+				warg(i+ii-1)=warg(ii)
+				powslope(i+ii-1)=powslope(ii)
+				powrad0(i+ii-1)=powrad0(ii)
+				TdesA(i+ii-1)=TdesA(ii)
+				TdesB(i+ii-1)=TdesB(ii)
+				asym(i+ii-1)=asym(ii)
+				asym2(i+ii-1)=asym2(ii)
+				wasym2(i+ii-1)=wasym2(ii)
+				Pmax(i+ii-1)=Pmax(ii)
+				tdes_fast(i+ii-1)=tdes_fast(ii)
+				powinner(i+ii-1)=powinner(ii)
+				powclose(i+ii-1)=powclose(ii)
+				powfar(i+ii-1)=powfar(ii)
+				partarg(i+ii-1)=partarg(ii)
+				settlefile(i+ii-1)=settlefile(ii)
+				material(i+ii-1)=material(ii)
+				shtype(i+ii-1)=shtype(ii)
+				settle(i+ii-1)=settle(ii)
+				trace(i+ii-1)=trace(ii)
+				coupledabun(i+ii-1)=coupledabun(ii)
+				coupledfrac(i+ii-1)=coupledfrac(ii)
+				frac(i+ii-1)=frac(ii)
+				parttype(i+ii-1)=parttype(ii)
+				part_shscale(i+ii-1)=part_shscale(ii)
+				minrad(i+ii-1)=minrad(ii)
+				maxrad(i+ii-1)=maxrad(ii)
+				roundwidth(i+ii-1)=roundwidth(ii)
+				roundpow(i+ii-1)=roundpow(ii)
+				roundpeak(i+ii-1)=roundpeak(ii)
+				roundtype(i+ii-1)=roundtype(ii)
+				powmix(i+ii-1)=powmix(ii)
+				radmix(i+ii-1)=radmix(ii)
+				Tmix(i+ii-1)=Tmix(ii)
+				rgrain(i+ii-1)=rgrain(ii)
+				rhograin(i+ii-1)=rhograin(ii)
+			enddo
+			ngrains=ngrains+computepart_ngrains(ii)-1
+			computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
+     &				+log10(computepart_amax(ii)/computepart_amin(ii))
+     &				*real(1)/real(computepart_ngrains(ii)))
+     		computepart_ngrains(ii)=1
+			goto 57
+		endif
+	enddo
+
 	if(nzones.ne.0) then
 		D%Mtot=0d0
 		write(denstype,'("ZONES")')
@@ -1031,6 +1183,9 @@ C       End
 			allocate(Zone(i)%abun(ngrains))
 			allocate(Zone(i)%inc_grain(ngrains))
 			Zone(i)=ZoneTemp(i)
+			if(Zone(i)%a_min.le.0d0) Zone(i)%a_min=mrn_rmin*1d4
+			if(Zone(i)%a_max.le.0d0) Zone(i)%a_max=mrn_rmax*1d4
+			if(Zone(i)%a_pow.gt.100d0) Zone(i)%a_pow=mrn_index
 			D%Mtot=D%Mtot+Zone(i)%Mdust
 			if(Zone(i)%Rin.gt.D%Rin.and.Zone(i)%Rin.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rin)).ne.0d0) then
 				nRfix=nRfix+1
@@ -2586,6 +2741,10 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			call readQHP(partarg(ii),Grain(ii))
 		else if(parttype(ii).eq.5) then
 			call readTopac(partarg(ii),Grain(ii))
+		else if(parttype(ii).eq.7) then
+			call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
+     &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
+     &							,computepart_porosity(ii))
 		endif
 
 		! Set scale height scaling of dust
@@ -2684,6 +2843,9 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				mrn_rmin=Zone(iz)%a_min*1d-4
 				mrn_rmax=Zone(iz)%a_max*1d-4
 				mrn_index=Zone(iz)%a_pow
+				do ii=1,ngrains
+					rgrain(ii)=Grain(ii)%rv
+				enddo
 				call gsd_MRN(rgrain(1:ngrains),Zone(iz)%abun(1:ngrains))
 			endif
 			do i=1,D%nR-1
