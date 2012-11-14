@@ -93,6 +93,9 @@ c-----------------------------------------------------------------------
 	integer ii,fix,iz
 	real*8 rr,zz,hr,f1,f2
 	
+	real*8 totG,xxx,yyy,zzz,xx0,yy0,zz0,sint
+	integer iii,jjj,kkk
+	
 	write(*,'("Solving vertical structure")')
 	write(9,'("Solving vertical structure")')
 
@@ -105,6 +108,28 @@ c-----------------------------------------------------------------------
 
 	eps=1d-6
 	do i=1,D%nR-1
+
+c	do j=1,D%nTheta-1
+c		xx0=D%R_av(i)*sin(D%theta_av(j))
+c		yy0=0d0
+c		zz0=D%R_av(i)*cos(D%theta_av(j))
+c		totG=0d0
+c		do iii=1,D%nR-1
+c		do jjj=1,D%nTheta-1
+c		do kkk=1,9
+c			sint=sin(D%theta_av(jjj))
+c			xxx=D%R_av(iii)*cos(pi*(real(kkk)-0.5d0)/9d0)*sint
+c			yyy=D%R_av(iii)*sin(pi*(real(kkk)-0.5d0)/9d0)*sint
+c			zzz=D%R_av(iii)*cos(D%theta_av(jjj))
+c			totG=totG+(C(iii,jjj)%mass/18d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
+c			zzz=-zzz
+c			totG=totG+(C(iii,jjj)%mass/18d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
+c		enddo
+c		enddo
+c		enddo
+c		C(i,j)%FradZ=totG*gas2dust/(D%Mstar*zz0/(sqrt(xx0**2+yy0**2+zz0**2)**3))
+c	enddo
+
 		call tellertje(i,D%nR-1)
 		do ii=0,ngrains
 		rhosig(1:D%nTheta-1)=0d0

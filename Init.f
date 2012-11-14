@@ -297,6 +297,7 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%Rsh=1d0
 		ZoneTemp(i)%sh=0.01d0
 		ZoneTemp(i)%shpow=1.1
+		ZoneTemp(i)%Rexp=1d200
 	enddo
 	nzones=0
 	
@@ -983,6 +984,8 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%Rout
 		else if(keyzone.eq.'denspow') then
 			read(value,*) ZoneTemp(i)%denspow
+		else if(keyzone.eq.'rexp') then
+			read(value,*) ZoneTemp(i)%Rexp
 		else if(keyzone.eq.'sh') then
 			read(value,*) ZoneTemp(i)%sh
 		else if(keyzone.eq.'shpow') then
@@ -1366,6 +1369,10 @@ C	End
 		write(9,'("Dust mass:            ",e18.3," Msun")') ZoneTemp(i)%Mdust
 		write(*,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
 		write(9,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
+		if(Zone(i)%Rexp.lt.1d100) then
+			write(*,'("Exponential cutoff:   ",f14.3," AU")') ZoneTemp(i)%Rexp
+			write(9,'("Exponential cutoff:   ",f14.3," AU")') ZoneTemp(i)%Rexp
+		endif
 		if(Zone(i)%fix_struct) then
 			write(*,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
 			write(9,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
@@ -2341,7 +2348,7 @@ c in the theta grid we actually store cos(theta) for convenience
 					r=D%R_av(i)*sin(D%theta_av(j))/AU
 					z=D%R_av(i)*cos(D%theta_av(j))/AU
 					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-					f1=r**(-Zone(iz)%denspow)
+					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(2d0-Zone(iz)%denspow))
 					f2=exp(-(z/hr)**2)
 					do ii=1,ngrains
 						if(Zone(iz)%inc_grain(ii)) then

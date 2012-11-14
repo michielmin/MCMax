@@ -114,7 +114,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type DiskZone
 		real*8 Rin,Rout,Mdust,denspow,shpow,sh,Rsh
-		real*8 a_min,a_max,a_pow
+		real*8 a_min,a_max,a_pow,Rexp
 		logical fix_struct,sizedis
 		real*8,allocatable :: abun(:)
 		logical,allocatable :: inc_grain(:)
