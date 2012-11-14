@@ -611,7 +611,7 @@ c-----------------------------------------------------------------------
 	character*500 input
 	open(unit=20,file=input)
 	i=1
-	read(20,*,end=102) x0,y01,y02
+1	read(20,*,end=102,err=1) x0,y01,y02
 	wp=(1d0-y01)/x0**2
 	gamma=y02/x0**3
 103	if(x0.ge.grid(i)) then

@@ -46,7 +46,7 @@ c-----------------------------------------------------------------------
 	endif
 	open(unit=20,file=input,RECL=100)
 	i=1
-	read(20,*,end=102) x0,y0
+1	read(20,*,end=102,err=1) x0,y0
 103	if(x0.ge.grid(i)) then
 		y(i)=y0
 		i=i+1
@@ -88,7 +88,7 @@ c-----------------------------------------------------------------------
 	endif
 	open(unit=20,file=input,RECL=100)
 	i=1
-	read(20,*,end=102) x0,y0
+1	read(20,*,end=102,err=1) x0,y0
 103	if(x0.ge.grid(i)) then
 		y(i)=y0
 		i=i+1
@@ -133,7 +133,7 @@ c-----------------------------------------------------------------------
 	endif
 	open(unit=20,file=input,RECL=100)
 	i=1
-	read(20,*,end=102) x0,y0
+1	read(20,*,end=102,err=1) x0,y0
 103	if(x0.ge.grid(i)) then
 		y(i)=y0
 		i=i+1
@@ -229,7 +229,7 @@ c-----------------------------------------------------------------------
 	character*500 input
 	open(unit=20,file=input,RECL=1000)
 	i=1
-	read(20,*,end=102) x0,y01,y02
+1	read(20,*,end=102,err=1) x0,y01,y02
 	wp=(1d0-y01)/x0**2
 	gamma=y02/x0**3
 103	if(x0.ge.grid(i)) then
