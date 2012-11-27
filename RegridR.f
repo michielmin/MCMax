@@ -27,8 +27,12 @@ c--------------------------------------------------------------------
 	logical refineR,refining,error,fix1(D%nR),fix2(D%nR)
 	real*8 taustar(0:D%nTheta),taulocal(0:D%nTheta),shtemp(0:D%nR)
 	real*8 taustarabs(0:D%nTheta),taulocalabs(0:D%nTheta),MaxGasMass(ngrains)
-	real*8 Kpext(ngrains,0:TMAX),Kpabs(ngrains,0:TMAX),Kpstarabs(ngrains)
+	real*8,allocatable :: Kpext(:,:),Kpabs(:,:),Kpstarabs(:)
 	real*8 Rnext(D%nTheta),Rprev,R1refine,TdiskStruct(0:D%nR),spec(nlam)
+
+	allocate(Kpext(ngrains,0:TMAX))
+	allocate(Kpabs(ngrains,0:TMAX))
+	allocate(Kpstarabs(ngrains))
 
 	if(.not.allocated(Temp)) then
 		allocate(Temp(0:D%nR,0:D%nTheta))
@@ -720,6 +724,11 @@ c			C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)/C(i,j)%mass
 	write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),MassTot0/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 	enddo
 	close(unit=90)
+
+	deallocate(Kpext)
+	deallocate(Kpabs)
+	deallocate(Kpstarabs)
+
 
 	return
 	end

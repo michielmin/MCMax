@@ -5,30 +5,58 @@
 	type(particle) p
 	real*8 amin,amax,apow,fmax,porosity
 	logical blend
-	integer ii
+	integer ii,MAXMAT
+	parameter(MAXMAT=20)
 
-	real e1(100,nlam),e2(100,nlam),cext,csca,maxf
-	real minlog,maxlog,pow,frac(100),e1blend,e2blend
-	real f11(nlam,1000),f12(nlam,1000),cabs,totA
-	real f22(nlam,1000),f33(nlam,1000)
-	real f34(nlam,1000),f44(nlam,1000)
-	real e1av,e2av,f(1000,100),wf(1000,100),rad,r1,r2,tot,lmax,lmin,Mass,tot2
-	real r(100,1000),nr(100,1000),lambda,rho(100),Vol,rho_av
+	real cext,csca,maxf
+	real minlog,maxlog,pow,e1blend,e2blend,cabs,totA
+	real,allocatable :: f11(:,:),f12(:,:)
+	real,allocatable :: f22(:,:),f33(:,:)
+	real,allocatable :: f34(:,:),f44(:,:)
+	real e1av,e2av,rad,r1,r2,tot,lmax,lmin,Mass,tot2
+	real lambda,Vol,rho_av
+	real,allocatable :: r(:),nr(:,:),f(:),wf(:),rho(:)
+	real,allocatable :: e1(:,:),e2(:,:),frac(:)
 	integer i,j,k,l,na,nf,ns,nm,ilam,Err,spheres,toolarge
 	complex m,min,mav,alpha
-	real mu(1000),QEXT, QSCA, QBS, GQSC,rcore,wvno,scale
-	real M1(1000,2), M2(1000,2), S21(1000,2), D21(1000,2)
+	real QEXT, QSCA, QBS, GQSC,rcore,wvno,scale
+	real,allocatable :: mu(:),M1(:,:),M2(:,:),S21(:,:),D21(:,:)
 	character*3 meth
 	character*500 input,filename(100),grid,tmp,tmp2,partfile
 
-	real*8 Mief11(1000),Mief12(1000),Mief22(1000),rmie,lmie,e1mie,e2mie
-	real*8 Mief33(1000),Mief34(1000),Mief44(1000),csmie,cemie,KR,theta,dummy
+	real*8 rmie,lmie,e1mie,e2mie,csmie,cemie,KR,theta,dummy
+	real*8,allocatable :: Mief11(:),Mief12(:),Mief22(:)
+	real*8,allocatable :: Mief33(:),Mief34(:),Mief44(:)
 	logical truefalse,checkparticlefile
 
 	write(meth,100)
 100	format('DHS')
 
 	na=180
+
+	allocate(e1(MAXMAT,nlam))
+	allocate(e2(MAXMAT,nlam))
+
+	allocate(Mief11(na))
+	allocate(Mief12(na))
+	allocate(Mief22(na))
+	allocate(Mief33(na))
+	allocate(Mief34(na))
+	allocate(Mief44(na))
+	allocate(mu(na))
+	allocate(M1(na,2))
+	allocate(M2(na,2))
+	allocate(S21(na,2))
+	allocate(D21(na,2))
+
+	allocate(frac(MAXMAT))
+	allocate(rho(MAXMAT))
+	allocate(f11(nlam,na))
+	allocate(f12(nlam,na))
+	allocate(f22(nlam,na))
+	allocate(f33(nlam,na))
+	allocate(f34(nlam,na))
+	allocate(f44(nlam,na))
 
 	minlog=log10(amin)
 	maxlog=log10(amax)
@@ -43,6 +71,10 @@
 	read(30,*) ns
 	call ignorestar(30)
 	read(30,*) nf
+	allocate(r(ns))
+	allocate(nr(MAXMAT,ns))
+	allocate(f(nf))
+	allocate(wf(nf))
 	nm=1
 1	call ignorestar(30)
 	read(30,*,end=2) filename(nm)
@@ -109,18 +141,15 @@ c changed this to mass fractions (11-05-2010)
 		enddo
 	enddo
 
-	do l=1,nm
-		if(nf.gt.1.and.maxf.gt.0.01e0) then
-			call gauleg2(0.01e0,maxf,f(1:nf,l),wf(1:nf,l),nf)
-		else if(maxf.eq.0d0) then
-			f(1:nf,l)=0d0
-			wf(1:nf,l)=1d0/real(nf)
-		else
-			f(1,l)=maxf
-			wf(1,l)=1d0
-		endif
-	enddo
-
+	if(nf.gt.1.and.maxf.gt.0.01e0) then
+		call gauleg2(0.01e0,maxf,f(1:nf),wf(1:nf),nf)
+	else if(maxf.eq.0d0) then
+		f(1:nf)=0d0
+		wf(1:nf)=1d0/real(nf)
+	else
+		f(1)=maxf
+		wf(1)=1d0
+	endif
 
 	do ilam=1,nlam
 	call tellertje(ilam,nlam)
@@ -138,10 +167,10 @@ c changed this to mass fractions (11-05-2010)
 	do l=1,nm
 		tot=0d0
 		do k=1,ns
-			r(l,k)=10d0**(minlog
+			r(k)=10d0**(minlog
      &			+(maxlog-minlog)*real(k-1)/real(ns-1))
-			nr(l,k)=r(l,k)**(pow+1d0)
-			tot=tot+nr(l,k)*r(l,k)**3
+			nr(l,k)=r(k)**(pow+1d0)
+			tot=tot+nr(l,k)*r(k)**3
 		enddo
 		do k=1,ns
 			nr(l,k)=frac(l)*nr(l,k)/tot
@@ -151,16 +180,16 @@ c changed this to mass fractions (11-05-2010)
 	do l=1,nm
 	if(frac(l).eq.0d0) goto 10
 	do k=1,ns
-	r1=r(l,k)
+	r1=r(k)
 	Err=0
 	spheres=0
 	toolarge=0
 	do i=1,nf
-		rad=r1/(1d0-f(i,l))**(1d0/3d0)
+		rad=r1/(1d0-f(i))**(1d0/3d0)
 		m=dcmplx(e1(l,ilam),-e2(l,ilam))
 		wvno=2d0*3.1415926536/lam(ilam)
 
-		if(f(i,l).eq.0d0) then
+		if(f(i).eq.0d0) then
 			spheres=1
 			goto 20
 		endif
@@ -174,15 +203,15 @@ c			endif
 		endif
 c		print*,'Using hollow spheres'
 		if(meth(1:3).eq.'DHS') then
-			rcore=rad*f(i,l)**(1d0/3d0)
+			rcore=rad*f(i)**(1d0/3d0)
 			call DMiLay(RCORE, rad, WVNO, m, min, MU,
      &                   NA/2, QEXT, QSCA, QBS, GQSC, 
-     &                   M1, M2, S21, D21, 1000 ,Err)
+     &                   M1, M2, S21, D21, NA ,Err)
 		else
 			rcore=rad*0.999
 			call DMiLay(RCORE, rad, WVNO, min, m, MU,
      &                   NA/2, QEXT, QSCA, QBS, GQSC, 
-     &                   M1, M2, S21, D21, 1000 ,Err)
+     &                   M1, M2, S21, D21, NA ,Err)
 		endif
 c		if(Err.eq.1) then
 c			print*,'Error in hollow spheres'
@@ -238,18 +267,18 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 		if(Mief11(1).lt.0d0) Mief11(1)=0d0
 
 		do j=1,na
-			f11(ilam,j)=f11(ilam,j)+wf(i,l)*nr(l,k)*Mief11(j)*csmie
-			f12(ilam,j)=f12(ilam,j)+wf(i,l)*nr(l,k)*Mief12(j)*csmie
-			f22(ilam,j)=f22(ilam,j)+wf(i,l)*nr(l,k)*Mief22(j)*csmie
-			f33(ilam,j)=f33(ilam,j)+wf(i,l)*nr(l,k)*Mief33(j)*csmie
-			f34(ilam,j)=f34(ilam,j)+wf(i,l)*nr(l,k)*Mief34(j)*csmie
-			f44(ilam,j)=f44(ilam,j)+wf(i,l)*nr(l,k)*Mief44(j)*csmie
+			f11(ilam,j)=f11(ilam,j)+wf(i)*nr(l,k)*Mief11(j)*csmie
+			f12(ilam,j)=f12(ilam,j)+wf(i)*nr(l,k)*Mief12(j)*csmie
+			f22(ilam,j)=f22(ilam,j)+wf(i)*nr(l,k)*Mief22(j)*csmie
+			f33(ilam,j)=f33(ilam,j)+wf(i)*nr(l,k)*Mief33(j)*csmie
+			f34(ilam,j)=f34(ilam,j)+wf(i)*nr(l,k)*Mief34(j)*csmie
+			f44(ilam,j)=f44(ilam,j)+wf(i)*nr(l,k)*Mief44(j)*csmie
 		enddo
-		cext=cext+wf(i,l)*nr(l,k)*cemie
-		csca=csca+wf(i,l)*nr(l,k)*csmie
-	   	cabs=cabs+wf(i,l)*nr(l,k)*(cemie-csmie)
-		Mass=Mass+wf(i,l)*nr(l,k)*rho(l)*4d0*pi*r1**3/3d0
-		Vol=Vol+wf(i,l)*nr(l,k)*4d0*pi*r1**3/3d0
+		cext=cext+wf(i)*nr(l,k)*cemie
+		csca=csca+wf(i)*nr(l,k)*csmie
+	   	cabs=cabs+wf(i)*nr(l,k)*(cemie-csmie)
+		Mass=Mass+wf(i)*nr(l,k)*rho(l)*4d0*pi*r1**3/3d0
+		Vol=Vol+wf(i)*nr(l,k)*4d0*pi*r1**3/3d0
 	enddo
 	enddo
 10	continue
@@ -293,8 +322,38 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 	frac=frac/tot
 
-	call ParticleFITS(p,r,nr,nm,ns,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,filename)
+	call ParticleFITS(p,r,nr(1:nm,1:ns),nm,ns,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,filename)
 	
+	deallocate(e1)
+	deallocate(e2)
+	
+	deallocate(Mief11)
+	deallocate(Mief12)
+	deallocate(Mief22)
+	deallocate(Mief33)
+	deallocate(Mief34)
+	deallocate(Mief44)
+	deallocate(mu)
+	deallocate(M1)
+	deallocate(M2)
+	deallocate(S21)
+	deallocate(D21)
+
+	deallocate(frac)
+	deallocate(rho)
+	deallocate(f11)
+	deallocate(f12)
+	deallocate(f22)
+	deallocate(f33)
+	deallocate(f34)
+	deallocate(f44)
+
+	deallocate(r)
+	deallocate(nr)
+	deallocate(f)
+	deallocate(wf)
+
+
 	return
 	end
 
@@ -437,7 +496,7 @@ c-----------------------------------------------------------------------
 
 	type(particle) p
 	integer nm,na,i,j,ii
-	real r(100,1000),nr(100,1000)
+	real r(na),nr(nm,na)
 	real a0,a1,a2,a3,rho_av,rmin,rmax
 	real*8,allocatable :: array(:,:,:)
 
@@ -460,16 +519,16 @@ c-----------------------------------------------------------------------
 	a1=0d0
 	a2=0d0
 	a3=0d0
-	rmin=r(1,1)
-	rmax=r(1,1)
+	rmin=r(1)
+	rmax=r(1)
 	do i=1,nm
 	do j=1,na
 		a0=a0+nr(i,j)
-		a1=a1+nr(i,j)*r(i,j)
-		a2=a2+nr(i,j)*r(i,j)**2
-		a3=a3+nr(i,j)*r(i,j)**3
-		if(r(i,j).lt.rmin) rmin=r(i,j)
-		if(r(i,j).gt.rmax) rmax=r(i,j)
+		a1=a1+nr(i,j)*r(j)
+		a2=a2+nr(i,j)*r(j)**2
+		a3=a3+nr(i,j)*r(j)**3
+		if(r(j).lt.rmin) rmin=r(j)
+		if(r(j).gt.rmax) rmax=r(j)
 	enddo
 	enddo
 	a1=a1/a0
@@ -1344,6 +1403,7 @@ c     ..
 	real*8 par1(1),par2(1),par3(1),rdis(1,300),nwrdis(1,300)
 	real*8 F(4,6000),theta(6000)
 	
+	nangle=na
 	nparts=1
 	develop=0
 	delta=1d-8
@@ -1390,7 +1450,7 @@ c     ..
 
       implicit double precision (a-h,o-z)
       implicit integer (i-n)
-      parameter ( NDang=6000, NDcoef=10000000, NDpart = 4, nrunit=88 )
+      parameter ( NDang=6000, NDcoef=6000, NDpart = 4, nrunit=88 )
       parameter ( NDdis=300 )
       double precision lambda, nr, ni, miec, nwrdis,outCext,outCsca
       integer develop
@@ -1668,8 +1728,8 @@ c      stop 'program mie terminated'
       implicit double precision (a-h,o-z)
       parameter( NDn=10000000 )
       double complex m, zn, znm1, save, perm
-      double complex an(NDn), bn(NDn), D(NDn)
-      dimension psi(0:NDn), chi(0:NDn)
+      double complex an(nmax), bn(nmax), D(nmax)
+      dimension psi(0:nmax), chi(0:nmax)
       perm = 1.D0/m
       perx = 1.D0/x
       xn   = 0.D0
@@ -2330,6 +2390,7 @@ c       upward recursion:
   999 continue!write(7,*) ' rminmax: found rmin = ',rmin,' rmax = ',rmax
       return
       end
+
       subroutine scatmat( u, wth, m, lambda, idis
      +                  , thmin, thmax, step, develop
      +                  , nsub, ngauss, rmin, rmax
@@ -2363,18 +2424,18 @@ c       upward recursion:
 ************************************************************************
       implicit double precision (a-h,o-z)
       parameter( NDn=10000000, NDr=1000, NDang=6000, NDdis=300, NDpart = 4)
-      double complex   m, ci, d, Splusf, Sminf, cSplusf
+      double complex   m, ci, Splusf, Sminf, cSplusf
       double complex   cSminf, Splusb, Sminb, cSplusb, cSminb
-      double complex   an(NDn), bn(NDn)
+
+      double complex, allocatable :: an(:), bn(:),D(:)
+      double precision,allocatable :: pi(:), tau(:), fi(:), chi(:)
+      double precision,allocatable :: facf(:), facb(:)
+
       double precision lambda, nwithr, miec, numpar, thmin, thmax, step
      +               , nwrdis
       integer     develop
-      dimension   u(NDang), wth(NDang), F(4,NDang)
-      dimension   pi(NDn), tau(NDn), fi(0:NDn), chi(0:NDn)
-      dimension   D(NDn), miec(13)
-      dimension   r(NDr), w(NDr), nwithr(NDr)
-      dimension   facf(NDn), facb(NDn)
-      dimension   rdis(NDpart, NDdis), nwrdis(NDpart, NDdis)
+      dimension   u(NDang), wth(NDang), F(4,NDang),rdis(NDpart, NDdis)
+      dimension   miec(13), nwrdis(NDpart, NDdis),r(NDr), w(NDr), nwithr(NDr)
       logical     symth
 ************************************************************************
 *  Initialization                                                      *
@@ -2429,6 +2490,17 @@ c       upward recursion:
       nfi  = nmax+60
       zabs = x*cdabs(m)
       nD   = zabs + 4.05D0*zabs**(1.D0/3.D0) + 70
+
+	allocate(an(max(nD,nfi,nmax)))
+	allocate(bn(max(nD,nfi,nmax)))
+	allocate(pi(max(nD,nfi,nmax)))
+	allocate(tau(max(nD,nfi,nmax)))
+	allocate(fi(0:max(nD,nfi,nmax)))
+	allocate(chi(0:max(nD,nfi,nmax)))
+	allocate(D(max(nD,nfi,nmax)))
+	allocate(facf(max(nD,nfi,nmax)))
+	allocate(facb(max(nD,nfi,nmax)))
+
       if ((nD.gt.NDn) .or. (nfi.gt.NDn)) then
           write(*,*) ' scatmat: estimated number of Mie-terms:',nD
           write(*,*) '          for particle sizeparameter   :',x
@@ -2639,6 +2711,17 @@ c       upward recursion:
       miec(9) = numpar
       miec(10)= volume
 *
+
+	deallocate(an)
+	deallocate(bn)
+	deallocate(pi)
+	deallocate(tau)
+	deallocate(fi)
+	deallocate(chi)
+	deallocate(D)
+	deallocate(facf)
+	deallocate(facb)
+
       return
       end
       subroutine sizedis( idis, par1, par2, par3, r, numr, nwithr
