@@ -116,15 +116,15 @@ c		zz0=D%R_av(i)*cos(D%theta_av(j))
 c		totG=0d0
 c		do iii=1,D%nR-1
 c		do jjj=1,D%nTheta-1
-c		do kkk=1,9
-c			sint=sin(D%theta_av(jjj))
-c			xxx=D%R_av(iii)*cos(pi*(real(kkk)-0.5d0)/9d0)*sint
-c			yyy=D%R_av(iii)*sin(pi*(real(kkk)-0.5d0)/9d0)*sint
+c			sint=D%R_av(iii)*sin(D%theta_av(jjj))
 c			zzz=D%R_av(iii)*cos(D%theta_av(jjj))
-c			totG=totG+(C(iii,jjj)%mass/18d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
-c			zzz=-zzz
-c			totG=totG+(C(iii,jjj)%mass/18d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
-c		enddo
+c			do kkk=1,4
+c				xxx=cos(pi*(real(kkk)-0.5d0)/9d0)*sint
+c				yyy=sin(pi*(real(kkk)-0.5d0)/9d0)*sint
+c				totG=totG+(C(iii,jjj)%mass/8d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
+c				zzz=-zzz
+c				totG=totG+(C(iii,jjj)%mass/8d0)*(zz0-zzz)/(sqrt((xxx-xx0)**2+(yyy-yy0)**2+(zzz-zz0)**2)**3)
+c			enddo
 c		enddo
 c		enddo
 c		C(i,j)%FradZ=totG*gas2dust/(D%Mstar*zz0/(sqrt(xx0**2+yy0**2+zz0**2)**3))

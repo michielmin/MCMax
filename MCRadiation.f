@@ -19,7 +19,7 @@
 	parameter(nangle=30,clight=2.9979d8)
 	real*8 angle(0:nangle),wangle(nangle),spec(nlam,nangle),cosangle(0:nangle)
 	real*8 wlam(nlam),scatspec(nlam,nangle),spectemp(nlam),tot
-	real*8 dspec(nlam),spec2(nlam,nangle),Mdot,FracVis
+	real*8 dspec(nlam),spec2(nlam,nangle),Mdot,FracVis,starttime,checktime
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
 	character*500 specfile,pressurefile,timefile
 	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
@@ -32,6 +32,8 @@
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
 	real*8 Reddening,compute_dlam
+
+6	continue
 
 	do i=1,nlam
 		call tellertje(i,nlam)
@@ -172,6 +174,7 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 	
 	write(*,'("Emitting ",i10," photon packages")') NphotTot
 	write(9,'("Emitting ",i10," photon packages")') NphotTot
+	call cpu_time(starttime)
 
 	do iruns=1,nruns
 	
@@ -215,6 +218,23 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 	do i=1,Nphot
 		call tellertje(i,Nphot)
 
+		if(maxruntime.gt.0) then
+			call cpu_time(checktime)
+			if((checktime-starttime).gt.real(maxruntime)) then
+				write(*,'("STOPPING DUE TO TIME CONSTRAINT!!")')
+				write(*,'("REDUCING NUMBER OF PHOTON PACKAGES!!")')
+				write(9,'("STOPPING DUE TO TIME CONSTRAINT!!")')
+				write(9,'("REDUCING NUMBER OF PHOTON PACKAGES!!")')
+				NphotTot=NphotTot*(0.5d0*real(i)/real(Nphot))
+				deallocate(EJvTot)
+				deallocate(EJv2Tot)
+				if(.not.tcontact.or.tdes_iter) then
+					deallocate(EJvTotP)
+				endif
+				goto 6
+			endif
+		endif
+				
 		phot%nr=i
 		phot%fnr=real(i)/real(Nphot)
 

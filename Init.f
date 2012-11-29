@@ -298,6 +298,8 @@
 	computepart_porosity=0.25d0
 	computepart_ngrains=1
 	
+	maxruntime=-1
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -904,6 +906,9 @@ c----------------------------------------------
 	if(key.eq.'rimwidth') read(value,*) rimwidth
 	
 	if(key.eq.'nruns') read(value,*) nruns
+
+c		set the maximum runtime for the radiative transfer in seconds
+	if(key.eq.'maxruntime') read(value,*) maxruntime
 
 	if(key.eq.'viscous') read(value,*) viscous
 	if(key.eq.'fastviscous') read(value,*) fastviscous
@@ -3177,7 +3182,7 @@ c		call PAHMCMax(0)
 		enddo
 		Grain(ii)%material=material(ii)
 	enddo
-
+	
 	RmaxRefine=D%Rout
 	tauincrease=1d30
 	do i=0,D%nR-1
@@ -3513,6 +3518,7 @@ c		f_weight=f_weight_backup
 		Grain(ii)%trace=trace(ii)
 	enddo
 
+
 	if((RNDW.or.nphotdiffuse.gt.0).and.Nphot.ne.0) call InitRandomWalk()
 
 	if(reprocess.gt.0d0.and.Nphot.gt.0) then
@@ -3595,11 +3601,10 @@ c Set the spectrum and energy for the interstellar radiation field
 	enddo
 	close(unit=90)
 
-
 	arraysallocated=.true.
 	
 	NsigDiskstructure=1
-	
+
 	return
 	end
 

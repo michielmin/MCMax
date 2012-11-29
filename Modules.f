@@ -25,7 +25,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer*8 nemit,ninteract,maxinteract,nmaxinteract
 	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal
 	integer nspan,nlev,ntspan,ntlev,nexits,nruns,iTD(0:TMAX),NsigDiskstructure,nBW,nqhp
-	integer nplanets,niter0,nspike,ngrains2,nzones
+	integer nplanets,niter0,nspike,ngrains2,nzones,maxruntime
 	integer gsd_diag !Gijsexp
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp

@@ -316,6 +316,8 @@
 	keyword(i)='amax'
 	i=i+1
 	keyword(i)='apow'
+	i=i+1
+	keyword(i)='maxruntime'
 	
 	Nnormal=i
 c from here on keywords with numbers
