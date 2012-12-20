@@ -1850,7 +1850,9 @@ c	else
 		warg=warg/sum(warg)
 	endif
 
-	do i=1,ngrains
+	do i=1,ngrains  !  Start displaying particle information
+
+	!  Display particle file locations
 	if(compositionfile.eq.' ') then
 	if(parttype(i).eq.1) then
 	write(*,'("Particle file:        ",a," (",f6.2,"%)")') partarg(i)(1:len_trim(partarg(i))),100d0*warg(i)/sum(warg(1:ngrains))
@@ -1910,6 +1912,20 @@ c	else
 	write(9,'("FITS file particle   :",a)') partarg(i)(1:len_trim(partarg(i)))
 	endif
 	endif
+
+	! Display HG scattering properties (if set manually)
+	if(asym(i).lt.1d0.and.asym(i).gt.-1d0) then
+	   write(*,'("Asymmetry parameter g:",f4.2)') asym(i)
+	   write(9,'("Asymmetry parameter g:",f4.2)') asym(i)	   
+	   if(wasym2(i).ne.0d0) then
+	      write(*,'("Second g:             ",f4.2)') asym2(i)
+	      write(9,'("Second g:             ",f4.2)') asym2(i)
+	      write(*,'("Weight of second g: ",f6.2)') wasym2(i)	      
+	      write(9,'("Weight of second g: ",f6.2)') wasym2(i)	      
+	   endif
+	endif
+
+	!  Display vertical structure per particle
 	if(settle(i)) then
 	if(shtype(i).eq.'DISK') then
 	if(settlefile(i).eq.' ') then
@@ -1940,16 +1956,17 @@ c	else
 	endif
 	endif
 
+	!  Display particle properties
 	write(*,'("Particle material:    ",a)') material(i)(1:len_trim(material(i)))
 	write(9,'("Particle material:    ",a)') material(i)(1:len_trim(material(i)))
-C       Gijsexp
 	if(scset.or.mpset) then
 	   write(*,'("Particle radius(micron):",f12.4)') rgrain(i) * 1d4
 	   write(9,'("Particle radius(micron):",f12.4)') rgrain(i) * 1d4
 	   write(*,'("Particle density:               ",f4.2)') rhograin(i)
 	   write(9,'("Particle density:               ",f4.2)') rhograin(i)
 	endif
-C       end
+
+	!  Display particle inner and outer radii and gap shapes
 	if(minrad(i).gt.D%Rin) then
 	write(*,'("Destroying inside:    ",f6.2," AU")') minrad(i)
 	write(9,'("Destroying inside:    ",f6.2," AU")') minrad(i)
@@ -1973,6 +1990,8 @@ C       end
 	   write(9,'("Using a soft edge")')
 	endif
 	enddo ! loop over ngrains
+	write(*,'("--------------------------------------------------------")')
+	write(9,'("--------------------------------------------------------")')
 
 	if(compositionfile.ne.' ') then
 	write(*,'("Composition file:     ",a)') compositionfile(1:len_trim(compositionfile))
@@ -2784,7 +2803,9 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			Grain(ii)%dust_moment3=(Grain(ii)%rv*1d4)**3
 		endif
 	enddo
-	
+	write(*,'("--------------------------------------------------------")')
+	write(9,'("--------------------------------------------------------")')	
+
 	! Set composition in every grid cell (from keywords, mrn/gsd or file)
 	if(compositionfile.eq.' ') then
 		do i=0,D%nR-1
