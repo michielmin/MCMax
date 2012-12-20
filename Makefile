@@ -1,6 +1,6 @@
 # makefile for mcmax (with comments!)
-# Tested on MacOSX 10.6 with ifort 11.1.080
-# Tested on Fedora Core 8 with ifort 10.1.015
+# Tested on MacOSX 10.6 with ifort 11.1.080 (20/12/2012)
+# Tested on Fedora Core 8 with ifort 10.1.015 (20/12/2012)
 
 # compiler= FC, flags = FFlags
 # linker= LINKER, flags= LDFLAGS, libraries=LIBS
@@ -8,7 +8,7 @@ FC	      = ifort
 LINKER	      = ifort
 
 # Platform specific compilation options
-FLAG_ALL      = -O3 -extend-source -traceback -fp-model strict  -zero -prec-div
+FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
 FLAG_LINUX    = -msse3 -prefetch
 FLAG_MAC      = -mssse3 -opt-prefetch
 
