@@ -218,14 +218,18 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 	do i=1,Nphot
 		call tellertje(i,Nphot)
 
-		if(maxruntime.gt.0) then
+		if(maxruntime.gt.0.and.Nphot.gt.10) then
 			call cpu_time(checktime)
-			if((checktime-starttime).gt.real(maxruntime)) then
+			checktime=checktime-starttime
+			if((checktime.gt.real(maxruntime)
+     &	.or.(i.gt.100.and.(checktime*real(Nphot)/real(i)).gt.real(5*maxruntime)))
+     &	.and.(real(i)/real(Nphot).lt.0.9)) then
 				write(*,'("STOPPING DUE TO TIME CONSTRAINT!!")')
 				write(*,'("REDUCING NUMBER OF PHOTON PACKAGES!!")')
 				write(9,'("STOPPING DUE TO TIME CONSTRAINT!!")')
 				write(9,'("REDUCING NUMBER OF PHOTON PACKAGES!!")')
-				NphotTot=NphotTot*(0.5d0*real(i)/real(Nphot))
+				NphotTot=NphotTot*(real(maxruntime)/checktime)*(0.5d0*real(i)/real(Nphot))
+				if(NphotTot.lt.10) NphotTot=10
 				deallocate(EJvTot)
 				deallocate(EJv2Tot)
 				if(.not.tcontact.or.tdes_iter) then
@@ -399,6 +403,7 @@ c			else
 			tau=-log(ran2(idum))
 		endif
 1		continue
+
 		call trace2d(phot,tau,escape,hitstar,.true.)
 		if(hitstar) then
 			if(forcefirst) goto 4
@@ -560,6 +565,11 @@ c			else
 
 	call flush(9)
 
+
+	if(emptylower) then
+		spec=(spec+1d23*D%Fstar(i))/2d0
+		scatspec=scatspec/2d0
+	endif
 
 !c-----------------------------------------
 !c this is for the output MC spectrum
@@ -920,6 +930,13 @@ c ------------------------------------------------
 	endif
 
 	if(jnext.eq.D%nTheta-1..and.phot%j.eq.D%nTheta-1.and.inext.eq.phot%i) vzPress=-vzPress
+
+	if(emptylower) then
+		if(jnext.eq.D%nTheta-1..and.phot%j.eq.D%nTheta-1.and.inext.eq.phot%i) then
+			escape=.true.
+			return
+		endif
+	endif
 
 	phot%i=inext
 	phot%j=jnext

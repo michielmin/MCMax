@@ -16,7 +16,7 @@
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid
-	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:)
+	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)
 	real*8 T,Planck,Vtot,clight,MassTot,thet,tot,Tmax_R,RTmax,stretch,Kext,Kabs
 	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(100),scale,Luminosity,MassTot0
 	real*8 powslope(100),powrad0(100),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
@@ -299,6 +299,7 @@
 	computepart_ngrains=1
 	
 	maxruntime=-1
+	emptylower=.false.
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
@@ -909,6 +910,9 @@ c----------------------------------------------
 
 c		set the maximum runtime for the radiative transfer in seconds
 	if(key.eq.'maxruntime') read(value,*) maxruntime
+	
+c		possibility to empty the lower half of the density space
+	if(key.eq.'emptylower') read(value,*) emptylower
 
 	if(key.eq.'viscous') read(value,*) viscous
 	if(key.eq.'fastviscous') read(value,*) fastviscous
@@ -1058,7 +1062,7 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) ZoneTemp(i)%abun(j)
 		else if(keyzone(1:4).eq.'incl') then
-			read(keyzone(4:len_trim(keyzone)),*) j
+			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) ZoneTemp(i)%inc_grain(j)
 		else
 			write(*,'("Zone keyword not understood:",a)') trim(keyzone)
@@ -2556,6 +2560,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			enddo
 		enddo
 		enddo
+		deallocate(zonedens)
 	endif
 
 	do i=1,D%nR-1
@@ -2869,10 +2874,38 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				mrn_rmin=Zone(iz)%a_min*1d-4
 				mrn_rmax=Zone(iz)%a_max*1d-4
 				mrn_index=Zone(iz)%a_pow
+				allocate(w(ngrains))
+				allocate(rtemp(ngrains))
+				j=0
 				do ii=1,ngrains
-					rgrain(ii)=Grain(ii)%rv
+					if(Zone(iz)%inc_grain(ii)) then
+						j=j+1
+						rtemp(j)=Grain(ii)%rv
+					endif
 				enddo
-				call gsd_MRN(rgrain(1:ngrains),Zone(iz)%abun(1:ngrains))
+				do ii=j+1,ngrains
+					rtemp(ii)=10d0*mrn_rmax
+				enddo
+				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+				j=0
+				do ii=1,ngrains
+					if(Zone(iz)%inc_grain(ii)) then
+						j=j+1
+						Zone(iz)%abun(ii)=w(j)
+					else
+						Zone(iz)%abun(ii)=0d0
+					endif
+				enddo
+				deallocate(w)
+				deallocate(rtemp)
+			else
+				do ii=1,ngrains
+					if(Zone(iz)%inc_grain(ii)) then
+						Zone(iz)%abun(ii)=ZoneTemp(iz)%abun(ii)
+					else
+						Zone(iz)%abun(ii)=0d0
+					endif
+				enddo
 			endif
 			do i=1,D%nR-1
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
@@ -2890,7 +2923,65 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			if(tot.lt.1d-50) C(i,j)%w(1:ngrains)=1d0/real(ngrains)
 		enddo
 		enddo
-	endif			
+
+		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1))
+		zonedens=0d0
+		do iz=1,nzones
+			tot=0d0
+			do ii=1,ngrains
+				if(Zone(iz)%inc_grain(ii)) tot=tot+Zone(iz)%abun(ii)
+			enddo
+			Zone(iz)%abun(1:ngrains)=Zone(iz)%abun(1:ngrains)/tot
+			tot=0d0
+			do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
+     &					(D%Theta(j)-D%Theta(j+1))*AU**3
+				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
+					r=D%R_av(i)*sin(D%theta_av(j))/AU
+					z=D%R_av(i)*cos(D%theta_av(j))/AU
+					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(2d0-Zone(iz)%denspow))
+					f2=exp(-(z/hr)**2)
+					do ii=1,ngrains
+						if(Zone(iz)%inc_grain(ii)) then
+							zonedens(iz,ii,i,j)=Zone(iz)%abun(ii)*f1*f2/hr
+						else
+							zonedens(iz,ii,i,j)=0d0
+						endif
+						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
+					enddo
+				else
+					do ii=1,ngrains
+						zonedens(iz,ii,i,j)=0d0
+					enddo
+				endif
+			enddo
+			enddo
+			zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%Mdust*Msun/tot
+		enddo
+		do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%dens=1d-60
+			C(i,j)%w(1:ngrains)=0d0
+			do iz=1,nzones
+				do ii=1,ngrains
+					if(Zone(iz)%inc_grain(ii)) then
+						C(i,j)%dens=C(i,j)%dens+zonedens(iz,ii,i,j)
+						C(i,j)%w(ii)=C(i,j)%w(ii)+zonedens(iz,ii,i,j)
+					endif
+				enddo
+			enddo
+			tot=sum(C(i,j)%w(1:ngrains))
+			if(tot.lt.1d-50) then
+				C(i,j)%w(1:ngrains)=1d0/real(ngrains)
+			else
+				C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
+			endif
+		enddo
+		enddo
+		deallocate(zonedens)
+	endif
 
 
 	MassTot0=0d0

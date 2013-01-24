@@ -1049,6 +1049,14 @@ c-----------------------------------------------------------------------
 		hitstar=.true.
 		return
 	endif
+	
+	if(emptylower) then
+		if(jnext.eq.D%nTheta-1..and.phot%j.eq.D%nTheta-1.and.inext.eq.phot%i.and.phot%irg.eq.phot%irg) then
+			escape=.true.
+			return
+		endif
+	endif
+	
 	phot%i=inext
 	phot%j=jnext
 	phot%irg=irgnext
@@ -1876,6 +1884,9 @@ c-----------------------------------------------------------------------
 
 	p%n=p%n+1
 	p%v(p%n)=v
+	
+	if(emptylower.and.phot%z.gt.0d0) p%v(p%n)=0d0
+
 	p%i(p%n)=phot%i
 	p%j(p%n)=phot%j
 	p%irg(p%n)=phot%irg

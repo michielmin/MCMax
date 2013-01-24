@@ -279,9 +279,26 @@ c				endif
 				endif
 			enddo
 		else if(Grain(ii)%shtype.eq.'WEDGE') then
-			do j=D%nTheta-1,1,-1
-				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*exp(-((90d0-180d0*D%theta_av(j)/pi)/shscale(i))**2d0))
-			enddo
+			if(scale.gt.0d0) then
+				do j=1,D%nTheta-1
+					if((180d0*D%theta_av(j)/pi).gt.scale) then
+						rho(j,ii)=0d0
+					else
+						rho(j,ii)=-60d0
+					endif
+				enddo
+			else
+				do j=1,D%nTheta-1
+					if((180d0*D%theta_av(j)/pi).lt.(-scale)) then
+						rho(j,ii)=0d0
+					else
+						rho(j,ii)=-60d0
+					endif
+				enddo
+			endif				
+c			do j=D%nTheta-1,1,-1
+c				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*exp(-((90d0-180d0*D%theta_av(j)/pi)/shscale(i))**2d0))
+c			enddo
 		else
 			if(i.eq.1) then
 				write(*,'("Scale height type unknown!!",i)') ii
