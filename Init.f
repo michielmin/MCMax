@@ -143,6 +143,8 @@
  	scseteq=.true.		! Gijsexp
 	mpset=.false.		! Gijsexp
 	mpstr=.false.		! Gijsexp
+	
+	fixmpset=.false.
 
 	mrn=.false.		! Gijsexp: calculate grain size distribution 
 	mrn_index=3.5d0		! Gijsexp
@@ -300,6 +302,8 @@
 	
 	maxruntime=-1
 	emptylower=.false.
+	
+	particledir=outdir
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
@@ -614,6 +618,8 @@ c			endif
 		endif
 		use_topac=.true.
 	endif
+
+	if(key.eq.'dirparticle') write(particledir,'(a,"/")') trim(value)
 
 	if(key(1:11).eq.'computepart') then
 		read(key(12:index(key,":")-1),*) i
@@ -945,6 +951,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'scset') read(value,*) scset
 	if(key.eq.'mpset') read(value,*) mpset
 	if(key.eq.'mpstr') read(value,*) mpstr ! isothermal vertical structure
+	if(key.eq.'fixmpset') read(value,*) fixmpset
 	if(key.eq.'scseteq') read(value,*) scseteq
 	if(key.eq.'scsetsave') read(value,*) scsetsave
 	if(key.eq.'lifetime') read(value,*) lifetime
@@ -1239,6 +1246,7 @@ C       End
 C       Gijsexp, disable scaleheight scaling when doing the s.c. settling
 	if (scset) scalesh='NONE'
 	if (mpset) scalesh='NONE'	
+	if (fixmpset) scalesh='NONE'	
 C	End
 
 C       Gijsexp, can now also use roundpeak
@@ -1706,6 +1714,15 @@ C       Gijsexp
 	if (mpset) then
 	   write(*,'("Using isothermal dust settling")')
 	   write(9,'("Using isothermal dust settling")')
+	   write(*,'("Alpha (Turbulent)         ",e14.3)') alphaturb
+	   write(9,'("Alpha (Turbulent)         ",e14.3)') alphaturb
+	   write(*,'("q (Turbulent)             ",f8.1)') qturb
+	   write(9,'("q (Turbulent)             ",f8.1)') qturb
+	endif
+
+	if (fixmpset) then
+	   write(*,'("Using isothermal dust settling with prescribed soundspeed")')
+	   write(9,'("Using isothermal dust settling with prescribed soundspeed")')
 	   write(*,'("Alpha (Turbulent)         ",e14.3)') alphaturb
 	   write(9,'("Alpha (Turbulent)         ",e14.3)') alphaturb
 	   write(*,'("q (Turbulent)             ",f8.1)') qturb
@@ -2434,6 +2451,11 @@ c in the theta grid we actually store cos(theta) for convenience
 		C(0,i)%mass=C(0,i)%V*C(0,i)%dens
 	enddo
 
+	do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%opacity_set=.false.
+		enddo
+	enddo
 
 
 	shscale(0:D%nR)=1d0
@@ -3176,7 +3198,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	if(denstype.eq.'POW'.or.denstype.eq.'DOUBLEPOW'.or.
      &     denstype.eq.'SURFFILE'.or.denstype.eq.'SIMILARITY'.or.
      &     denstype.eq.'DOUBLEPOWSIM'.or. ! Gijsexp
-     &     struct_iter.or.mpset.or.scset.or.gsd.or.nzones.ne.0) then ! Gijsexp
+     &     struct_iter.or.mpset.or.scset.or.fixmpset.or.gsd.or.nzones.ne.0) then ! Gijsexp
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%dens0=C(i,j)%dens
@@ -3399,6 +3421,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 	if(multiwav) then
 		allocate(column(ngrains,ngrains2))
 		allocate(specemit(nlam))
+		if(exportprodimo) allocate(Kext_column(nlam))
 	endif
 
 	if(tdes_iter.and.Nphot.ne.0.and.(iter0.le.nBW.or.nBW.lt.0)) then
@@ -3798,6 +3821,7 @@ c-----------------------------------------------------------------------
 	if(multiwav) then
 		deallocate(column)
 		deallocate(specemit)
+		if(exportprodimo) deallocate(Kext_column)
 	endif
 	if(allocated(D%SinTheta)) deallocate(D%SinTheta)
 	if(allocated(shscale)) deallocate(shscale)

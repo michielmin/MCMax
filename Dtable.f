@@ -111,6 +111,91 @@
 		return
 	endif
 
+	if(C(ci,cj)%opacity_set) then
+		Ksca(1:nlam)=C(ci,cj)%KscaTot(1:nlam)
+		Kabs(1:nlam)=C(ci,cj)%KabsTot(1:nlam)
+		Kext(1:nlam)=Kabs(1:nlam)+Ksca(1:nlam)
+	else
+		Kext(1:nlam)=0d0
+		Ksca(1:nlam)=0d0
+		do ii=1,ngrains
+		   do iopac=1,Grain(ii)%nopac
+			Kext(1:nlam)=Kext(1:nlam)+
+     &	        Grain(ii)%Kext(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
+			Ksca(1:nlam)=Ksca(1:nlam)+
+     &          Grain(ii)%Ksca(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
+		   enddo
+		enddo
+		Kabs(1:nlam)=Kext(1:nlam)-Ksca(1:nlam)
+	endif
+
+	Kqhp(1:nlam)=0d0
+	g(1:nlam)=0d0
+	do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			g(1:nlam)=g(1:nlam)+
+     &          Grain(ii)%g(iopac,1:nlam)*Grain(ii)%Ksca(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
+			if(Grain(ii)%qhp) then
+				Kqhp(1:nlam)=Kqhp(1:nlam)+Grain(ii)%Kabs(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
+			endif
+		enddo
+	enddo
+	if(scattering) then
+		g(1:nlam)=g(1:nlam)/Ksca(1:nlam)
+	else
+		g(1:nlam)=0d0
+	endif
+
+	dBB(1:nlam)=BB(1:nlam,iT+1)-BB(1:nlam,iT)
+
+	spec(1:nlam)=dBB(1:nlam)/(Kext(1:nlam)-g(1:nlam)**2*Ksca(1:nlam))
+	call integrate(spec,int1)
+	call integrate(dBB,int2)
+	C(ci,cj)%KDext=int2/int1
+
+	spec(1:nlam)=dBB(1:nlam)*(Kabs(1:nlam)-Kqhp(1:nlam))
+	call integrate(spec,int1)
+	C(ci,cj)%KDabs=int1/int2
+	if(use_qhp) then
+		spec(1:nlam)=dBB(1:nlam)*Kqhp(1:nlam)
+		call integrate(spec,int1)
+		C(ci,cj)%KDQHP=int1/int2
+	else
+		C(ci,cj)%KDQHP=0d0
+	endif
+
+	C(ci,cj)%iTD=iT
+
+	if(ngrains.eq.1) then
+		KDext(iT)=C(ci,cj)%KDext
+		KDabs(iT)=C(ci,cj)%KDabs
+		iTD(iT)=C(ci,cj)%iTD
+	endif
+
+	return
+	end
+
+
+
+
+
+	subroutine DiffCoeffCellMin2009(ci,cj,iT)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j,iT,ci,cj,ii,iopac
+	real*8 Ksca(nlam),Kext(nlam),dBB(nlam),spec(nlam),int1,int2
+	real*8 wfunc(nlam),Kabs(nlam),g(nlam),Kqhp(nlam)
+
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX-1) iT=TMAX-1
+
+	if(ngrains.eq.1.and.iTD(iT).eq.iT) then
+		C(ci,cj)%KDabs=KDabs(iT)
+		C(ci,cj)%KDext=KDext(iT)
+		C(ci,cj)%iTD=iTD(iT)
+		return
+	endif
+
 	Kext(1:nlam)=0d0
 	Ksca(1:nlam)=0d0
 	Kqhp(1:nlam)=0d0

@@ -29,6 +29,9 @@
 	real*8,allocatable :: Mief33(:),Mief34(:),Mief44(:)
 	logical truefalse,checkparticlefile
 
+	write(tmp,'("mkdir -p ",a)') particledir(1:len_trim(particledir)-1)
+	call system(tmp)
+
 	write(meth,100)
 100	format('DHS')
 
@@ -97,7 +100,7 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 	frac=frac/tot
 
-	write(partfile,'(a,"particle",i0.4,".fits")') trim(outdir),ii
+	write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
 	inquire(file=partfile,exist=truefalse)
 	if(truefalse) then
 		if(checkparticlefile(partfile,amin,amax,apow,fmax,blend,porosity,frac,rho,nm,filename)) then
@@ -165,16 +168,21 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 
 	do l=1,nm
-		tot=0d0
-		do k=1,ns
-			r(k)=10d0**(minlog
-     &			+(maxlog-minlog)*real(k-1)/real(ns-1))
-			nr(l,k)=r(k)**(pow+1d0)
-			tot=tot+nr(l,k)*r(k)**3
-		enddo
-		do k=1,ns
-			nr(l,k)=frac(l)*nr(l,k)/tot
-		enddo
+		if(ns.eq.1) then
+			r(1)=10d0**((minlog+maxlog)/2d0)
+			nr(l,1)=1d0
+		else
+			tot=0d0
+			do k=1,ns
+				r(k)=10d0**(minlog
+     &				+(maxlog-minlog)*real(k-1)/real(ns-1))
+				nr(l,k)=r(k)**(pow+1d0)
+				tot=tot+nr(l,k)*r(k)**3
+			enddo
+			do k=1,ns
+				nr(l,k)=frac(l)*nr(l,k)/tot
+			enddo
+		endif
 	enddo
 
 	do l=1,nm
@@ -505,7 +513,7 @@ c-----------------------------------------------------------------------
 	  logical simple,extend,truefalse
 	character*500 filename
 
-	write(filename,'(a,"particle",i0.4,".fits")') trim(outdir),ii
+	write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
 
 	inquire(file=filename,exist=truefalse)
 	if(truefalse) then

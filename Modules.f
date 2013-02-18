@@ -11,7 +11,7 @@
 	parameter(kb=1.3806503d-16,sigma=5.6704d-5)
 c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:)
-	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:)
+	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:),Kext_column(:)
 	real*8 xsf(NPHISCATT),ysf(NPHISCATT),zsf(NPHISCATT),tautot,epsiter,tau_max,nEJv
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
@@ -35,13 +35,14 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat,Tsmooth,emptylower
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
+	logical fixmpset
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
 	logical deadzone	!Gijsexp
 	logical topac_interpol	!Gijsexp
 	logical,allocatable :: scattcomputed(:)
 	integer,allocatable :: nscattcomputed(:)
-	character*500 outdir
+	character*500 outdir,particledir
 	real*8,allocatable :: coolingtime(:)
 	integer,allocatable :: ncoolingtime(:)
 	integer icoolingtime
@@ -83,7 +84,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		integer Ni,iedge(6),lastphotnr,iTD,nrg
 		real*8 Kabs,Ksca,Kext,Albedo,dT,ddens,gasfrac,EJv2,dEJv,TMC
 		real*8 tauexit,dens0,KDext,KDabs,gasdens,HighTQHP,KDQHP,Tav
-		real*8,allocatable :: TP(:),EJvP(:),EJvQHP(:),EviscDirect(:)
+		real*8,allocatable :: TP(:),EJvP(:),EJvQHP(:),EviscDirect(:),KabsTot(:),KscaTot(:)
 		type(Mueller) F
 		real*8,allocatable :: w(:),scattfield(:,:,:),w0(:),QHP(:,:),LRF(:)
 		integer,allocatable :: nLRF(:)
@@ -96,10 +97,8 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: wopac(:,:),FE(:)
 		real*8 KappaGas
 		real*8 Tgas,Egas
-		logical useFE
+		logical useFE,opacity_set
 		real*8,allocatable :: line_emis(:),line_abs(:),velo_T(:)
-		real*8,allocatable :: TotKabs(:),TotKext(:),TotKsca(:)
-		type(Mueller),allocatable :: TotF(:)
 	end type Cell
 
 	type Disk

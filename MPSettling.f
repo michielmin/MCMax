@@ -99,3 +99,44 @@ c         write(20,*) D%R_av(i) / AU, scale_d(2:ngrains,i),scale_w(2:ngrains,i)
       !
  666  return
       end
+
+
+
+
+c-----------------------------------------------------------------------
+c This subroutine computes the scaling factor for the dust scaleheight 
+c of different dust species with respect to the gas.
+c Based on midplane (mp) temperatures and density, see Dubrulle et al 95
+c but also assuming the sound speed in the midplane is consistent with
+c the scaleheight and everything is isothermal. In this case no iteration
+c on the settling is needed, and the scaleheight scaling follows directly
+c from the surface density.
+c-----------------------------------------------------------------------
+
+	subroutine FixedMPSettling()
+	use Parameters
+	IMPLICIT NONE
+	real*8 surfdens,gamma,hH
+	integer ii,i,j
+	
+	gamma=2d0
+	do i=1,D%nR-1
+		surfdens=0d0
+		do j=1,D%nTheta-1
+			surfdens=surfdens+C(i,j)%gasdens*gas2dust*C(i,j)%V
+		enddo
+		surfdens=surfdens/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+		do ii=1,ngrains
+            if(Grain(ii)%shtype.eq.'DISK') then
+				Grain(ii)%settle=.true.
+				hH=((1d0/(1d0+gamma))**0.25d0)*sqrt(alphaturb*surfdens/(sqrt(2d0*pi)*Grain(ii)%rho*Grain(ii)%rv))
+				Grain(ii)%shscale(i)=hH/sqrt(1d0+hH**2)
+			endif
+		enddo
+	enddo
+	
+	return
+	end
+
+	
+	

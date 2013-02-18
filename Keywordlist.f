@@ -227,6 +227,8 @@
 	i=i+1
 	keyword(i)='mpstr'
 	i=i+1
+	keyword(i)='fixmpset'
+	i=i+1
 	keyword(i)='scseteq'
 	i=i+1
 	keyword(i)='scsetsave'
@@ -320,6 +322,8 @@
 	keyword(i)='maxruntime'
 	i=i+1
 	keyword(i)='emptylower'
+	i=i+1
+	keyword(i)='dirparticle'
 	
 	Nnormal=i
 c from here on keywords with numbers

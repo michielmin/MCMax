@@ -104,6 +104,7 @@ c-----------------------------------------------------------------------
 	allocate(rho(D%nTheta+1,0:ngrains))
 
 	call UnMakeGaps()
+	if (fixmpset) call FixedMPSettling()
 	if (mpset) call MPSettling() !Gijsexp
 
 	eps=1d-6

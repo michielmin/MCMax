@@ -21,6 +21,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	character*500 fluxfile
 	integer il10,il100,il1000,il10000,i10
 	real*8 i1,il1,Planck,frac_opening
+	logical alltrace
 
 	tau_max=1d8
 
@@ -35,6 +36,11 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		allocate(fluxcontr(2,0:D%nR,0:D%nTheta))
 		fluxcontr=0d0
 	endif
+
+	alltrace=.true.
+	do ii=1,ngrains
+		if(.not.Grain(ii)%trace) alltrace=.false.
+	enddo
 
 	image%lam=lam0
 	if(lam0.le.lam(1)) then
@@ -308,15 +314,20 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 				scatV(kp,ip,jp)=scatV(kp,ip,jp)/C(ip,jp)%Ksca
 			endif
 		endif
-		Ksca=0d0
-		do ii=1,ngrains
-			if(Grain(ii)%trace) then
-				do iopac=1,Grain(ii)%nopac
-					Ksca=Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
-     &		    +wl2*Grain(ii)%Ksca(iopac,ilam2))*C(ip,jp)%w(ii)*C(ip,jp)%wopac(ii,iopac)
-				enddo
-			endif
-		enddo
+
+		if(alltrace) then
+			Ksca=C(ip,jp)%Ksca
+		else
+			Ksca=0d0
+			do ii=1,ngrains
+				if(Grain(ii)%trace) then
+					do iopac=1,Grain(ii)%nopac
+						Ksca=Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
+     &			    +wl2*Grain(ii)%Ksca(iopac,ilam2))*C(ip,jp)%w(ii)*C(ip,jp)%wopac(ii,iopac)
+					enddo
+				endif
+			enddo
+		endif
 		scat(kp,ip,jp)=scat(kp,ip,jp)*Ksca
 		if(scat_how.eq.2) then
 			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)*Ksca

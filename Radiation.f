@@ -39,7 +39,7 @@
 	type(photon) phot
 	real*8 spec(nlam),Albedo,ran2,T0,T1,increaseT,increaseTP
 	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,Edust,Egas
-	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam)
+	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),w1,w2,KscaR
 	integer i,iT,iT0,iT1,l,ii,iopac
 	type(Mueller) M
 
@@ -54,13 +54,11 @@
 	Ksca=0d0
 	Kext=0d0
 	KabsQHP=0d0
+	Ksca=(C(phot%i,phot%j)%KscaTot(phot%ilam1)*phot%wl1+C(phot%i,phot%j)%KscaTot(phot%ilam2)*phot%wl2)
+	Kext=Ksca+(C(phot%i,phot%j)%KabsTot(phot%ilam1)*phot%wl1+C(phot%i,phot%j)%KabsTot(phot%ilam2)*phot%wl2)
 	do i=1,ngrains
 	do iopac=1,Grain(i)%nopac
-	Ksca=Ksca+(Grain(i)%Ksca(iopac,phot%ilam1)*phot%wl1+
-     &     Grain(i)%Ksca(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
-	Kext=Kext+(Grain(i)%Kext(iopac,phot%ilam1)*phot%wl1+
-     &     Grain(i)%Kext(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
-	if(Grain(i)%qhp) KabsQHP=KabsQHP+(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
+		if(Grain(i)%qhp) KabsQHP=KabsQHP+(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
      &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
 	enddo
 	enddo
@@ -166,15 +164,7 @@ c Thermal contact (single temperature)
 
 	if(iT0.eq.iT1) then
 		do l=1,nlam
-			Kabs=0d0
-			do i=1,ngrains
-				if(.not.Grain(i)%qhp) then
-					do iopac=1,Grain(i)%nopac
-						Kabs=Kabs+Grain(i)%Kabs(iopac,l)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
-					enddo
-				endif
-			enddo
-			spec(l)=(BB(l,iT0+1)-BB(l,iT0))*Kabs
+			spec(l)=(BB(l,iT0+1)-BB(l,iT0))*C(phot%i,phot%j)%KabsTot(l)
 		enddo
 		kp=0d0
 		do i=1,ngrains
@@ -186,15 +176,7 @@ c Thermal contact (single temperature)
 		enddo
 	else
 		do l=1,nlam
-			Kabs=0d0
-			do i=1,ngrains
-				if(.not.Grain(i)%qhp) then
-					do iopac=1,Grain(i)%nopac
-						Kabs=Kabs+Grain(i)%Kabs(iopac,l)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
-					enddo
-				endif
-			enddo
-			spec(l)=(epsT1*BB(l,iT1+1)+(1d0-epsT1)*BB(l,iT1)-epsT0*BB(l,iT0+1)-(1d0-epsT0)*BB(l,iT0))*Kabs
+			spec(l)=(epsT1*BB(l,iT1+1)+(1d0-epsT1)*BB(l,iT1)-epsT0*BB(l,iT0+1)-(1d0-epsT0)*BB(l,iT0))*C(phot%i,phot%j)%KabsTot(l)
 		enddo
 		kp=0d0
 		do i=1,ngrains
@@ -246,17 +228,29 @@ c scattering
 	if(scat_how.eq.1) then
 		call randomdirection(phot%vx,phot%vy,phot%vz)
 		if(multiwav) then
-			Ks(1:nlam)=0d0
-			do i=1,ngrains
-			do iopac=1,Grain(i)%nopac
-				Ks(1:nlam)=Ks(1:nlam)+Grain(i)%Ksca(iopac,1:nlam)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
-			enddo
-			enddo
-			specemit(1:nlam)=specemit(1:nlam)*Ks(1:nlam)
+			specemit(1:nlam)=specemit(1:nlam)*C(phot%i,phot%j)%KscaTot(1:nlam)
 		endif
 	else
-c First determine the integrated F11 and F12 for the current 
-c wavelength and composition.
+		KscaR=Ksca*ran2(idum)
+		do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+			w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
+			KscaR=KscaR-w2
+			if(KscaR.lt.0d0) then
+				M=Grain(ii)%F(iopac,phot%ilam2)
+				goto 1
+			endif
+			w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
+			KscaR=KscaR-w1
+			if(KscaR.lt.0d0) then
+				M=Grain(ii)%F(iopac,phot%ilam1)
+				goto 1
+			endif
+		enddo
+		enddo
+c Randomly picking a grain and wavelength went wrong for some reason
+c use the slow backup determination of average scattering matrix instead
 		M%IF11=0d0
 		M%IF12=0d0
 		M%F11=0d0
@@ -267,38 +261,27 @@ c wavelength and composition.
 		M%F44=0d0
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
-			M%IF11=M%IF11+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%IF11*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%IF11*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%IF12=M%IF12+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%IF12*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%IF12*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F11=M%F11+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F11*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F11*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F12=M%F12+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F12*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F12*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F22=M%F22+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F22*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F22*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F33=M%F33+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F33*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F33*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F34=M%F34+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F34*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F34*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			M%F44=M%F44+(phot%wl1*Grain(ii)%F(iopac,phot%ilam1)%F44*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%F(iopac,phot%ilam2)%F44*Grain(ii)%Ksca(iopac,phot%ilam2))
-     &			*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+			w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+			w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
+			w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
+			M%IF11=M%IF11+w1*Grain(ii)%F(iopac,phot%ilam1)%IF11+w2*Grain(ii)%F(iopac,phot%ilam2)%IF11
+			M%IF12=M%IF12+w1*Grain(ii)%F(iopac,phot%ilam1)%IF12+w2*Grain(ii)%F(iopac,phot%ilam2)%IF12
+			M%F11=M%F11+w1*Grain(ii)%F(iopac,phot%ilam1)%F11+w2*Grain(ii)%F(iopac,phot%ilam2)%F11
+			M%F12=M%F12+w1*Grain(ii)%F(iopac,phot%ilam1)%F12+w2*Grain(ii)%F(iopac,phot%ilam2)%F12
+			M%F22=M%F22+w1*Grain(ii)%F(iopac,phot%ilam1)%F22+w2*Grain(ii)%F(iopac,phot%ilam2)%F22
+			M%F33=M%F33+w1*Grain(ii)%F(iopac,phot%ilam1)%F33+w2*Grain(ii)%F(iopac,phot%ilam2)%F33
+			M%F34=M%F34+w1*Grain(ii)%F(iopac,phot%ilam1)%F34+w2*Grain(ii)%F(iopac,phot%ilam2)%F34
+			M%F44=M%F44+w1*Grain(ii)%F(iopac,phot%ilam1)%F44+w2*Grain(ii)%F(iopac,phot%ilam2)%F44
 		enddo
 		enddo
-		call scatangle(phot,M)
+		
+1		call scatangle(phot,M)
 		if(multiwav) then
 			specemit(1:nlam)=0d0
 			specemit(phot%ilam1)=phot%wl1
 			specemit(phot%ilam2)=phot%wl2
 			column(1:ngrains,1:ngrains2)=0d0
+			if(exportprodimo) Kext_column=0d0
 		endif
 	endif
 	
@@ -337,11 +320,9 @@ c------------------------------------------------------------------------
 	real*8 theta,Fr,ran2,Fi,FiOld,w1,w2,s1,s2,x,y,z
 	real*8 E,Q,U,V,F,IF11,IF12,I0,I1,Itot,phi,wp1,P,P2,r,thet
 	type(photon) phot
-	integer i,ii
+	integer i,ii,iopac
 	type(Mueller) M
 
-c First determine the integrated F11 and F12 for the current 
-c wavelength and composition.
 	IF11=M%IF11*180d0
 	IF12=M%IF12*180d0
 
@@ -385,13 +366,9 @@ c Then rotate the Stokes vector to the new reference axis
 	phot%Sx=x
 	phot%Sy=y
 	phot%Sz=z
-	
-c Determine the integrated scattered intensity in the scattering plane.
-	Fr=0d0
-	do i=1,180
-		thet=pi*(real(i)-0.5d0)/180d0
-		Fr=Fr+pi*sin(thet)*(M%F11(i)*phot%E+M%F12(i)*phot%Q)
-	enddo
+
+	Fr=180d0*(phot%E*M%IF11+phot%Q*M%IF12)
+
 c Now determine the scattering angle theta
 	Fr=ran2(idum)*Fr
 	Fi=0d0
@@ -411,7 +388,7 @@ c Now determine the scattering angle theta
 1	continue
 c Due to symmetry, could also have been -theta
 	if(ran2(idum).lt.0.5d0) theta=-theta
-
+	
 c Now determine the scattered stokes vector.
 	E=0d0
 	Q=0d0
@@ -490,66 +467,32 @@ c------------------------------------------------------------------------
 	
 	return
 	end
-	
-	
+
 
 	real*8 function increaseT(phot)
 	use Parameters
 	IMPLICIT NONE
-	type(photon) phot
-	real*8 E1,kp0,kp1
+	type(photon) phot,phot2
+	real*8 E1,kp0,kp1,determineT,computeE
 	integer i,j,ii,iopac
 
 	E1=C(phot%i,phot%j)%Eabs/C(phot%i,phot%j)%mass
 	j=int(C(phot%i,phot%j)%T/dT)
-	kp0=0d0
-	do ii=1,ngrains
-		if(.not.Grain(ii)%qhp) then
-			do iopac=1,Grain(ii)%nopac
-				kp0=kp0+(Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
-			enddo
-		endif
-	enddo
+	kp0=computeE(phot%i,phot%j,j)
+
 	do i=j,TMAX-1
-		kp1=0d0
-		do ii=1,ngrains
-			if(.not.Grain(ii)%qhp) then
-				do iopac=1,Grain(ii)%nopac
-					kp1=kp1+(Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
-				enddo
-			endif
-		enddo
+		kp1=computeE(phot%i,phot%j,i+1)
 		if(kp0.le.E1.and.kp1.ge.E1) then
 			increaseT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
 		kp0=kp1
 	enddo
-	j=1
-	kp0=0d0
-	do ii=1,ngrains
-		if(.not.Grain(ii)%qhp) then
-			do iopac=1,Grain(ii)%nopac
-				kp0=kp0+(Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
-			enddo
-		endif
-	enddo
-	do i=j,TMAX-1
-		kp1=0d0
-		do ii=1,ngrains
-			if(.not.Grain(ii)%qhp) then
-				do iopac=1,Grain(ii)%nopac
-					kp1=kp1+(Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac))
-				enddo
-			endif
-		enddo
-		if(kp0.le.E1.and.kp1.ge.E1) then
-			increaseT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
-			return
-		endif
-		kp0=kp1
-	enddo
-	increaseT=real(TMAX-1)*dT
+c not found, starting from 1 K
+	phot2=phot
+	phot2%E=E1
+	increaseT=determineT(phot2)
+
 	return
 	end
 
@@ -578,6 +521,7 @@ c------------------------------------------------------------------------
 		endif
 		kp0=kp1
 	enddo
+c not found, starting from 1 K
 	j=1
 	kp0=0d0
 	do iopac=1,Grain(ii)%nopac
@@ -599,7 +543,82 @@ c------------------------------------------------------------------------
 	end
 
 
+	real*8 function computeE(i,j,iT)
+	use Parameters
+	IMPLICIT NONE
+	integer iT,ii,iopac,i,j
+
+	computeE=0d0
+	do ii=1,ngrains
+		if(.not.Grain(ii)%qhp) then
+			do iopac=1,Grain(ii)%nopac
+				computeE=computeE+(Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac))
+			enddo
+		endif
+	enddo
+	return
+	end
+
 	real*8 function determineT(phot)
+	use Parameters
+	IMPLICIT NONE
+	type(photon) phot
+	real*8 E1,E,T,Emin,Emax,computeE
+	integer i,ii,iopac,iTmin,iTmax,iT0,iT
+
+	E1=phot%E
+	iTmin=0
+	iTmax=TMAX
+
+	iT=C(phot%i,phot%j)%T/dT
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX-1) iT=TMAX-1
+
+	E=computeE(phot%i,phot%j,iT)
+	Emax=computeE(phot%i,phot%j,iTmax)
+	Emin=0d0
+
+	if(E.gt.Emax) then
+		iT=TMAX-1
+		determineT=real(iT)*dT
+		return
+	endif
+
+	iT0=iT
+	do while(abs(iTmax-iTmin).gt.1)
+		iT=(E1/E)**(0.25)*iT
+		if(iT.eq.iT0) then
+			if(E1.lt.E) iT=iT0-1
+			if(E1.gt.E) iT=iT0+1
+		endif
+1		continue
+		if(iT.le.iTmin) then
+			iT=iTmin+1
+			goto 1
+		endif
+		if(iT.ge.iTmax) then
+			iT=iTmax-1
+			goto 1
+		endif
+		E=computeE(phot%i,phot%j,iT)
+		if(E.ge.E1) then
+			iTmax=iT
+			Emax=E
+		endif
+		if(E.le.E1) then
+			iTmin=iT
+			Emin=E
+		endif
+		iT0=iT
+	enddo
+
+	determineT=(real(iTmin)**4+(real(iTmax)**4-real(iTmin)**4)*(E1-Emin)/(Emax-Emin))**(0.25d0)*dT
+
+	return
+	end
+
+
+	real*8 function determineTslow(phot)
 	use Parameters
 	IMPLICIT NONE
 	type(photon) phot
@@ -625,14 +644,15 @@ c------------------------------------------------------------------------
 			endif
 		enddo
 		if(kp0.le.E1.and.kp1.ge.E1) then
-			determineT=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			determineTslow=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
 		kp0=kp1
 	enddo
-	determineT=real(TMAX-1)*dT
+	determineTslow=real(TMAX-1)*dT
 	return
 	end
+
 
 	real*8 function determineTP(phot,ii)
 	use Parameters
@@ -674,6 +694,7 @@ c------------------------------------------------------------------------
 	if(multiwav) then
 		specemit=spec
 		column(1:ngrains,1:ngrains2)=0d0
+		if(exportprodimo) Kext_column=0d0
 	endif
 
 	call randomdirection(phot%vx,phot%vy,phot%vz)
@@ -1011,30 +1032,31 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 		W=0.5d0*(1d0-sqrt(1d0-(D%Rstar/r)**2))
 		do j=1,D%nTheta-1
 			do ii=1,ngrains
-				Tevap=1500d0
-				minT=0d0
-				maxT=real(TMAX)*dT
-				do iter=1,10
-					if(determinegasfrac(Tevap,i,j,ii).gt.1d0) then
-						maxT=Tevap
-						Tevap=(Tevap+minT)/2d0
-					else
-						minT=Tevap
-						Tevap=(Tevap+maxT)/2d0
-					endif
-				enddo
-				iT=int(Tevap/dT)
-				if(iT.lt.1) iT=1
-				if(iT.gt.TMAX-1)iT=TMAX-1
-				eps=Grain(ii)%Kp(1,iT)/(BBint(iT)*Grain(ii)%Kpabsstar(1))
-				f1=abs((2d0*muRad(j)+1d0/eps)*eps)
-				f2=abs(muRad(j)*(2d0+3d0*muRad(j)*eps)*eps)
-				if(f1.gt.f2) then
-					fBW(ii,j)=f1
-				else
-					fBW(ii,j)=f2
-				endif
-				if(fBW(ii,j).lt.1d0) fBW(ii,j)=1d0
+				fBW(ii,j)=1d0
+c				Tevap=1500d0
+c				minT=0d0
+c				maxT=real(TMAX)*dT
+c				do iter=1,10
+c					if(determinegasfrac(Tevap,i,j,ii).gt.1d0) then
+c						maxT=Tevap
+c						Tevap=(Tevap+minT)/2d0
+c					else
+c						minT=Tevap
+c						Tevap=(Tevap+maxT)/2d0
+c					endif
+c				enddo
+c				iT=int(Tevap/dT)
+c				if(iT.lt.1) iT=1
+c				if(iT.gt.TMAX-1)iT=TMAX-1
+c				eps=Grain(ii)%Kp(1,iT)/(BBint(iT)*Grain(ii)%Kpabsstar(1))
+c				f1=abs((2d0*muRad(j)+1d0/eps)*eps)
+c				f2=abs(muRad(j)*(2d0+3d0*muRad(j)*eps)*eps)
+c				if(f1.gt.f2) then
+c					fBW(ii,j)=f1
+c				else
+c					fBW(ii,j)=f2
+c				endif
+c				if(fBW(ii,j).lt.1d0) fBW(ii,j)=1d0
 			enddo
 				
 			do iter=1,3
@@ -1059,15 +1081,15 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 			if(BBGrains) then
 				phot%E=W*phot%E*D%Lstar/(pi*D%Rstar**2)/wtot
 				if(viscous) then
-				T=ShakuraSunyaevIJ(i,j)
-				iT=T/dT
-				if(iT.gt.TMAX-1)iT=TMAX-1
-				if(iT.lt.1)iT=1
-				do ii=1,ngrains
-					do iopac=1,Grain(ii)%nopac
-						phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					T=ShakuraSunyaevIJ(i,j)
+					iT=T/dT
+					if(iT.gt.TMAX-1)iT=TMAX-1
+					if(iT.lt.1)iT=1
+					do ii=1,ngrains
+						do iopac=1,Grain(ii)%nopac
+							phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+						enddo
 					enddo
-				enddo
 				endif
 				C(i,j)%EJv=phot%E
 				C(i,j)%T=determineT(phot)
@@ -1077,20 +1099,20 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 				C(i,j)%TMC=C(i,j)%T
 			endif
 			if(.not.tcontact.or.tdes_iter) then
-			do ii=1,ngrains
-				phot%E=0d0
-				do iopac=1,Grain(ii)%nopac
-					phot%E=phot%E+W*Grain(ii)%Kpabsstar(iopac)*C(i,j)%wopac(ii,iopac)*D%Lstar/(pi*D%Rstar**2)
-				enddo
-				if(BW) phot%E=phot%E*fBW(ii,j)
-				if(viscous) then
+				do ii=1,ngrains
+					phot%E=0d0
 					do iopac=1,Grain(ii)%nopac
-						phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%wopac(ii,iopac)
+						phot%E=phot%E+W*Grain(ii)%Kpabsstar(iopac)*C(i,j)%wopac(ii,iopac)*D%Lstar/(pi*D%Rstar**2)
 					enddo
-				endif
-				C(i,j)%EJvP(ii)=phot%E
-				C(i,j)%TP(ii)=determineTP(phot,ii)
-			enddo
+					if(BW) phot%E=phot%E*fBW(ii,j)
+					if(viscous) then
+						do iopac=1,Grain(ii)%nopac
+							phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%wopac(ii,iopac)
+						enddo
+					endif
+					C(i,j)%EJvP(ii)=phot%E
+					C(i,j)%TP(ii)=determineTP(phot,ii)
+				enddo
 			endif
 			C(i,j)%dT=dT
 

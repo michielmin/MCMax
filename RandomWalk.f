@@ -197,48 +197,27 @@ c==============================================================================
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,iT,ci,cj,ii,iopac
-	real*8 Ksca(nlam),Kext(nlam),dBB(nlam),spec(nlam),int1,int2
-	real*8 wfunc(nlam),Kabs(nlam),g(nlam),Kqhp(nlam),EJv
+	real*8 Kext(nlam),dBB(nlam),int1,int2
+	real*8 wfunc(nlam),EJv
 
 	if(iT.lt.1) iT=1
 	if(iT.gt.TMAX-1) iT=TMAX-1
 
-	Kext(1:nlam)=0d0
-	Ksca(1:nlam)=0d0
-	Kqhp(1:nlam)=0d0
-	g(1:nlam)=0d0
-	do ii=1,ngrains
-	   do iopac=1,Grain(ii)%nopac
-		Kext(1:nlam)=Kext(1:nlam)+
-     &	        Grain(ii)%Kext(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
-		Ksca(1:nlam)=Ksca(1:nlam)+
-     &          Grain(ii)%Ksca(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
-		g(1:nlam)=g(1:nlam)+
-     &          Grain(ii)%g(iopac,1:nlam)*Grain(ii)%Ksca(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
-		if(Grain(ii)%qhp) then
-			Kqhp(1:nlam)=Kqhp(1:nlam)+Grain(ii)%Kabs(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
-		endif
-	   enddo
-	enddo
-	Kabs(1:nlam)=Kext(1:nlam)-Ksca(1:nlam)
-	if(scattering) then
-		g(1:nlam)=g(1:nlam)/Ksca(1:nlam)
+	if(C(ci,cj)%opacity_set) then
+		Kext(1:nlam)=C(ci,cj)%KabsTot(1:nlam)+C(ci,cj)%KscaTot(1:nlam)
 	else
-		g(1:nlam)=0d0
+		Kext(1:nlam)=0d0
+		do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				Kext(1:nlam)=Kext(1:nlam)+
+     &	        Grain(ii)%Kext(iopac,1:nlam)*C(ci,cj)%w(ii)*C(ci,cj)%wopac(ii,iopac)
+			enddo
+		enddo
 	endif
 
 	dBB(1:nlam)=BB(1:nlam,iT+1)-BB(1:nlam,iT)
 
-	spec(1:nlam)=dBB(1:nlam)*Kabs(1:nlam)
-	call integrate(spec,int1)
-	dBB(1:nlam)=dBB(1:nlam)/int1
-	wfunc(1:nlam)=dBB(1:nlam)*Kabs(1:nlam)
-
-	do j=1,10
-		spec(1:nlam)=Kabs(1:nlam)*wfunc(1:nlam)/Kext(1:nlam)
-		call integrate(spec,int1)
-		wfunc(1:nlam)=Kabs(1:nlam)*dBB(1:nlam)*int1+Ksca(1:nlam)*wfunc(1:nlam)/Kext(1:nlam)
-	enddo
+	wfunc(1:nlam)=dBB(1:nlam)*Kext(1:nlam)
 
 	call integrate(wfunc,int2)
 	

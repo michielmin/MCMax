@@ -24,7 +24,7 @@
 	character*500 specfile,pressurefile,timefile
 	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
 	logical scatbackup,emitted,dofastvisc,phot_irf
-	integer nsplit,isplit,iter
+	integer nsplit,isplit,iter,l
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
 	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha
@@ -151,6 +151,27 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 				EJvTotP(ii,i,j)=0d0
 			enddo
 		endif
+		if(.not.allocated(C(i,j)%KabsTot)) then
+			allocate(C(i,j)%KabsTot(nlam))
+			allocate(C(i,j)%KscaTot(nlam))
+		endif
+		do l=1,nlam
+			C(i,j)%KabsTot(l)=0d0
+			C(i,j)%KscaTot(l)=0d0
+			do ii=1,ngrains
+				if(.not.Grain(ii)%qhp) then
+					do iopac=1,Grain(ii)%nopac
+						C(i,j)%KabsTot(l)=C(i,j)%KabsTot(l)
+     &	+Grain(ii)%Kabs(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					enddo
+				endif
+				do iopac=1,Grain(ii)%nopac
+					C(i,j)%KscaTot(l)=C(i,j)%KscaTot(l)
+     &	+Grain(ii)%Ksca(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				enddo
+			enddo
+		enddo
+		C(i,j)%opacity_set=.true.
 	enddo
 	enddo
 
@@ -222,7 +243,7 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 			call cpu_time(checktime)
 			checktime=checktime-starttime
 			if((checktime.gt.real(maxruntime)
-     &	.or.(i.gt.100.and.(checktime*real(Nphot)/real(i)).gt.real(5*maxruntime)))
+     &	.or.(i.gt.(Nphot/10).and.(checktime*real(Nphot)/real(i)).gt.real(5*maxruntime)))
      &	.and.(real(i)/real(Nphot).lt.0.9)) then
 				write(*,'("STOPPING DUE TO TIME CONSTRAINT!!")')
 				write(*,'("REDUCING NUMBER OF PHOTON PACKAGES!!")')
@@ -432,12 +453,16 @@ c			else
 			iangle=-phot%vz*real(nangle)+1
 		endif
 		if(multiwav) then
-			spectemp(1:nlam)=0d0
-			do ii=1,ngrains
-				do iopac=1,Grain(ii)%nopac
-					spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
+			if(exportprodimo) then
+				spectemp(1:nlam)=Kext_column(1:nlam)
+			else
+				spectemp(1:nlam)=0d0
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
+					enddo
 				enddo
-			enddo
+			endif
 			do j=1,nlam
 				if(spectemp(j).lt.1000d0) then
 					spectemp(j)=specemit(j)*exp(-spectemp(j))
@@ -696,6 +721,14 @@ c	close(unit=20)
 
 	endif
 
+	do j=1,D%nTheta-1
+	do i=0,D%nR-1
+		deallocate(C(i,j)%KabsTot)
+		deallocate(C(i,j)%KscaTot)
+		C(i,j)%opacity_set=.false.
+	enddo
+	enddo
+
 	return
 	end
 	
@@ -843,13 +876,15 @@ c ------------------------------------------------
 				C(phot%i,phot%j)%KextLRF=C(phot%i,phot%j)%KextLRF+EJv*Kext
 				C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      		endif
+			if(exportprodimo.and.multiwav) Kext_column=Kext_column
+     &			+v*C(phot%i,phot%j)%dens*AU*(C(phot%i,phot%j)%KabsTot+C(phot%i,phot%j)%KscaTot)
 		endif
 		if(multiwav) then
 			do ii=1,ngrains
-			do iopac=1,Grain(ii)%nopac
-				column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
+				do iopac=1,Grain(ii)%nopac
+					column(ii,iopac)=column(ii,iopac)+v*C(phot%i,phot%j)%dens
      &					*C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)*AU
-			enddo
+				enddo
 			enddo
 		endif
 		iRWinter=iRWinter+1
@@ -904,6 +939,8 @@ c ------------------------------------------------
 			C(phot%i,phot%j)%KextLRF=C(phot%i,phot%j)%KextLRF+EJv*Kext
 			C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      	endif
+		if(exportprodimo.and.multiwav) Kext_column=Kext_column
+     &		+v*C(phot%i,phot%j)%dens*AU*(C(phot%i,phot%j)%KabsTot+C(phot%i,phot%j)%KscaTot)
 	endif
 	if(multiwav) then
 		do ii=1,ngrains
@@ -1372,12 +1409,16 @@ c-----------------------------------------------------------------------
 		return
 	endif
 	
-	spectemp(1:nlam)=0d0
-	do ii=1,ngrains
-		do iopac=1,Grain(ii)%nopac
-			spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
+	if(exportprodimo) then
+		spectemp(1:nlam)=Kext_column(1:nlam)
+	else
+		spectemp(1:nlam)=0d0
+		do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
+			enddo
 		enddo
-	enddo
+	endif
 	do j=1,nlam
 		if(spectemp(j).lt.10d0) then
 			spectemp(j)=specemit(j)*exp(-spectemp(j))
