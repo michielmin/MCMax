@@ -654,7 +654,82 @@ c not found, starting from 1 K
 	end
 
 
+
+	real*8 function computeEP(i,j,iT,ii)
+	use Parameters
+	IMPLICIT NONE
+	integer iT,ii,iopac,i,j
+
+	computeEP=0d0
+	do iopac=1,Grain(ii)%nopac
+		computeEP=computeEP+(Grain(ii)%Kp(iopac,iT)*C(i,j)%wopac(ii,iopac))
+	enddo
+
+	return
+	end
+
+
 	real*8 function determineTP(phot,ii)
+	use Parameters
+	IMPLICIT NONE
+	type(photon) phot
+	real*8 E1,E,T,Emin,Emax,computeEP
+	integer i,ii,iopac,iTmin,iTmax,iT0,iT
+
+	E1=phot%E
+	iTmin=0
+	iTmax=TMAX
+
+	iT=C(phot%i,phot%j)%TP(ii)/dT
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX-1) iT=TMAX-1
+
+	E=computeEP(phot%i,phot%j,iT,ii)
+	Emax=computeEP(phot%i,phot%j,iTmax,ii)
+	Emin=0d0
+
+	if(E.gt.Emax) then
+		iT=TMAX-1
+		determineTP=real(iT)*dT
+		return
+	endif
+
+	iT0=iT
+	do while(abs(iTmax-iTmin).gt.1)
+		iT=(E1/E)**(0.25)*iT
+		if(iT.eq.iT0) then
+			if(E1.lt.E) iT=iT0-1
+			if(E1.gt.E) iT=iT0+1
+		endif
+1		continue
+		if(iT.le.iTmin) then
+			iT=iTmin+1
+			goto 1
+		endif
+		if(iT.ge.iTmax) then
+			iT=iTmax-1
+			goto 1
+		endif
+		E=computeEP(phot%i,phot%j,iT,ii)
+		if(E.ge.E1) then
+			iTmax=iT
+			Emax=E
+		endif
+		if(E.le.E1) then
+			iTmin=iT
+			Emin=E
+		endif
+		iT0=iT
+	enddo
+
+	determineTP=(real(iTmin)**4+(real(iTmax)**4-real(iTmin)**4)*(E1-Emin)/(Emax-Emin))**(0.25d0)*dT
+
+	return
+	end
+
+
+
+	real*8 function determineTPslow(phot,ii)
 	use Parameters
 	IMPLICIT NONE
 	type(photon) phot
@@ -672,14 +747,16 @@ c not found, starting from 1 K
 			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
 		enddo
 		if(kp0.le.E1.and.kp1.ge.E1) then
-			determineTP=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			determineTPslow=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
 			return
 		endif
 		kp0=kp1
 	enddo
-	determineTP=real(TMAX-1)*dT
+	determineTPslow=real(TMAX-1)*dT
 	return
 	end
+
+
 
 
 	subroutine emit(phot,spec,Lttot)

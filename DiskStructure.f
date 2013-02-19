@@ -2033,23 +2033,28 @@ c in the theta grid we actually store cos(theta) for convenience
 	real*8 A,B,T,dens
 	integer i,j,ii,k
 
-	dens=0d0
-	do k=1,ngrains
-		if(Grain(ii)%material.eq.Grain(k)%material) dens=dens+C(i,j)%w0(k)
-	enddo
+	if(Grain(ii)%material.eq.'UNKNOWN') then
+		dens=1d0
+	else
+		dens=0d0
+		do k=1,ngrains
+			if(Grain(ii)%material.eq.Grain(k)%material) dens=dens+C(i,j)%w0(k)
+		enddo
+	endif
 	dens=dens*C(i,j)%dens0
+
 	A=Grain(ii)%TdesA
 	B=Grain(ii)%TdesB
 
-	if(abs(B).lt.1d-15) then
-		if(T.gt.A) then
-			determinegasfrac=2d0
+	if(abs(B).gt.1d-15) then
+		if(T.ge.3d0) then
+			determinegasfrac=10d0**(A/B-1d4/(T*B)-log10(T))/dens
 		else
 			determinegasfrac=0d0
 		endif
 	else
-		if(T.ge.3d0) then
-			determinegasfrac=10d0**(A/B-1d4/(T*B)-log10(T))/dens
+		if(T.gt.A) then
+			determinegasfrac=2d0
 		else
 			determinegasfrac=0d0
 		endif
@@ -2306,17 +2311,17 @@ c ------------ for the IN05 sublimation law --------------------
 		if(tcontact) then
 			spec(1:nlam)=0d0
 			BBGrains=.false.
+			phot%E=0d0
 			do ii=1,ngrains
 				if(.not.Grain(ii)%qhp.and.C(Rbw-1,j)%w(ii).gt.0d0) then
 				   do iopac=1,Grain(ii)%nopac
-				      spec(1:nlam)=spec(1:nlam)+D%Fstar(1:nlam)*Grain(ii)%Kabs(iopac,1:nlam)*
+						phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*D%Lstar*
      &       C(Rbw-1,j)%wopac(ii,iopac)*C(Rbw-1,j)%w(ii)/(pi*D%Rstar**2)
 				   enddo
 				   BBGrains=.true.
 				endif
 			enddo
 			if(BBGrains) then
-				call integrate(spec,phot%E)
 				phot%E=phot%E*fBW(1,j)
 				Tbw=determineT(phot)
 			else
@@ -2341,10 +2346,10 @@ c ------------ for the IN05 sublimation law --------------------
 		else
 			do ii=1,ngrains
 			if(.not.Grain(ii)%qhp.and.C(Rbw-1,j)%w0(ii).gt.0d0) then
-			        do iopac=1,Grain(ii)%nopac
-				   spec(1:nlam)=spec(1:nlam)+D%Fstar(1:nlam)*Grain(ii)%Kabs(iopac,1:nlam)*C(Rbw-1,j)%wopac(ii,iopac)/(pi*D%Rstar**2)
+				phot%E=0d0
+		        do iopac=1,Grain(ii)%nopac
+					phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*D%Lstar*C(Rbw-1,j)%wopac(ii,iopac)/(pi*D%Rstar**2)
 				enddo
-				call integrate(spec,phot%E)
 				phot%E=W*phot%E
 				Tbw=determineTP(phot,ii)
 				f=determinegasfrac(Tbw,Rbw-1,j,ii)

@@ -36,7 +36,6 @@
 6	continue
 
 	do i=1,nlam
-		call tellertje(i,nlam)
 		ExtISM(i)=Reddening(lam(i),compute_dlam(lam(i)),D%Av)
 	enddo
 
