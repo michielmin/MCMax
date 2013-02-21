@@ -23,7 +23,7 @@ else
 endif
 
 # use a suffix in file name (i.e. static, test etc.)
-# cl> make suffix=32 ...
+# cl> make name=test
 ifneq ($(name),)
   SUFFIX = -$(name)
 endif

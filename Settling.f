@@ -426,10 +426,12 @@ c-------------------------------------------------------------------
             call tridag(tr_a,tr_b,tr_c,rhs,y,nz)
 
             ! Check for negative densities
-            !
             do iz=1,nz
                if(y(iz).lt.0.d0) y(iz)=0.d0
             enddo
+
+            ! Check for zero density in bottom grid cell
+            if(y(nz).lt.1d-50) y(nz)=1d-50
 
             !  Renormalize the dust density using cell volume (conserves mass)
             !  Using the surface density does not work in a spherical grid.
@@ -516,34 +518,35 @@ c         write(66,*) settletime(1:ns)
          close(unit=66)         !  Close the ouput file
       endif
 
-      !
-      !  Fix abundance at densities lower than 1d-50
-      !  TODO: make sure it also works at larger radii (normalization?)
+      !  Fix abundance at densities lower than 1d-45
+      !  This is to avoid kinks in temperature contours when 
+      !  densities approach the lower limit of 1d-50
+      !  Useful for making plots only.
       !
       if (thinparticle.ge.-1.and.thinparticle.le.ngrains) then
          hitbottom=.false.
-!     condition=ir.le.135.and.ir.ge.130
+!         condition=ir.eq.120
          condition=0
          if (condition) write(*,*) "                                 ", radius / AU
 
          do iz=1,nz
             if (condition) write(*,'(e10.3,$)') sum(f(iz,1:ns))
-            if (sum(f(iz,1:ns)).le.1d-50) then !  arrive at <1d-50 ?
+            if (.not.hitbottom.and.sum(f(iz,1:ns)).le.1d-45) then !  arrive at <1d-45 ?
                hitbottom=.true.
-               ibottom=iz-1
-               scalebottom=1.01d-50 / sum(f(iz-1,1:ns))
+               ibottom=max(iz-1,1)
+               scalebottom=1.01d-45 / sum(f(iz-1,1:ns))
             endif
-            
             if (hitbottom) then !  >1d-50 for everything above
                if (thinparticle.eq.-1) then ! use last density
                   f(iz,1:ns)=f(ibottom,1:ns) * scalebottom
                else if (thinparticle.eq.0) then ! use input abundance
-                  f(iz,1:ns)=C(ir,nz)%w(1:ns)*1.01d-50
+                  f(iz,1:ns)=C(ir,nz)%w(1:ns)*1.01d-45
                else if (thinparticle.ge.1) then ! use particle # 
-                  f(iz,1:ns)=0d0
-                  f(iz,thinparticle)=1.01d-50
+                  f(iz,1:ns)=1d-50
+                  f(iz,thinparticle)=1.01d-45
                endif
             endif
+         
             if (condition) write(*,'(e10.3)') sum(f(iz,1:ns))
          enddo
       endif
