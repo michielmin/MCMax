@@ -3722,11 +3722,13 @@ c Set the spectrum and energy for the interstellar radiation field
 	allocate(ncoolingtime(0:D%nR))
 	allocate(coolingtime(0:D%nR))
 
-	do i=0,D%nR-1
-		do j=1,D%nTheta-1
-			call CheckMinimumDensity(i,j)
+	if(Nphot.gt.0) then
+		do i=0,D%nR-1
+			do j=1,D%nTheta-1
+				call CheckMinimumDensity(i,j)
+			enddo
 		enddo
-	enddo
+	endif
 
 	write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
 	open(unit=90,file=surfdensfile,RECL=100)
