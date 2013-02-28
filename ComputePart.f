@@ -117,6 +117,7 @@ c changed this to mass fractions (11-05-2010)
 		nm=nm+1
 		e1(nm,1:nlam)=1d0
 		e2(nm,1:nlam)=0d0
+		rho(nm)=0d0
 		frac(nm)=porosity
 		frac(1:nm-1)=frac(1:nm-1)*(1d0-porosity)
 		do i=1,nlam

@@ -320,6 +320,7 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%a_min=-1d0
 		ZoneTemp(i)%a_max=-1d0
 		ZoneTemp(i)%a_pow=1d5
+		ZoneTemp(i)%gamma_exp=-1d0
 	enddo
 	nzones=0
 	
@@ -1047,6 +1048,8 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%denspow
 		else if(keyzone.eq.'rexp') then
 			read(value,*) ZoneTemp(i)%Rexp
+		else if(keyzone.eq.'gamma_exp') then
+			read(value,*) ZoneTemp(i)%gamma_exp
 		else if(keyzone.eq.'sh') then
 			read(value,*) ZoneTemp(i)%sh
 		else if(keyzone.eq.'shpow') then
@@ -1202,6 +1205,7 @@ C       End
 			if(Zone(i)%a_min.le.0d0) Zone(i)%a_min=mrn_rmin*1d4
 			if(Zone(i)%a_max.le.0d0) Zone(i)%a_max=mrn_rmax*1d4
 			if(Zone(i)%a_pow.gt.100d0) Zone(i)%a_pow=mrn_index
+			if(Zone(i)%gamma_exp.lt.0d0) Zone(i)%gamma_exp=2d0-Zone(i)%denspow
 			D%Mtot=D%Mtot+Zone(i)%Mdust
 			if(Zone(i)%Rin.gt.D%Rin.and.Zone(i)%Rin.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rin)).ne.0d0) then
 				nRfix=nRfix+1
@@ -1533,25 +1537,27 @@ C	End
 	do i=1,nzones
 		write(*,'("Zone      ",i4,":")') i
 		write(9,'("Zone      ",i4,":")') i
-		write(*,'("Inner radius:         ",f14.3," AU")') ZoneTemp(i)%Rin
-		write(9,'("Inner radius:         ",f14.3," AU")') ZoneTemp(i)%Rin
-		write(*,'("Outer radius:         ",f14.3," AU")') ZoneTemp(i)%Rout
-		write(9,'("Outer radius:         ",f14.3," AU")') ZoneTemp(i)%Rout
-		write(*,'("Dust mass:            ",e18.3," Msun")') ZoneTemp(i)%Mdust
-		write(9,'("Dust mass:            ",e18.3," Msun")') ZoneTemp(i)%Mdust
+		write(*,'("Inner radius:         ",f14.3," AU")') Zone(i)%Rin
+		write(9,'("Inner radius:         ",f14.3," AU")') Zone(i)%Rin
+		write(*,'("Outer radius:         ",f14.3," AU")') Zone(i)%Rout
+		write(9,'("Outer radius:         ",f14.3," AU")') Zone(i)%Rout
+		write(*,'("Dust mass:            ",e18.3," Msun")') Zone(i)%Mdust
+		write(9,'("Dust mass:            ",e18.3," Msun")') Zone(i)%Mdust
 		write(*,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
 		write(9,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
 		if(Zone(i)%Rexp.lt.1d100) then
-			write(*,'("Exponential cutoff:   ",f14.3," AU")') ZoneTemp(i)%Rexp
-			write(9,'("Exponential cutoff:   ",f14.3," AU")') ZoneTemp(i)%Rexp
+			write(*,'("Exponential cutoff:   ",f14.3," AU")') Zone(i)%Rexp
+			write(9,'("Exponential cutoff:   ",f14.3," AU")') Zone(i)%Rexp
+			write(*,'("Exponent:             ",f14.3," AU")') Zone(i)%gamma_exp
+			write(9,'("Exponent:             ",f14.3," AU")') Zone(i)%gamma_exp
 		endif
 		if(Zone(i)%fix_struct) then
-			write(*,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
-			write(9,'("Reference radius:     ",f14.3," AU")') ZoneTemp(i)%Rsh
-			write(*,'("Scaleheight:          ",f14.5," AU")') ZoneTemp(i)%sh
-			write(9,'("Scaleheight:          ",f14.5," AU")') ZoneTemp(i)%sh
-			write(*,'("Scaleheight powerlaw: ",f14.3," Msun")') ZoneTemp(i)%shpow
-			write(9,'("Scaleheight powerlaw: ",f14.3," Msun")') ZoneTemp(i)%shpow
+			write(*,'("Reference radius:     ",f14.3," AU")') Zone(i)%Rsh
+			write(9,'("Reference radius:     ",f14.3," AU")') Zone(i)%Rsh
+			write(*,'("Scaleheight:          ",f14.5," AU")') Zone(i)%sh
+			write(9,'("Scaleheight:          ",f14.5," AU")') Zone(i)%sh
+			write(*,'("Scaleheight powerlaw: ",f14.3," Msun")') Zone(i)%shpow
+			write(9,'("Scaleheight powerlaw: ",f14.3," Msun")') Zone(i)%shpow
 		else
 			write(*,'("Solving vertical structure")')
 			write(9,'("Solving vertical structure")')
@@ -2553,7 +2559,7 @@ c in the theta grid we actually store cos(theta) for convenience
 					r=D%R_av(i)*sin(D%theta_av(j))/AU
 					z=D%R_av(i)*cos(D%theta_av(j))/AU
 					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(2d0-Zone(iz)%denspow))
+					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
 					f2=exp(-(z/hr)**2)
 					do ii=1,ngrains
 						if(Zone(iz)%inc_grain(ii)) then
@@ -2963,7 +2969,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					r=D%R_av(i)*sin(D%theta_av(j))/AU
 					z=D%R_av(i)*cos(D%theta_av(j))/AU
 					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(2d0-Zone(iz)%denspow))
+					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
 					f2=exp(-(z/hr)**2)
 					do ii=1,ngrains
 						if(Zone(iz)%inc_grain(ii)) then
