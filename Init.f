@@ -15,13 +15,13 @@
 	subroutine initialize(input,Nphot,NphotFirst,NFirst,iter0)
 	use Parameters
 	IMPLICIT NONE
-	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid
+	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid,njj
 	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)
 	real*8 T,Planck,Vtot,clight,MassTot,thet,tot,Tmax_R,RTmax,stretch,Kext,Kabs
 	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(100),scale,Luminosity,MassTot0
 	real*8 powslope(100),powrad0(100),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
 	real*8 gap1(100),gap2(100),gap(100),Rdes,Rmin,zlam1,zlam2,dummy
-	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup
+	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup,theta
 	real*8 gapshape(100),gaproundpow(100)
 	real*8 asym(100),asym2(100),wasym2(100),Pmax(100),tdes_fast(100),powinner(100)
 	integer npow,powclose(100),powfar(100),ilam1,ilam2,ngap,nzlam,nr,nt
@@ -2556,17 +2556,24 @@ c in the theta grid we actually store cos(theta) for convenience
 				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
-					r=D%R_av(i)*sin(D%theta_av(j))/AU
-					z=D%R_av(i)*cos(D%theta_av(j))/AU
-					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
-					f2=exp(-(z/hr)**2)
+					zonedens(iz,1:ngrains,i,j)=0d0
+					njj=10
+					do jj=1,njj
+						theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+						r=D%R_av(i)*sin(theta)/AU
+						z=D%R_av(i)*cos(theta)/AU
+						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+						f2=exp(-(z/hr)**2)
+						do ii=1,ngrains
+							if(Zone(iz)%inc_grain(ii)) then
+								zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+							else
+								zonedens(iz,ii,i,j)=0d0
+							endif
+						enddo
+					enddo
 					do ii=1,ngrains
-						if(Zone(iz)%inc_grain(ii)) then
-							zonedens(iz,ii,i,j)=Zone(iz)%abun(ii)*f1*f2/hr
-						else
-							zonedens(iz,ii,i,j)=0d0
-						endif
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
 				else
@@ -2617,14 +2624,19 @@ c			f2=exp(-0.5*(z/hr)**2)
 			scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
 			C(i,j)%dens=scale*f1*f2*r**(-D%shpow)
 		else if(denstype.eq.'PARAMETERIZED') then
-			r=D%R_av(i)*sin(D%theta_av(j))/AU
-			z=D%R_av(i)*cos(D%theta_av(j))/AU
-			hr=D%sh1AU*r**D%shpow
-			hr=hr*shscale(i)
-			f1=r**(-D%denspow)
-			f2=exp(-(z/hr)**2)
-			scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
-			C(i,j)%dens=scale*f1*f2/hr
+			njj=10
+			C(i,j)%dens=0d0
+			do jj=1,njj
+				theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+				r=D%R_av(i)*sin(theta)/AU
+				z=D%R_av(i)*cos(theta)/AU
+				hr=D%sh1AU*r**D%shpow
+				hr=hr*shscale(i)
+				f1=r**(-D%denspow)
+				f2=exp(-(z/hr)**2)
+				scale=D%Mtot/(AU**3*2d0*pi*D%sh1AU*sqrt(pi)*(D%Rout-D%Rin))
+				C(i,j)%dens=C(i,j)%dens+scale*f1*f2/hr/real(njj)
+			enddo
 		else if(denstype.eq.'SHELL') then ! gijsexp: shell
 			C(i,j)%dens=(AU/D%R_av(i))**(D%denspow) ! density
 		else if(denstype.eq.'POW') then
@@ -2966,17 +2978,24 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
-					r=D%R_av(i)*sin(D%theta_av(j))/AU
-					z=D%R_av(i)*cos(D%theta_av(j))/AU
-					hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-					f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
-					f2=exp(-(z/hr)**2)
+					zonedens(iz,1:ngrains,i,j)=0d0
+					njj=10
+					do jj=1,njj
+						theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+						r=D%R_av(i)*sin(theta)/AU
+						z=D%R_av(i)*cos(theta)/AU
+						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+						f2=exp(-(z/hr)**2)
+						do ii=1,ngrains
+							if(Zone(iz)%inc_grain(ii)) then
+								zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+							else
+								zonedens(iz,ii,i,j)=0d0
+							endif
+						enddo
+					enddo
 					do ii=1,ngrains
-						if(Zone(iz)%inc_grain(ii)) then
-							zonedens(iz,ii,i,j)=Zone(iz)%abun(ii)*f1*f2/hr
-						else
-							zonedens(iz,ii,i,j)=0d0
-						endif
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
 				else
