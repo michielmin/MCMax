@@ -922,9 +922,9 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 filename
-	real*8 sh(D%nR),z(D%nTheta),ct,tau,lr0,lr1
-	real*8 Mtot,Mtot2,Fsc,p,p0,p1,Sig(D%nR),Q
-	logical escape,hitstar
+	real*8 sh(2,D%nR),z(D%nTheta),ct,tau,lr0,lr1
+	real*8 Mtot,Mtot2,Fsc,p,p0,p1,Sig(D%nR),Q,dens,d0,d1
+	logical escape,hitstar,shset(2)
 	type(photon) phot
 	integer i,j
 	
@@ -932,15 +932,25 @@ c-----------------------------------------------------------------------
 		p0=C(i,D%nTheta-1)%gasdens*C(i,D%nTheta-1)%T
 		p1=p0
 		p0=p0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
+		d0=C(i,D%nTheta-1)%gasdens
+		d1=d0
+		d0=d0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
+		shset=.false.
 		z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
 		do j=D%nTheta-2,1,-1
 			z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
 			p=C(i,j)%gasdens*C(i,j)%T
-			if(p.lt.p0) then
-				sh(i)=(z(j+1)+(z(j)-z(j+1))*(p1-p0)/(p1-p))
-				goto 1
+			if(p.lt.p0.and..not.shset(1)) then
+				sh(1,i)=(z(j+1)+(z(j)-z(j+1))*(p1-p0)/(p1-p))
+				shset(1)=.true.
 			endif
 			p1=p
+			dens=C(i,j)%gasdens
+			if(dens.lt.d0.and..not.shset(2)) then
+				sh(2,i)=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
+				shset(2)=.true.
+			endif
+			d1=dens
 		enddo
 1		continue
 		Sig(i)=0d0
@@ -949,9 +959,10 @@ c-----------------------------------------------------------------------
 		enddo
 	enddo
 	open(unit=80,file=filename,RECL=1000)
+	write(80,'("# R[AU], pressure scaleheight, density scaelheight, Q")')
 	do i=1,D%nR-1
-		Q=(sh(i)*AU*D%Mstar)/(D%R_av(i)**3*pi*Sig(i)*gas2dust)
-		write(80,*) D%R_av(i)/AU,sh(i),Q
+		Q=(sh(1,i)*AU*D%Mstar)/(D%R_av(i)**3*pi*Sig(i)*gas2dust)
+		write(80,*) D%R_av(i)/AU,sh(1,i),sh(2,i),Q
 	enddo
 	close(unit=80)
 	return

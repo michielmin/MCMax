@@ -2830,7 +2830,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			enddo
 		enddo
 
-		if(parttype(ii).ne.6) then
+		if(parttype(ii).ne.6.and.parttype(ii).ne.7) then
 			Grain(ii)%dust_moment1=Grain(ii)%rv*1d4
 			Grain(ii)%dust_moment2=(Grain(ii)%rv*1d4)**2
 			Grain(ii)%dust_moment3=(Grain(ii)%rv*1d4)**3
@@ -3743,6 +3743,8 @@ c Set the spectrum and energy for the interstellar radiation field
 	write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),tot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 	enddo
 	close(unit=90)
+
+	call KappaAverage()
 
 	arraysallocated=.true.
 	

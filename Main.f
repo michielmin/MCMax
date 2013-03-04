@@ -511,13 +511,15 @@ c
 		enddo
 	endif
 
-	
+
 	write(kappafile,'(a,"kappas.dat")') outdir(1:len_trim(outdir))
 	open(unit=20,file=kappafile,RECL=6000)
 	do i=1,nlam
 		write(20,*) lam(i),(Grain(j)%Kabs(1,i),j=1,ngrains),(Grain(j)%Ksca(1,i),j=1,ngrains)
 	enddo
 	close(unit=20)
+
+	call KappaAverage()
 
 	if(Nphot.gt.0.or.forcediff) then
 		write(*,'("--------------------------------------------------------")')

@@ -491,7 +491,200 @@ c-----------------------------------------------------------------------
 	return
 	end
 	
+	subroutine KappaAverage()
+	use Parameters
+	IMPLICIT NONE
+	type(particle) p
+	integer i,j,ii,iopac,l
+	real*8,allocatable :: array(:,:,:)
+	real*8 Mtot,Vtot,w,wtot(ngrains,ngrains2)
 
+	  integer status,unit,blocksize,bitpix,naxis,naxes(3)
+	  integer group,fpixel,nelements
+	  logical simple,extend,truefalse
+	character*500 filename
+
+
+	allocate(p%Kabs(1,nlam))
+	allocate(p%Ksca(1,nlam))
+	allocate(p%Kext(1,nlam))
+	allocate(p%F(1,nlam))
+	p%Kabs=0d0
+	p%Kext=0d0
+	p%Ksca=0d0
+	do l=1,nlam
+		p%F(1,l)%F11=0d0
+		p%F(1,l)%F12=0d0
+		p%F(1,l)%F22=0d0
+		p%F(1,l)%F33=0d0
+		p%F(1,l)%F34=0d0
+		p%F(1,l)%F44=0d0
+	enddo
+	Mtot=0d0
+	Vtot=0d0
+	wtot=0d0
+	do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			do ii=1,ngrains
+				do iopac=1,Grain(ii)%nopac
+					w=C(i,j)%mass*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					wtot(ii,iopac)=wtot(ii,iopac)+w
+				enddo
+			enddo
+			Mtot=Mtot+C(i,j)%mass
+		enddo
+	enddo
+	do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			w=wtot(ii,iopac)
+			p%dust_moment1=p%dust_moment1+w*Grain(ii)%dust_moment1
+			p%dust_moment2=p%dust_moment2+w*Grain(ii)%dust_moment2
+			p%dust_moment3=p%dust_moment3+w*Grain(ii)%dust_moment3
+			do l=1,nlam
+				p%Kabs(1,l)=p%Kabs(1,l)+w*Grain(ii)%Kabs(iopac,l)
+				p%Ksca(1,l)=p%Ksca(1,l)+w*Grain(ii)%Ksca(iopac,l)
+				p%F(1,l)%F11(1:180)=p%F(1,l)%F11(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F11(1:180)
+				p%F(1,l)%F12(1:180)=p%F(1,l)%F12(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F12(1:180)
+				p%F(1,l)%F22(1:180)=p%F(1,l)%F22(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F22(1:180)
+				p%F(1,l)%F33(1:180)=p%F(1,l)%F33(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F33(1:180)
+				p%F(1,l)%F34(1:180)=p%F(1,l)%F34(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F34(1:180)
+				p%F(1,l)%F44(1:180)=p%F(1,l)%F44(1:180)
+     &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F44(1:180)
+			enddo
+			Vtot=Vtot+w/Grain(ii)%rho
+		enddo
+	enddo
+	do l=1,nlam
+		p%F(1,l)%F11(1:180)=p%F(1,l)%F11(1:180)/p%Ksca(1,l)
+		p%F(1,l)%F12(1:180)=p%F(1,l)%F12(1:180)/p%Ksca(1,l)
+		p%F(1,l)%F22(1:180)=p%F(1,l)%F22(1:180)/p%Ksca(1,l)
+		p%F(1,l)%F33(1:180)=p%F(1,l)%F33(1:180)/p%Ksca(1,l)
+		p%F(1,l)%F34(1:180)=p%F(1,l)%F34(1:180)/p%Ksca(1,l)
+		p%F(1,l)%F44(1:180)=p%F(1,l)%F44(1:180)/p%Ksca(1,l)
+	enddo
+	p%Kabs=p%Kabs/Mtot
+	p%Ksca=p%Ksca/Mtot
+	p%Kext=p%Kabs+p%Ksca
+	p%dust_moment1=p%dust_moment1/Mtot
+	p%dust_moment2=p%dust_moment2/Mtot
+	p%dust_moment3=p%dust_moment3/Mtot
+	p%rho=Mtot/Vtot
+	
+	write(filename,'(a,"particle_average.fits")') trim(outdir)
+
+	inquire(file=filename,exist=truefalse)
+	if(truefalse) then
+		write(*,'("FITS file already exists, overwriting")')
+		write(9,'("FITS file already exists, overwriting")')
+		open(unit=90,file=filename)
+		close(unit=90,status='delete')
+	endif
+	
+	  status=0
+C	 Get an unused Logical Unit Number to use to create the FITS file
+	  call ftgiou(unit,status)
+C	 create the new empty FITS file
+	  blocksize=1
+	  call ftinit(unit,filename,blocksize,status)
+
+	  simple=.true.
+	  extend=.true.
+	group=1
+	fpixel=1
+
+	bitpix=-64
+	naxis=2
+	naxes(1)=nlam
+	naxes(2)=4
+	nelements=naxes(1)*naxes(2)
+	allocate(array(nlam,4,1))
+
+	! Write the required header keywords.
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+	! Write optional keywords to the header
+
+	call ftpkye(unit,'a1',real(p%dust_moment1),8,'[micron]',status)
+	call ftpkye(unit,'a2',real(p%dust_moment2),8,'[micron^2]',status)
+	call ftpkye(unit,'a3',real(p%dust_moment3),8,'[micron^3]',status)
+	call ftpkye(unit,'density',real(p%rho),8,'[g/cm^3]',status)
+
+
+	!  Write the array to the FITS file.
+
+	!------------------------------------------------------------------------------
+	! HDU 0: opacities 
+	!------------------------------------------------------------------------------
+
+	do i=1,nlam
+		array(i,1,1)=lam(i)
+		array(i,2,1)=p%Kext(1,i)
+		array(i,3,1)=p%Kabs(1,i)
+		array(i,4,1)=p%Ksca(1,i)
+	enddo
+
+	call ftpprd(unit,group,fpixel,nelements,array(1:nlam,1:4,1),status)
+	
+	deallocate(array)
+
+	!------------------------------------------------------------------------------
+	! HDU 1: Temperature 
+	!------------------------------------------------------------------------------
+	bitpix=-64
+	naxis=3
+	naxes(1)=nlam
+	naxes(2)=6
+	naxes(3)=180
+	nelements=naxes(1)*naxes(2)*naxes(3)
+
+	allocate(array(nlam,6,180))
+
+	! create new hdu
+	call ftcrhd(unit, status)
+
+	!  Write the required header keywords.
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+	do i=1,nlam
+		do j=1,180
+			array(i,1,j)=p%F(1,i)%F11(j)
+			array(i,2,j)=p%F(1,i)%F12(j)
+			array(i,3,j)=p%F(1,i)%F22(j)
+			array(i,4,j)=p%F(1,i)%F33(j)
+			array(i,5,j)=p%F(1,i)%F34(j)
+			array(i,6,j)=p%F(1,i)%F44(j)
+		enddo
+	enddo
+
+	!  Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,array,status)
+
+	deallocate(array)
+	
+	!  Close the file and free the unit number.
+	call ftclos(unit, status)
+	call ftfiou(unit, status)
+
+	!  Check for any error, and if so print out error messages
+	if (status.gt.0) then
+	   print*,'error in export to fits file'
+	end if
+	
+	write(filename,'(a,"particle_average.opacity")') trim(outdir)
+	open(unit=30,file=filename,RECL=500)
+	do i=1,nlam
+		write(30,*) lam(i),p%Kext(1,i),p%Kabs(1,i),p%Ksca(1,i)
+	enddo
+	close(unit=30)
+	
+	return
+	end
+	
 
 	subroutine ParticleFITS(p,r,nr,nm,na,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,lnkfiles)
 	use Parameters
@@ -548,6 +741,8 @@ c-----------------------------------------------------------------------
 	p%dust_moment2=a2
 	p%dust_moment3=a3
 	p%rv=sqrt(p%dust_moment2)*1d-4
+	p%rvmin=amin*1d-4
+	p%rvmax=amax*1d-4
 	
 	  status=0
 C	 Get an unused Logical Unit Number to use to create the FITS file
