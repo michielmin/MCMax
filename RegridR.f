@@ -22,7 +22,7 @@ c--------------------------------------------------------------------
 	real*8 tau,tau0,lam0,Kext,dens,w(ngrains),taumax,R
 	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg
 	real*8 taustart,dtaumax,tauend,ct,Rmultmax,dtaumaxabs
-	logical escape,hitstar,locfield,RNDWBackup
+	logical escape,hitstar,locfield,RNDWBackup,checkfix
 	integer iT,irefine,inormal
 	logical refineR,refining,error,fix1(D%nR),fix2(D%nR)
 	real*8 taustar(0:D%nTheta),taulocal(0:D%nTheta),shtemp(0:D%nR)
@@ -414,7 +414,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 		enddo
 4		continue
 		do k=1,D%nR-1
-			if(Rnew(i+1).ge.D%R(k).and.Rnew(i+1).lt.D%R(k+1)) then
+			if(Rnew(i+1).gt.D%R(k).and.Rnew(i+1).le.D%R(k+1)) then
 				i2=k
 				goto 5
 			endif
@@ -542,11 +542,15 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 			enddo
 			call CheckMinimumDensity(i,j)
 		else
-			if(fix1(i)) then
-				C(i,j)%gasdens=Cold(i2)%gasdens
-				C(i,j)%dens0=Cold(i2)%dens0
-				C(i,j)%dens=Cold(i2)%dens
-			else if(fix2(i)) then
+			checkfix=.false.
+			if(i1.le.1.or.i1.ge.D%nR) then
+				checkfix=.true.
+			else
+				do ii=1,D%nRfix
+					if(D%R_av(i1-1)/AU.lt.D%Rfix(ii).and.D%R_av(i1+1)/AU.gt.D%Rfix(ii)) checkfix=.true.
+				enddo
+			endif
+			if(fix1(i).or.fix2(i).or.checkfix) then
 				C(i,j)%gasdens=Cold(i1)%gasdens
 				C(i,j)%dens0=Cold(i1)%dens0
 				C(i,j)%dens=Cold(i1)%dens
