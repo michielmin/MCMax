@@ -81,7 +81,7 @@ c-------------------------------------------------------------------
       !
       do is=1,ns
          agrain(is)=Grain(is)%rv
-         mgrain(is)=Grain(is)%m
+         mgrain(is)=Grain(is)%rho * 4d0/3d0*pi* agrain(is)**3d0
       enddo
 
       !  Print dust parameters ?
@@ -91,7 +91,7 @@ c-------------------------------------------------------------------
          write(*,'("  ")')
          do is=1,ns
             write(*,'("agrain[",I0,"]= ",F10.4)') is,Grain(is)%rv * 1d4
-            write(*,'("mgrain[",I0,"]= ",E16.5)') is,Grain(is)%m
+            write(*,'("mgrain[",I0,"]= ",E16.5)') is,mgrain(is)
          enddo
       endif
 

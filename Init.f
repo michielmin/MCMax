@@ -2776,7 +2776,6 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		Grain(ii)%tdes_fast=tdes_fast(ii)
 		Grain(ii)%rv=rgrain(ii)
 		Grain(ii)%rho=rhograin(ii)
-		Grain(ii)%m=(4d0*pi/3d0) * rhograin(ii) * (rgrain(ii) ** 3)
 		Grain(ii)%Rcryst=radmix(ii)
 		Grain(ii)%Tcryst=tmix(ii)
 		Grain(ii)%powcryst=powmix(ii)
@@ -4430,8 +4429,7 @@ c-----------------------------------------------------------------------
 	print*,p%Nc,p%Mc,p%Td_qhp
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
-	p%m=p%Nc*Mc
-	p%rho=p%m/(4d0*pi*p%rv**3/3d0)
+	p%rho=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
 	print*,p%Nc,p%rv*1d4,p%rho
 
 	i=1

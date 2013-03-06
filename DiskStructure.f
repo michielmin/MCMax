@@ -608,10 +608,10 @@ c================================
 		massgrains=0d0
 		Agrains=0d0
 		do ii=1,ngrains
-			massgrains=massgrains+Grain(ii)%m*C(i,j)%w(ii)
+			massgrains=massgrains+(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho/3d0)*C(i,j)%w(ii)
 c			Agrains=Agrains+Grain(ii)%rv**2*pi*C(i,j)%w(ii)
 			do iopac=1,Grain(ii)%nopac
-			   Agrains=Agrains+Grain(ii)%Kpstar(iopac)*Grain(ii)%m*C(i,j)%w(ii)
+			   Agrains=Agrains+Grain(ii)%Kpstar(iopac)*(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho/3d0)*C(i,j)%w(ii)
 			enddo
 		enddo
 		mass=0d0

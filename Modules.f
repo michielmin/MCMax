@@ -55,7 +55,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	end type Mueller
 	
 	type Particle
-		real*8 m,rho,Nc,rv,rvmin,rvmax
+		real*8 rho,Nc,rv,rvmin,rvmax
 		real*8,allocatable :: Kabs(:,:),Ksca(:,:),Kext(:,:),shscale(:),g(:,:)
 		real*8,allocatable :: Kp(:,:),Kpstar(:),Kpabsstar(:),Topac(:),cryst(:)
 		real*8,allocatable :: KabsL(:),KextL(:)
