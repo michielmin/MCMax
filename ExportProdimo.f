@@ -252,7 +252,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
-	call CreateLRF(100000,10000)
+	call CreateLRF(250000,10000)
 
 	! create new hdu
 	call ftcrhd(unit, status)

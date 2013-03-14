@@ -4,8 +4,8 @@
 	integer Nphot,i,j,k,ilam,NphotStar
 	
 	makeangledependence=.true.
-
 	storescatt=.false.
+	useobspol=.false.
 	
 	if(scattering.and.Nphot.ne.0) then
 		do i=0,D%nR
@@ -53,11 +53,15 @@
 				endif
 			enddo
 		enddo
-c		nexits=0
-c		call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
+		if(lam(ilam).lt.0.3) then
+			nexits=0
+			call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
+		endif
 		do i=1,D%nR-1
 			do j=1,D%nTheta-1
-				if(.false.) then !C(i,j)%randomwalk.or.C(i,j)%diff) then
+				if(lam(ilam).lt.0.3) then
+					C(i,j)%scattfield(1,ilam,1)=C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
+				else if(.false.) then !C(i,j)%randomwalk.or.C(i,j)%diff) then
 					C(i,j)%scattfield(1,ilam,1)=C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
 				else if((C(i,j)%Ni+C(i,j)%nLRF(ilam)).gt.0) then
 					C(i,j)%scattfield(1,ilam,1)=(C(i,j)%Ni*C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V

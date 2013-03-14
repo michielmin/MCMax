@@ -386,10 +386,10 @@ c emit from the interstellar radiation field
 		split(1)=1d0
 		if(forcefirst) then
 			call tau2exit(phot,tau)
-c			if(tau.lt.1d-15) then
-c				nsplit=1
-c				split(1)=1d0
-c			else 
+			if(tau.lt.1d-9) then
+				nsplit=1
+				split(1)=1d0
+			else 
 			if(tau.gt.1d-6) then
 				nsplit=2
 				split(1)=exp(-tau)
@@ -398,6 +398,7 @@ c			else
 				nsplit=2
 				split(1)=1d0-tau
 				split(2)=tau
+			endif
 			endif
 		endif
 
@@ -1400,13 +1401,14 @@ c-----------------------------------------------------------------------
 	integer ii,j,iopac
 	type(photon) phot
 
-	if(.not.exportProDiMo) then
+c	if(.not.exportProDiMo) then
+c currently don't use the multiwav exportProDiMo because it is too slow.
 		C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
 		C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
 		C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
 		C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
 		return
-	endif
+c	endif
 	
 	if(exportprodimo) then
 		spectemp(1:nlam)=Kext_column(1:nlam)

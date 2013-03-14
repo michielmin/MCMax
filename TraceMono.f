@@ -15,7 +15,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	real*8 wT1,wT2,emis(0:D%nR,D%nTheta),frac,wl1,wl2,Ksca
 	integer ilam1,ilam2,iT,ip,jp,kp,jj1,jj2,djj,njj,irg,iopac
 	real*8 scat(2,0:D%nR,D%nTheta),fact,scatflux
-	real*8 scatQ(2,0:D%nR,D%nTheta),scatU(2,0:D%nR,D%nTheta)
+	real*8 scatQ(2,0:D%nR,D%nTheta),scatU(2,0:D%nR,D%nTheta),ww
 	real*8 scatV(2,0:D%nR,D%nTheta),fluxQ,ReadMCScatt,nf,sf,fracirg(D%nTheta,360)
 	real*8,allocatable :: scatim(:,:),fluxcontr(:,:,:)
 	character*500 fluxfile
@@ -133,6 +133,24 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			scattcomputed(ilam2)=.true.
 			nscattcomputed(ilam2)=Nphot+NphotStar
 		endif
+		do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%Kabs=0d0
+			C(i,j)%Kext=0d0
+			C(i,j)%Ksca=0d0
+			do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				C(i,j)%Kabs=C(i,j)%Kabs+(wl1*Grain(ii)%Kabs(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kabs(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Ksca=C(i,j)%Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
+     &			+wl2*Grain(ii)%Ksca(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			enddo
+			enddo
+			C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
+		enddo
+		enddo
 	else if(scattering.and.(Nphot.ne.0.or.NphotStar.ne.0)) then
 		do i=0,D%nR
 		do j=0,D%nTheta
@@ -145,24 +163,29 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		enddo
 		enddo
 		call TraceMono(lam0,Nphot,image%angle,NphotStar)
+	else
+		do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%Kabs=0d0
+			C(i,j)%Kext=0d0
+			C(i,j)%Ksca=0d0
+			do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				C(i,j)%Kabs=C(i,j)%Kabs+(wl1*Grain(ii)%Kabs(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kabs(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Ksca=C(i,j)%Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
+     &			+wl2*Grain(ii)%Ksca(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			enddo
+			enddo
+			C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
+		enddo
+		enddo
 	endif
 
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
-		C(i,j)%Kabs=0d0
-		C(i,j)%Kext=0d0
-		C(i,j)%Ksca=0d0
-		do ii=1,ngrains
-		do iopac=1,Grain(ii)%nopac
-			C(i,j)%Kabs=C(i,j)%Kabs+(wl1*Grain(ii)%Kabs(iopac,ilam1)
-     &			+wl2*Grain(ii)%Kabs(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
-     &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Ksca=C(i,j)%Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
-     &			+wl2*Grain(ii)%Ksca(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-		enddo
-		enddo
-		C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
 		scat(1:2,i,j)=0d0
 		if(storescatt) then
 		scat(1:2,i,j)=(wl1*C(i,j)%scattfield(1,ilam1,1:2)+wl2*C(i,j)%scattfield(1,ilam2,1:2))
@@ -286,11 +309,12 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		if(jj1.le.jj2) djj=1
 		njj=0
 		jj=jj1
-1		scat(kp,ip,jp)=scat(kp,ip,jp)+C(ip,jp)%Albedo*C(ip,jp)%scattfield(irg,jj,kp)/(C(ip,jp)%V*fracirg(jp,irg))
+1		ww=C(ip,jp)%Albedo/(C(ip,jp)%V*fracirg(jp,irg))
+		scat(kp,ip,jp)=scat(kp,ip,jp)+ww*C(ip,jp)%scattfield(irg,jj,kp)
 		if(scat_how.eq.2) then
-			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)+C(ip,jp)%Albedo*C(ip,jp)%scattQ(irg,jj,kp)/(C(ip,jp)%V*fracirg(jp,irg))
-			scatU(kp,ip,jp)=scatU(kp,ip,jp)+C(ip,jp)%Albedo*C(ip,jp)%scattU(irg,jj,kp)/(C(ip,jp)%V*fracirg(jp,irg))
-			scatV(kp,ip,jp)=scatV(kp,ip,jp)+C(ip,jp)%Albedo*C(ip,jp)%scattV(irg,jj,kp)/(C(ip,jp)%V*fracirg(jp,irg))
+			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)+ww*C(ip,jp)%scattQ(irg,jj,kp)
+			scatU(kp,ip,jp)=scatU(kp,ip,jp)+ww*C(ip,jp)%scattU(irg,jj,kp)
+			scatV(kp,ip,jp)=scatV(kp,ip,jp)+ww*C(ip,jp)%scattV(irg,jj,kp)
 		endif
 		njj=njj+1
 		if(jj.eq.jj2) goto 2
@@ -306,15 +330,6 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
 		tau_e=image%p(i,j)%v(k)*C(ip,jp)%dens*C(ip,jp)%Kext*AU
 
-		if(scattering.and.(Nphot+NphotStar).ne.0) then
-			scat(kp,ip,jp)=scat(kp,ip,jp)/C(ip,jp)%Ksca
-			if(scat_how.eq.2) then
-				scatQ(kp,ip,jp)=scatQ(kp,ip,jp)/C(ip,jp)%Ksca
-				scatU(kp,ip,jp)=scatU(kp,ip,jp)/C(ip,jp)%Ksca
-				scatV(kp,ip,jp)=scatV(kp,ip,jp)/C(ip,jp)%Ksca
-			endif
-		endif
-
 		if(alltrace) then
 			Ksca=C(ip,jp)%Ksca
 		else
@@ -327,12 +342,14 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 					enddo
 				endif
 			enddo
-		endif
-		scat(kp,ip,jp)=scat(kp,ip,jp)*Ksca
-		if(scat_how.eq.2) then
-			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)*Ksca
-			scatU(kp,ip,jp)=scatU(kp,ip,jp)*Ksca
-			scatV(kp,ip,jp)=scatV(kp,ip,jp)*Ksca
+			if(scattering.and.(Nphot+NphotStar).ne.0) then
+				scat(kp,ip,jp)=scat(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+				if(scat_how.eq.2) then
+					scatQ(kp,ip,jp)=scatQ(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+					scatU(kp,ip,jp)=scatU(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+					scatV(kp,ip,jp)=scatV(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+				endif
+			endif
 		endif
 
 		if(real(image%p(i,j)%jphi2(k)).lt.opening.and.real(image%p(i,j)%jphi1(k)).gt.opening) then
@@ -508,7 +525,7 @@ c-----------------------------------------------------------------------
 	type(Photon) phot
 	integer ilam,nabs,iopac
 	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
-	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet
+	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
 	integer NEmisDis(0:D%nR+1,0:D%nTheta+1),Nstar,ip,np,jj,Nmin
 	type(Mueller) M
 	
@@ -598,45 +615,35 @@ c-----------------------------------------------------------------------
 				C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
      &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
      &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
+     			if(useobspol) then
+					C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
      &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
      &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
+					C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
      &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
      &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
+					C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
      &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
      &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
+					C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
      &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
      &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
+				endif
 			enddo
 			enddo
 			C(i,j)%F%F11(ia)=C(i,j)%F%F11(ia)/C(i,j)%Ksca
 			C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)/C(i,j)%Ksca
-			C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)/C(i,j)%Ksca
-			C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)/C(i,j)%Ksca
-			C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)/C(i,j)%Ksca
-			C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)/C(i,j)%Ksca
+			if(useobspol) then
+				C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)/C(i,j)%Ksca
+				C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)/C(i,j)%Ksca
+				C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)/C(i,j)%Ksca
+				C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)/C(i,j)%Ksca
+			endif
 		enddo
 		else
 			C(i,j)%F%F11(1:180)=1d0
 		endif
 		endif
-c		tot=0d0
-c		tot2=0d0
-c		do ia=1,180
-c			tot=tot+C(i,j)%F%F11(ia)*sin(pi*(real(ia)-0.5)/180d0)
-c			tot2=tot2+sin(pi*(real(ia)-0.5)/180d0)
-c		enddo
-c		do ia=1,180
-c			C(i,j)%F%F11(ia)=tot2*C(i,j)%F%F11(ia)/tot
-c			C(i,j)%F%F12(ia)=tot2*C(i,j)%F%F12(ia)/tot
-c			C(i,j)%F%F22(ia)=tot2*C(i,j)%F%F22(ia)/tot
-c			C(i,j)%F%F33(ia)=tot2*C(i,j)%F%F33(ia)/tot
-c			C(i,j)%F%F34(ia)=tot2*C(i,j)%F%F34(ia)/tot
-c			C(i,j)%F%F44(ia)=tot2*C(i,j)%F%F44(ia)/tot
-c		enddo
 	enddo
 	enddo
 
@@ -664,8 +671,9 @@ c		enddo
 		print*,Planets(i)%j
 	enddo
 
-	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,vismass)
-	
+	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
+
+	print*,'E_IRF:',100d0*Eirf/(EnergyTot2+Estar+Eirf)	
 	call MakeStarScatter(Estar,NphotStar)
 
 	write(*,'("Emitting   ",i10," photon packages")') Nphot
@@ -680,8 +688,7 @@ c Start tracing the photons
 	call tellertje(iphot,Nphot)
 
 	phot%nr=iphot
-c	phot%E=(EnergyTot+Estar)/real(Nphot)
-	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,vismass,ignore)
+	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
 	phot%E=phot%E/real(Nphot)
 	if(scat_how.eq.2) then
 		phot%pol=.false.
@@ -751,12 +758,12 @@ c	fstop=C(phot%i,phot%j)%Albedo
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,vismass)
+	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
 	use Parameters
 	IMPLICIT NONE
 	real*8 lam0
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,EnergyTot2
-	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1)
+	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf
 	real*8 tau,taumin,ran2,Rad,Theta,phi
 	integer i,j,ii,k,iopac
 	type(Photon) phot,phot2
@@ -770,6 +777,11 @@ c		write(9,'("Finding shortest route to observer")')
 c	endif
 c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	Estar=D%Fstar(phot%ilam1)*phot%wl1+D%Fstar(phot%ilam2)*phot%wl2
+	if(use_IRF) then
+		Eirf=IRF(phot%ilam1)*phot%wl1+IRF(phot%ilam2)*phot%wl2
+	else
+		Eirf=0d0
+	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
 	do i=1,D%nR-1
@@ -897,10 +909,10 @@ c eliminating 'dark-zone'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 	
-	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,vismass,ignore)
+	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
 	use Parameters
 	IMPLICIT NONE
-	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet
+	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet,Eirf
 	real*8 inp,ct,r,Rad,Theta,ran2,phi,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
 	integer i,j
 	type(photon) phot
@@ -909,9 +921,9 @@ c-----------------------------------------------------------------------
 	ignore=.false.
 	phot%pol=.false.
 	
-	Er=(EnergyTot2+Estar)*ran2(idum)
+	Er=(EnergyTot2+Estar+Eirf)*ran2(idum)
 	if(Er.lt.Estar) then
-		phot%E=(EnergyTot2+Estar)
+		phot%E=(EnergyTot2+Estar+Eirf)
 		phot%scatt=.false.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(0)*phot%x
@@ -931,6 +943,39 @@ c-----------------------------------------------------------------------
 		do j=1,D%nTheta-1
 			if(ct.lt.D%Theta(j).and.ct.gt.D%Theta(j+1)) then
 				phot%i=0
+				phot%j=j
+				if(C(phot%i,phot%j)%nrg.gt.1) then
+					thet=acos(abs(phot%z)/sqrt(phot%x**2+phot%y**2+phot%z**2))
+					phot%irg=int(real(C(phot%i,phot%j)%nrg)*(thet-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
+					if(phot%irg.gt.C(phot%i,phot%j)%nrg) phot%irg=C(phot%i,phot%j)%nrg
+					if(phot%irg.lt.1) phot%irg=1
+				else
+					phot%irg=1
+				endif
+				return
+			endif
+		enddo
+	else if(Er.lt.(Estar+Eirf)) then
+		phot%E=(EnergyTot2+Estar+Eirf)
+		phot%scatt=.true.
+		call randomdirection(phot%x,phot%y,phot%z)
+		phot%x=D%R(D%nR)*phot%x
+		phot%y=D%R(D%nR)*phot%y
+		phot%z=D%R(D%nR)*phot%z
+		call randomdirection(phot%vx,phot%vy,phot%vz)
+		inp=(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)
+		if(inp.gt.0d0) then
+			phot%vx=-phot%vx
+			phot%vy=-phot%vy
+			phot%vz=-phot%vz
+		endif
+
+		phot%edgeNr=2
+		phot%onEdge=.true.
+		ct=abs(phot%z)/D%R(D%nR)
+		do j=1,D%nTheta-1
+			if(ct.lt.D%Theta(j).and.ct.gt.D%Theta(j+1)) then
+				phot%i=D%nR-1
 				phot%j=j
 				if(C(phot%i,phot%j)%nrg.gt.1) then
 					thet=acos(abs(phot%z)/sqrt(phot%x**2+phot%y**2+phot%z**2))
@@ -972,7 +1017,7 @@ c-----------------------------------------------------------------------
 					phot%irg=1
 				endif
 				phot%onEdge=.false.
-				phot%E=(EnergyTot2+Estar)/vismass(i,j)
+				phot%E=(EnergyTot2+Estar+Eirf)/vismass(i,j)
 				return
 			endif
 		enddo
@@ -1262,8 +1307,8 @@ c-----------------------------------------------------------------------
 	type(photon) phot,phot1(NPHISCATT),phot2
 	real*8 theta,tauplanet,Emin
 
-	write(*,'("Single scattered starlight")')
-	write(9,'("Single scattered starlight")')
+	write(*,'("Single scattered starlight:",i8," photon packages")') Nphot
+	write(9,'("Single scattered starlight:",i8," photon packages")') Nphot
 
 	Emin=1d-10*Estar/real(Nphot)
 	do iphot=1,Nphot
