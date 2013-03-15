@@ -2,7 +2,7 @@
 	use Parameters
 	IMPLICIT NONE
 
-	  integer status,unit,blocksize,bitpix,naxis,naxes(2)
+	  integer status,unit,blocksize,bitpix,naxis,naxes(4)
 	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac
 	  logical simple,extend,truefalse
 	character*500 filename,version

@@ -326,7 +326,7 @@ c	Initialize the 10 temp zones with defaults
 	
 c	Interstellar Radiation Field (IRF)
 	T_IRF=20000d0
-	F_IRF=1d-16
+	F_IRF=1d0
 	use_IRF=.false.
 	
 	ntau1_lam=1		! allways one extra tau=1 surface
@@ -3717,7 +3717,8 @@ c Set the spectrum and energy for the interstellar radiation field
 	if(use_IRF) then
 		allocate(IRF(nlam))
 		do i=1,nlam
-			IRF(i)=pi*(D%R(D%nR)*AU)**2*(Planck(T_IRF,lam(i))*F_IRF+Planck(2.7d0,lam(i)))
+			IRF(i)=pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
+     &                                               +Planck(2.7d0,lam(i)))
 		enddo
 		call integrate(IRF,E_IRF)
 	endif
