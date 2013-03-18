@@ -90,7 +90,7 @@ C	 create the new empty FITS file
 	pUV=log10(spec(2)/spec(1))/log10(spec(4)/spec(3))
 	deallocate(spec)
 
-	call RenormalizeLRF()
+c	call RenormalizeLRF()
 
 	! Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)

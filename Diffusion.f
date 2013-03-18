@@ -297,6 +297,7 @@ c the theta part
 					endif
 				enddo
 				C(celi(i),celj(i))%LRF(1:nlam)=BB(1:nlam,iT)*C(celi(i),celj(i))%EJv/kp
+				C(celi(i),celj(i))%nLRF(1:nlam)=100
 			endif
 		endif
 	enddo
