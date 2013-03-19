@@ -285,6 +285,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
      &			/(D%Theta(j)-D%Theta(j+1))
 		enddo
 	enddo
+	call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
@@ -295,7 +296,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
-	call tellertje(i,image%nr+1)
+	call tellertje(i+1,image%nr+2)
 !$OMP END CRITICAL
 	do j=1,image%nphi
 		image%image(i,j)=0d0
@@ -321,7 +322,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			x_scatU=scatU(kp,ip,jp)
 			x_scatV=scatV(kp,ip,jp)
 		endif
-		if(.not.storescatt.and.scattering.and.(Nphot+NphotStar).ne.0.and.C(ip,jp)%Ni.gt.0) then
+		if(.not.storescatt.and.scattering.and.(Nphot+NphotStar).ne.0) then
 		jj1=image%p(i,j)%jphi1(k)
 		jj2=image%p(i,j)%jphi2(k)
 		x_scat=0d0
@@ -721,8 +722,15 @@ c Start tracing the photons
 
 	ninteract=0
 
+	call tellertje(1,100)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn)
+!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,ninteract,
+!$OMP&   xsf,ysf,zsf,Nphot)
+!$OMP DO
 	do iphot=1,Nphot
-	call tellertje(iphot,Nphot)
+	call tellertje(iphot+1,Nphot+2)
 
 	phot%nr=iphot
 	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
@@ -779,6 +787,11 @@ c	fstop=C(phot%i,phot%j)%Albedo
 
 3	continue
 	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
+	call tellertje(100,100)
+
 
 	if(.not.storescatt.and.scat_how.eq.1) then
 	do i=1,D%nR-1
@@ -821,6 +834,7 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
+	call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
@@ -830,7 +844,7 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 !$OMP DO
 	do i=1,D%nR-1
 !$OMP CRITICAL
-		if(nexits.ne.0) call tellertje(i,D%nR)
+		if(nexits.ne.0) call tellertje(i+1,D%nR+1)
 !$OMP END CRITICAL
 		do j=1,D%nTheta-1
 			if(C(i,j)%T.ne.0d0) then
@@ -1171,12 +1185,14 @@ c-----------------------------------------------------------------------
 	real*8 v,x,y,z,phi,phi0,sin2t(NPHISCATT),cos2t(NPHISCATT),tauplanet
 	real*8 F11,F12,F22,F33,F34,F44,sI,sQ,sU,sV,Qt,Ut,vAU,P1,P2,theta
 	type(photon) phot,phot1(NPHISCATT)
-	integer i,j,iangle(NPHISCATT),ia,side,irg,j0
+	integer i,j,iangle(NPHISCATT),ia,side,irg
 	
 	if(.not.phot%scatt) return
 	
 	if(scat_how.eq.1.or.makeangledependence) then
+!$OMP FLUSH(C)
 		C(phot%i,phot%j)%scattfield(1,0,1)=C(phot%i,phot%j)%scattfield(1,0,1)+phot%E*v*AU/2d0
+!$OMP FLUSH(C)
 		C(phot%i,phot%j)%scattfield(1,0,2)=C(phot%i,phot%j)%scattfield(1,0,2)+phot%E*v*AU/2d0
 	else
 		x=phot%x+phot%vx*v/2d0
@@ -1199,15 +1215,8 @@ c-----------------------------------------------------------------------
 			side=2
 		endif
 
-		j0=j
 		vAU=v*AU/2d0
-!$OMP PARALLEL
-!$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(j,F11,F12,F22,F33,F34,F44,sI,Qt,Ut,sQ,sU,sV,ia)
-!$OMP& SHARED(C,iangle,j0,phot,useobspol,cos2t,sin2t,phot1,vAU,side,irg)
-!$OMP DO
 		do i=1,NPHISCATT/2
-			j=j0+i-1
 			if(j.lt.1) j=j+NPHISCATT
 			if(j.gt.NPHISCATT) j=j-NPHISCATT
 			ia=iangle(j)
@@ -1228,19 +1237,19 @@ c-----------------------------------------------------------------------
 				sV=-F34*phot1(j)%U+F44*phot1(j)%V
 			endif
 
+!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(irg,i,side)=C(phot%i,phot%j)%scattfield(irg,i,side)+sI*vAU
 			if(useobspol) then
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattQ(irg,i,side)=C(phot%i,phot%j)%scattQ(irg,i,side)+sQ*vAU
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattV(irg,i,side)=C(phot%i,phot%j)%scattV(irg,i,side)+sV*vAU
 			endif
-c			j=j+1
+			j=j+1
 		enddo
-!$OMP END DO
-!$OMP FLUSH
-!$OMP DO
 		do i=NPHISCATT/2+1,NPHISCATT
-			j=j0+i-1
 			if(j.lt.1) j=j+NPHISCATT
 			if(j.gt.NPHISCATT) j=j-NPHISCATT
 			ia=iangle(j)
@@ -1261,17 +1270,18 @@ c			j=j+1
 				sV=-F34*phot1(j)%U+F44*phot1(j)%V
 			endif
 
+!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)+sI*vAU
 			if(useobspol) then
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)+sQ*vAU
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)-sV*vAU
 			endif
-c			j=j+1
+			j=j+1
 		enddo
-!$OMP END DO
-!$OMP FLUSH
-!$OMP END PARALLEL
 		do i=1,nplanets
 			if(Planets(i)%i.eq.phot%i.and.Planets(i)%j.eq.phot%j) then
 				j=(real(NPHISCATT)*(phi+phi0-Planets(i)%phi)/360d0)
@@ -1349,7 +1359,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	real*8 Estar,r,ct,inp,sin2t(NPHISCATT),cos2t(NPHISCATT)
-	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext,j0
+	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext
 	real*8 v,x,y,z,phi,phi0,Qt,sQ,sU,sI,w,tau,F11,F12,vAU,P
 	type(photon) phot,phot1(NPHISCATT),phot2
 	real*8 theta,tauplanet,Emin
@@ -1359,8 +1369,19 @@ c-----------------------------------------------------------------------
 
 	Emin=1d-10*Estar/real(Nphot)
 
+	call tellertje(1,100)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(phot,x,y,z,r,tautot,tau,xsn,ysn,zsn,
+!$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
+!$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
+!$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,idum,
+!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
+!$OMP DO
 	do iphot=1,Nphot
-		call tellertje(iphot,Nphot)
+!$OMP CRITICAL
+		call tellertje(iphot+1,Nphot+2)
+!$OMP END CRITICAL
 		phot%E=Estar/real(Nphot)
 		phot%scatt=.false.
 
@@ -1423,6 +1444,7 @@ c-----------------------------------------------------------------------
 		call Trace2edgeRG(phot,v,inext,jnext,irgnext)
 		tau=C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
 
+!$OMP FLUSH(C)
 		if(phot%E.gt.(1d-3*Estar/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
 
 		if((tau*v).gt.1d-5) then
@@ -1432,7 +1454,9 @@ c-----------------------------------------------------------------------
 		endif
 
 		if(scat_how.eq.1.or.makeangledependence) then
+!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(1,0,1)=C(phot%i,phot%j)%scattfield(1,0,1)+phot%E*w*AU/2d0
+!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(1,0,2)=C(phot%i,phot%j)%scattfield(1,0,2)+phot%E*w*AU/2d0
 		else
 			x=phot%x+phot%vx*v/2d0
@@ -1440,9 +1464,11 @@ c-----------------------------------------------------------------------
 			z=phot%z+phot%vz*v/2d0
 			irg=phot%irg
 			if(phot%z.gt.0d0) then
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*w*AU
 				side=1
 			else
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,0,2)=C(phot%i,phot%j)%scattfield(irg,0,2)+phot%E*w*AU
 				side=2
 			endif
@@ -1454,14 +1480,7 @@ c-----------------------------------------------------------------------
 			j=(real(NPHISCATT)*(phi+phi0)/360d0)
 
 			vAU=v*AU/2d0
-			j0=j
-!$OMP PARALLEL
-!$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(j,F11,F12,sI,Qt,sQ,sU,ia)
-!$OMP& SHARED(C,iangle,j0,useobspol,phot,phot1,vAU,side,cos2t,sin2t,irg)
-!$OMP DO
 			do i=1,NPHISCATT/2
-				j=j0+i-1
 				if(j.lt.1) j=j+NPHISCATT
 				if(j.gt.NPHISCATT) j=j-NPHISCATT
 				ia=iangle(j)
@@ -1476,17 +1495,17 @@ c-----------------------------------------------------------------------
 					sU=-Qt*sin2t(j)
 				endif
 
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,i,side)=C(phot%i,phot%j)%scattfield(irg,i,side)+sI*vAU
 				if(useobspol) then
+!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattQ(irg,i,side)=C(phot%i,phot%j)%scattQ(irg,i,side)+sQ*vAU
+!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
 				endif
-c				j=j+1
+				j=j+1
 			enddo
-!$OMP END DO
-!$OMP DO
 			do i=NPHISCATT/2+1,NPHISCATT
-				j=j0+i-1
 				if(j.lt.1) j=j+NPHISCATT
 				if(j.gt.NPHISCATT) j=j-NPHISCATT
 				ia=iangle(j)
@@ -1501,16 +1520,16 @@ c				j=j+1
 					sU=-Qt*sin2t(j)
 				endif
 
+!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)+sI*vAU
 				if(useobspol) then
+!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)+sQ*vAU
+!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
 				endif
-c				j=j+1
+				j=j+1
 			enddo
-!$OMP END DO
-!$OMP FLUSH
-!$OMP END PARALLEL
 		endif
 
 		w=exp(-tau*v)
@@ -1531,6 +1550,10 @@ c		if(phot%E.lt.Emin) goto 2
 
 2		continue
 	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
+	call tellertje(100,100)
 
 	if(nplanets.gt.0) then
 	write(*,'("Planet scattered starlight")')
@@ -1856,6 +1879,7 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		endif
 	enddo
 	
+	call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(Rad,phot,ct,j,k,theta,photcount)
@@ -1863,7 +1887,7 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
-	call tellertje(i,image%nr+1)
+	call tellertje(i+1,image%nr+2)
 !$OMP END CRITICAL
 	do k=1,image%nPhi
 		image%phi(k)=1d-5+pi*(real(k)-0.5)/real(image%nPhi)
@@ -2426,6 +2450,7 @@ c	sinwi=sin(wi)
 		imV=0d0
 	endif
 
+	call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
@@ -2436,7 +2461,7 @@ c	sinwi=sin(wi)
 !$OMP DO
 	do i=1,image%nr-1
 !$OMP CRITICAL
-	call tellertje(i,image%nr)
+	call tellertje(i+1,image%nr+1)
 !$OMP END CRITICAL
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
