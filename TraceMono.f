@@ -17,6 +17,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	real*8 scat(2,0:D%nR,D%nTheta),fact,scatflux
 	real*8 scatQ(2,0:D%nR,D%nTheta),scatU(2,0:D%nR,D%nTheta),ww
 	real*8 scatV(2,0:D%nR,D%nTheta),fluxQ,ReadMCScatt,nf,sf,fracirg(D%nTheta,360)
+	real*8 x_scat,x_scatQ,x_scatU,x_scatV
 	real*8,allocatable :: scatim(:,:),fluxcontr(:,:,:)
 	character*500 fluxfile
 	integer il10,il100,il1000,il10000,i10
@@ -184,7 +185,11 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		enddo
 	endif
 
-!$OMP PARALLEL PRIVATE(j,ii,iT,wT1,wT2,iopac)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,ii,iT,wT1,wT2,iopac)
+!$OMP& SHARED(C,D,BB,Grain,scat,emis,storescatt,wl1,ilam1,wl2,ilam2,traceemis,tracegas,
+!$OMP&   gas2dust,usetgas,lam0,tcontact,ngrains)
 !$OMP DO
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
@@ -280,7 +285,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
      &			/(D%Theta(j)-D%Theta(j+1))
 		enddo
 	enddo
-!$OMP PARALLEL PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,w1,w2,exptau_e)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
+!$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac)
+!$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
+!$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,
+!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar)
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
@@ -304,35 +315,41 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		kp=image%p(i,j)%k(k)
 		irg=image%p(i,j)%irg(k)
 		
+		x_scat=scat(kp,ip,jp)
+		if(scat_how.eq.2) then
+			x_scatQ=scatQ(kp,ip,jp)
+			x_scatU=scatU(kp,ip,jp)
+			x_scatV=scatV(kp,ip,jp)
+		endif
 		if(.not.storescatt.and.scattering.and.(Nphot+NphotStar).ne.0.and.C(ip,jp)%Ni.gt.0) then
 		jj1=image%p(i,j)%jphi1(k)
 		jj2=image%p(i,j)%jphi2(k)
-		scat(kp,ip,jp)=0d0
+		x_scat=0d0
 		if(scat_how.eq.2) then
-			scatQ(kp,ip,jp)=0d0
-			scatU(kp,ip,jp)=0d0
-			scatV(kp,ip,jp)=0d0
+			x_scatQ=0d0
+			x_scatU=0d0
+			x_scatV=0d0
 		endif
 		djj=-1
 		if(jj1.le.jj2) djj=1
 		njj=0
 		jj=jj1
 1		ww=C(ip,jp)%Albedo/(C(ip,jp)%V*fracirg(jp,irg))
-		scat(kp,ip,jp)=scat(kp,ip,jp)+ww*C(ip,jp)%scattfield(irg,jj,kp)
+		x_scat=x_scat+ww*C(ip,jp)%scattfield(irg,jj,kp)
 		if(scat_how.eq.2) then
-			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)+ww*C(ip,jp)%scattQ(irg,jj,kp)
-			scatU(kp,ip,jp)=scatU(kp,ip,jp)+ww*C(ip,jp)%scattU(irg,jj,kp)
-			scatV(kp,ip,jp)=scatV(kp,ip,jp)+ww*C(ip,jp)%scattV(irg,jj,kp)
+			x_scatQ=x_scatQ+ww*C(ip,jp)%scattQ(irg,jj,kp)
+			x_scatU=x_scatU+ww*C(ip,jp)%scattU(irg,jj,kp)
+			x_scatV=x_scatV+ww*C(ip,jp)%scattV(irg,jj,kp)
 		endif
 		njj=njj+1
 		if(jj.eq.jj2) goto 2
 		jj=jj+djj
 		goto 1
-2		scat(kp,ip,jp)=scat(kp,ip,jp)/real(njj)
+2		x_scat=x_scat/real(njj)
 		if(scat_how.eq.2) then
-			scatQ(kp,ip,jp)=scatQ(kp,ip,jp)/real(njj)
-			scatU(kp,ip,jp)=scatU(kp,ip,jp)/real(njj)
-			scatV(kp,ip,jp)=scatV(kp,ip,jp)/real(njj)
+			x_scatQ=x_scatQ/real(njj)
+			x_scatU=x_scatU/real(njj)
+			x_scatV=x_scatV/real(njj)
 		endif
 		endif
 
@@ -351,11 +368,11 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 				endif
 			enddo
 			if(scattering.and.(Nphot+NphotStar).ne.0) then
-				scat(kp,ip,jp)=scat(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+				x_scat=x_scat*Ksca/C(ip,jp)%Ksca
 				if(scat_how.eq.2) then
-					scatQ(kp,ip,jp)=scatQ(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
-					scatU(kp,ip,jp)=scatU(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
-					scatV(kp,ip,jp)=scatV(kp,ip,jp)*Ksca/C(ip,jp)%Ksca
+					x_scatQ=x_scatQ*Ksca/C(ip,jp)%Ksca
+					x_scatU=x_scatU*Ksca/C(ip,jp)%Ksca
+					x_scatV=x_scatV*Ksca/C(ip,jp)%Ksca
 				endif
 			endif
 		endif
@@ -377,45 +394,45 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			if(i.lt.image%nr) then
 				w1=(image%R(i+1)-image%R(i))*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 				if(tau_e.lt.1d-6) then
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*scat(kp,ip,jp)+emis(ip,jp))*tau_e*fact
+					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*x_scat+emis(ip,jp))*tau_e*fact
 				else
 					exptau_e=exp(-tau_e)
 					frac=(1d0-exptau_e)
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*scat(kp,ip,jp)+emis(ip,jp))*frac*fact
+					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*x_scat+emis(ip,jp))*frac*fact
 				endif
 			endif
 			if(i.gt.1) then
 				w2=(image%R(i)-image%R(i-1))*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 				if(tau_e.lt.1d-6) then
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*scat(kp,ip,jp)+emis(ip,jp))*tau_e*fact
+					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*x_scat+emis(ip,jp))*tau_e*fact
 				else
 					exptau_e=exp(-tau_e)
 					frac=(1d0-exptau_e)
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*scat(kp,ip,jp)+emis(ip,jp))*frac*fact
+					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*x_scat+emis(ip,jp))*frac*fact
 				endif
 			endif
 		endif
 
 		if(tau_e.lt.1d-6) then
-			image%image(i,j)=image%image(i,j)+(2d0*scat(kp,ip,jp)+emis(ip,jp))*tau_e*fact
+			image%image(i,j)=image%image(i,j)+(2d0*x_scat+emis(ip,jp))*tau_e*fact
 			if(scat_how.eq.2) then
-				image%imageQ(i,j)=image%imageQ(i,j)+2d0*scatQ(kp,ip,jp)*tau_e*fact
-				image%imageU(i,j)=image%imageU(i,j)+2d0*scatU(kp,ip,jp)*tau_e*fact
-				image%imageV(i,j)=image%imageV(i,j)+2d0*scatV(kp,ip,jp)*tau_e*fact
+				image%imageQ(i,j)=image%imageQ(i,j)+2d0*x_scatQ*tau_e*fact
+				image%imageU(i,j)=image%imageU(i,j)+2d0*x_scatU*tau_e*fact
+				image%imageV(i,j)=image%imageV(i,j)+2d0*x_scatV*tau_e*fact
 			endif
-			scatim(i,j)=scatim(i,j)+2d0*scat(kp,ip,jp)*tau_e*fact
+			scatim(i,j)=scatim(i,j)+2d0*x_scat*tau_e*fact
 
 			fact=fact*(1d0-tau_e)
 		else
 			exptau_e=exp(-tau_e)
 			frac=(1d0-exptau_e)
-			image%image(i,j)=image%image(i,j)+(2d0*scat(kp,ip,jp)+emis(ip,jp))*frac*fact
+			image%image(i,j)=image%image(i,j)+(2d0*x_scat+emis(ip,jp))*frac*fact
 			if(scat_how.eq.2) then
-				image%imageQ(i,j)=image%imageQ(i,j)+2d0*scatQ(kp,ip,jp)*frac*fact
-				image%imageU(i,j)=image%imageU(i,j)+2d0*scatU(kp,ip,jp)*frac*fact
-				image%imageV(i,j)=image%imageV(i,j)+2d0*scatV(kp,ip,jp)*frac*fact
+				image%imageQ(i,j)=image%imageQ(i,j)+2d0*x_scatQ*frac*fact
+				image%imageU(i,j)=image%imageU(i,j)+2d0*x_scatU*frac*fact
+				image%imageV(i,j)=image%imageV(i,j)+2d0*x_scatV*frac*fact
 			endif
-			scatim(i,j)=scatim(i,j)+2d0*scat(kp,ip,jp)*frac*fact
+			scatim(i,j)=scatim(i,j)+2d0*x_scat*frac*fact
 
 			fact=fact*exptau_e
 		endif
@@ -582,7 +599,10 @@ c-----------------------------------------------------------------------
 		phot%nu=1d0/lam0
 	endif
 
-!$OMP PARALLEL PRIVATE(j,ii,iopac,ia)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,ii,iopac,ia)
+!$OMP& SHARED(D,C,ngrains,Grain,phot,scattering,scat_how,useobspol)
 !$OMP DO
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
@@ -701,13 +721,8 @@ c Start tracing the photons
 
 	ninteract=0
 
-!$OMP PARALLEL PRIVATE(phot,x,y,z,r,tau,tautot,ignore,escape,hitstar,fstop,fact,xsn,ysn,zsn)
-!$OMP DO
 	do iphot=1,Nphot
-
-!$OMP CRITICAL
-	call tellertje(iphot,Nphot+1)
-!$OMP END CRITICAL
+	call tellertje(iphot,Nphot)
 
 	phot%nr=iphot
 	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
@@ -764,10 +779,6 @@ c	fstop=C(phot%i,phot%j)%Albedo
 
 3	continue
 	enddo
-!$OMP END DO
-!$OMP FLUSH
-!$OMP END PARALLEL
-	call tellertje(100,100)
 
 	if(.not.storescatt.and.scat_how.eq.1) then
 	do i=1,D%nR-1
@@ -810,7 +821,12 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
-!$OMP PARALLEL PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
+!$OMP& SHARED(nexits,D,C,Grain,EmisDis,EnergyTot,EnergyTot2,Tcontact,ngrains,
+!$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB)
+
 !$OMP DO
 	do i=1,D%nR-1
 !$OMP CRITICAL
@@ -913,9 +929,13 @@ c eliminating 'dark-zone'
 				vismass(i,j)=(1d0-dexp(-C(i,j)%tauexit))
 			endif
 
+!$OMP CRITICAL
+!$OMP FLUSH(EnergyTot)
 			EnergyTot=EnergyTot+EmisDis(i,j)
 			EmisDis(i,j)=EmisDis(i,j)*vismass(i,j)
+!$OMP FLUSH(EnergyTot2)
 			EnergyTot2=EnergyTot2+EmisDis(i,j)
+!$OMP END CRITICAL
 		enddo
 	enddo
 !$OMP END DO
@@ -1151,7 +1171,7 @@ c-----------------------------------------------------------------------
 	real*8 v,x,y,z,phi,phi0,sin2t(NPHISCATT),cos2t(NPHISCATT),tauplanet
 	real*8 F11,F12,F22,F33,F34,F44,sI,sQ,sU,sV,Qt,Ut,vAU,P1,P2,theta
 	type(photon) phot,phot1(NPHISCATT)
-	integer i,j,iangle(NPHISCATT),ia,side,irg
+	integer i,j,iangle(NPHISCATT),ia,side,irg,j0
 	
 	if(.not.phot%scatt) return
 	
@@ -1163,14 +1183,6 @@ c-----------------------------------------------------------------------
 		y=phot%y+phot%vy*v/2d0
 		z=phot%z+phot%vz*v/2d0
 		irg=phot%irg
-c		if(C(phot%i,phot%j)%nrg.gt.1) then
-c			theta=acos(abs(z)/sqrt(x**2+y**2+z**2))
-c			irg=int(real(C(phot%i,phot%j)%nrg)*(theta-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
-c			if(irg.gt.C(phot%i,phot%j)%nrg) irg=C(phot%i,phot%j)%nrg
-c			if(irg.lt.1) irg=1
-c		else
-c			irg=1
-c		endif
 		if(phot%z.gt.0d0) then
 			C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*v*AU
 		else
@@ -1187,8 +1199,15 @@ c		endif
 			side=2
 		endif
 
+		j0=j
 		vAU=v*AU/2d0
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,F11,F12,F22,F33,F34,F44,sI,Qt,Ut,sQ,sU,sV,ia)
+!$OMP& SHARED(C,iangle,j0,phot,useobspol,cos2t,sin2t,phot1,vAU,side,irg)
+!$OMP DO
 		do i=1,NPHISCATT/2
+			j=j0+i-1
 			if(j.lt.1) j=j+NPHISCATT
 			if(j.gt.NPHISCATT) j=j-NPHISCATT
 			ia=iangle(j)
@@ -1215,9 +1234,13 @@ c		endif
 				C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
 				C(phot%i,phot%j)%scattV(irg,i,side)=C(phot%i,phot%j)%scattV(irg,i,side)+sV*vAU
 			endif
-			j=j+1
+c			j=j+1
 		enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP DO
 		do i=NPHISCATT/2+1,NPHISCATT
+			j=j0+i-1
 			if(j.lt.1) j=j+NPHISCATT
 			if(j.gt.NPHISCATT) j=j-NPHISCATT
 			ia=iangle(j)
@@ -1244,8 +1267,11 @@ c		endif
 				C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
 				C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)-sV*vAU
 			endif
-			j=j+1
+c			j=j+1
 		enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
 		do i=1,nplanets
 			if(Planets(i)%i.eq.phot%i.and.Planets(i)%j.eq.phot%j) then
 				j=(real(NPHISCATT)*(phi+phi0-Planets(i)%phi)/360d0)
@@ -1323,7 +1349,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	real*8 Estar,r,ct,inp,sin2t(NPHISCATT),cos2t(NPHISCATT)
-	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext
+	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext,j0
 	real*8 v,x,y,z,phi,phi0,Qt,sQ,sU,sI,w,tau,F11,F12,vAU,P
 	type(photon) phot,phot1(NPHISCATT),phot2
 	real*8 theta,tauplanet,Emin
@@ -1332,13 +1358,9 @@ c-----------------------------------------------------------------------
 	write(9,'("Single scattered starlight:",i8," photon packages")') Nphot
 
 	Emin=1d-10*Estar/real(Nphot)
-!$OMP PARALLEL PRIVATE(phot,inp,ct,j,theta,iangle,xsn,ysn,zsn,r,phot1,sin2t,cos2t,inext,jnext,irgnext,
-!$OMP& tau,v,w,x,y,z,irg,side,phi0,vAU,i,ia,sI,Qt,sQ,sU,F11,F12)
-!$OMP DO
+
 	do iphot=1,Nphot
-!$OMP CRITICAL
-		call tellertje(iphot,Nphot+1)
-!$OMP END CRITICAL
+		call tellertje(iphot,Nphot)
 		phot%E=Estar/real(Nphot)
 		phot%scatt=.false.
 
@@ -1417,15 +1439,6 @@ c-----------------------------------------------------------------------
 			y=phot%y+phot%vy*v/2d0
 			z=phot%z+phot%vz*v/2d0
 			irg=phot%irg
-c			if(C(phot%i,phot%j)%nrg.gt.1) then
-c				theta=acos(abs(z)/sqrt(x**2+y**2+z**2))
-c				irg=int(real(C(phot%i,phot%j)%nrg)*(theta-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
-c				if(irg.gt.C(phot%i,phot%j)%nrg) irg=C(phot%i,phot%j)%nrg
-c				if(irg.lt.1) irg=1
-c			else
-c				irg=1
-c			endif
-
 			if(phot%z.gt.0d0) then
 				C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*w*AU
 				side=1
@@ -1441,7 +1454,14 @@ c			endif
 			j=(real(NPHISCATT)*(phi+phi0)/360d0)
 
 			vAU=v*AU/2d0
+			j0=j
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,F11,F12,sI,Qt,sQ,sU,ia)
+!$OMP& SHARED(C,iangle,j0,useobspol,phot,phot1,vAU,side,cos2t,sin2t,irg)
+!$OMP DO
 			do i=1,NPHISCATT/2
+				j=j0+i-1
 				if(j.lt.1) j=j+NPHISCATT
 				if(j.gt.NPHISCATT) j=j-NPHISCATT
 				ia=iangle(j)
@@ -1461,9 +1481,12 @@ c			endif
 					C(phot%i,phot%j)%scattQ(irg,i,side)=C(phot%i,phot%j)%scattQ(irg,i,side)+sQ*vAU
 					C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
 				endif
-				j=j+1
+c				j=j+1
 			enddo
+!$OMP END DO
+!$OMP DO
 			do i=NPHISCATT/2+1,NPHISCATT
+				j=j0+i-1
 				if(j.lt.1) j=j+NPHISCATT
 				if(j.gt.NPHISCATT) j=j-NPHISCATT
 				ia=iangle(j)
@@ -1483,8 +1506,11 @@ c			endif
 					C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)+sQ*vAU
 					C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
 				endif
-				j=j+1
+c				j=j+1
 			enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
 		endif
 
 		w=exp(-tau*v)
@@ -1505,10 +1531,6 @@ c		if(phot%E.lt.Emin) goto 2
 
 2		continue
 	enddo
-!$OMP END DO
-!$OMP FLUSH
-!$OMP END PARALLEL
-	call tellertje(100,100)
 
 	if(nplanets.gt.0) then
 	write(*,'("Planet scattered starlight")')
@@ -1834,7 +1856,10 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		endif
 	enddo
 	
-!$OMP PARALLEL PRIVATE(Rad,phot,ct,j,k,theta,photcount)
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(Rad,phot,ct,j,k,theta,photcount)
+!$OMP& SHARED(C,D,image,angle)
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
@@ -2401,9 +2426,12 @@ c	sinwi=sin(wi)
 		imV=0d0
 	endif
 
-!$OMP PARALLEL PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
+!$OMP PARALLEL
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
+!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM)
 
 !$OMP DO
 	do i=1,image%nr-1
@@ -2534,10 +2562,14 @@ c			wy=gasdev(idum)*widthx
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
+!$OMP FLUSH(im)
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
+!$OMP FLUSH(imQ)
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
+!$OMP FLUSH(imU)
 					imU(ix,iy)=imU(ix,iy)+fluxU/real(2*nintegrate)
+!$OMP FLUSH(imV)
 					imV(ix,iy)=imV(ix,iy)+fluxV/real(2*nintegrate)
 				endif
 			endif
@@ -2552,10 +2584,14 @@ c			wy=gasdev(idum)*widthx
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
+!$OMP FLUSH(im)
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
+!$OMP FLUSH(imQ)
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
+!$OMP FLUSH(imU)
 					imU(ix,iy)=imU(ix,iy)-fluxU/real(2*nintegrate)
+!$OMP FLUSH(imV)
 					imV(ix,iy)=imV(ix,iy)-fluxV/real(2*nintegrate)
 				endif
 			endif
