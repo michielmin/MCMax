@@ -8,9 +8,10 @@ FC	      = ifort
 LINKER	      = ifort
 
 # Platform specific compilation options
-FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -openmp
+FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
 FLAG_LINUX    = -msse3 -prefetch
-FLAG_MAC      = -mssse3 -opt-prefetch
+FLAG_MAC      = -mssse3 -opt-prefetch -static-intel -openmp-link static
+#FLAG_MAC      = -xHOST -opt-prefetch -static-intel -openmp-link static
 
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec

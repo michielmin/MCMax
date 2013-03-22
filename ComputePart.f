@@ -1056,8 +1056,9 @@ c     .. Local Arrays ..
       DOUBLE PRECISION  PI( MXANG, 3 ), SI2THT( MXANG ), T( 5 ),
      &                  TA( 4 ), TAU( MXANG, 3 )
 
-      DOUBLE COMPLEX  ACAP( LL ), S1( MXANG, 2 ), S2( MXANG, 2 ),
-     &                U( 8 ), W( 3, LL ), WFN( 2 ), Z( 4 )
+      DOUBLE COMPLEX  S1( MXANG, 2 ), S2( MXANG, 2 ),
+     &                U( 8 ), WFN( 2 ), Z( 4 )
+	double complex,allocatable :: W(:,:),acap(:)
 c     ..
 c     .. External Functions ..
 
@@ -1081,6 +1082,9 @@ c     .. Data statements ..
       DATA      PASS1 / .True. / , TOLER / 1.D-6 / ,
      &          CZERO / ( 0.D0, 0.D0 ) / , CI / ( 0.D0, 1.D0 ) /
 c     ..
+
+	allocate(w(3,LL))
+	allocate(acap(LL))
 
       IF( PASS1 ) THEN
 

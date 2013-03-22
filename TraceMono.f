@@ -551,10 +551,10 @@ c-----------------------------------------------------------------------
 	integer i,j,k,l,t1,t2,iangle,nangle,Nphot,iphot,ii,NphotStar
 	real*8 ran2,tau,R0,R1,angle,r,distance,tottime,ct,lam0
 	real*8 VisEmisDis(0:D%nR+1,0:D%nTheta+1),E
-	real*8 th,ph,inp,determineT,fstop,fact
+	real*8 th,ph,inp,determineT,fstop,fact,s1,s2
 	integer starttime,stoptime,starttrace,cr,ia
 	logical escape,hitstar,hitmid,ignore
-	type(Photon) phot
+	type(Photon) phot,phot2,photinit
 	integer ilam,nabs,iopac
 	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
@@ -720,17 +720,19 @@ c-----------------------------------------------------------------------
 
 c Start tracing the photons
 
-	ninteract=0
-
+	photinit=phot
 	call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn)
-!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,ninteract,
-!$OMP&   xsf,ysf,zsf,Nphot)
+!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
+!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit)
 !$OMP DO
 	do iphot=1,Nphot
+!$OMP CRITICAL
 	call tellertje(iphot+1,Nphot+2)
+!$OMP END CRITICAL
+	phot=photinit
 
 	phot%nr=iphot
 	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
@@ -756,14 +758,37 @@ c Start tracing the photons
 	endif
 
 	tautot=0d0
+	ninteract=0
+
 1	continue
-	tau=-log(ran2(idum))
+
+	if(.not.forcefirst) then
+		tau=-log(ran2(idum))
+	else
+		phot2=phot
+		call trace2exit(phot2,tau,.true.)
+		if(tau.lt.1d-9.or.tau.gt.15d0) then
+			s1=0d0
+			s2=1d0
+		else 
+			if(tau.gt.1d-6) then
+				s1=exp(-tau)
+				s2=1d0-s1
+			else
+				s1=1d0-tau
+				s2=tau
+			endif
+		endif
+		tau=-log(ran2(idum)*s2+s1)
+		phot%E=phot%E*s2
+	endif
+		
 	call trace2dmono(phot,tau,escape,hitstar)
 	if(hitstar) goto 3
 	if(escape) goto 3
 
 c	fstop=((C(phot%i,phot%j)%Albedo+1d0)/2d0)
-	fstop=C(phot%i,phot%j)%Albedo**0.5d0	! fstop is the chance the photon goes trhough
+	fstop=C(phot%i,phot%j)%Albedo**0.25d0	! fstop is the chance the photon goes trhough
 c	fstop=C(phot%i,phot%j)%Albedo
 	fact=C(phot%i,phot%j)%Albedo/fstop
 
@@ -834,7 +859,7 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
-	call tellertje(1,100)
+	if(nexits.ne.0) call tellertje(1,100)
 !$OMP PARALLEL
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
@@ -931,7 +956,7 @@ c eliminating 'dark-zone'
 					phot2%i=i
 					phot2%j=j
 					phot2%onEdge=.false.
-					call trace2exit(phot2,tau)
+					call trace2exit(phot2,tau,.false.)
 					if(tau.lt.taumin.or.k.eq.1) taumin=tau
 				enddo
 				C(i,j)%tauexit=taumin
@@ -2301,12 +2326,13 @@ c	endif
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	subroutine trace2exit(phot,tau)
+	subroutine trace2exit(phot,tau,withscatt)
 	use Parameters
 	IMPLICIT NONE
 	type(Photon) phot
 	real*8 tau,v
 	integer inext,jnext,ntrace,i,j,ii
+	logical withscatt
 
 	tau=0d0
 
@@ -2319,8 +2345,12 @@ c-----------------------------------------------------------------------
 	phot%y=phot%y+phot%vy*v
 	phot%z=phot%z+phot%vz*v
 
-	tau=tau+v*C(phot%i,phot%j)%dens*AU*C(phot%i,phot%j)%Kabs
-
+	if(withscatt) then
+		tau=tau+v*C(phot%i,phot%j)%dens*AU*C(phot%i,phot%j)%Kext
+	else
+		tau=tau+v*C(phot%i,phot%j)%dens*AU*C(phot%i,phot%j)%Kabs
+	endif
+		
 	if(inext.ge.D%nR.or.inext.le.0) return
 
 	phot%i=inext
