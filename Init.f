@@ -108,6 +108,9 @@
 	NphotFirst=100000
 	NFirst=-1
 
+	NphotUV=250000
+	maxlamUV=0.3d0
+
 	scattype(1:9)='ISOTROPIC'
 	scat_how=1
 	scattering=.true.
@@ -537,6 +540,8 @@ c	endif
 	if(key.eq.'nphotfinal') read(value,*) NphotFinal
 	if(key.eq.'nphotfirst') read(value,*) NphotFirst
 	if(key.eq.'nfirst') read(value,*) NFirst
+	if(key.eq.'nphotuv') read(value,*) NphotUV
+	if(key.eq.'maxlamuv') read(value,*) maxlamUV
 
 	if(key.eq.'idum') read(value,*) idum
 
@@ -4081,7 +4086,6 @@ c the nspike parameter removes the n degree spike in the forward direction.
 			tot=tot+p%F(iopac,j)%F11(i)*sin(pi*(real(i)-0.5)/180d0)
 			tot2=tot2+sin(pi*(real(i)-0.5)/180d0)
 		enddo
-		print*,lam(j),tot/tot2
 		p%Ksca(iopac,j)=p%Ksca(iopac,j)*tot/tot2
 		p%Kext(iopac,j)=p%Kabs(iopac,j)+p%Ksca(iopac,j)
 		do i=1,180

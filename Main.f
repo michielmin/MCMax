@@ -42,9 +42,6 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Cell),allocatable :: Cprev(:,:)
 	type(Telescope) tel(MAXOBS)
 	real*8 T,kappa,KappaGas,w(100)
-	
-c The version number (please update frequently!)
-	call VersionDateTime(version)
 
 	arraysallocated=.false.
 	prevalloc=.false.
@@ -81,8 +78,12 @@ c The version number (please update frequently!)
 		write(9,'("Date: ",a2,"/",a2,"/",a4)') date(7:8),date(5:6),date(1:4)
 		write(9,'("Time: ",a2,":",a2,":",a6)') time(1:2),time(3:4),time(5:10)
 c	endif
-	write(*,'("Version: ",a)') version(1:len_trim(version))
-	write(9,'("Version: ",a)') version(1:len_trim(version))
+	call VersionDateTime(version)
+	write(*,'("Compile date:   ",a)') version(1:len_trim(version))
+	write(9,'("Compile date:   ",a)') version(1:len_trim(version))
+	call VersionGIT(version)
+	write(*,'("GIT commit ID:  ",a)') version(1:len_trim(version))
+	write(9,'("GIT commit ID:  ",a)') version(1:len_trim(version))
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 

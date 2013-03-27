@@ -261,7 +261,6 @@ c the nspike parameter removes the n degree spike in the forward direction.
 			tot=tot+p%F(iopac,j)%F11(i)*sin(pi*(real(i)-0.5)/180d0)
 			tot2=tot2+sin(pi*(real(i)-0.5)/180d0)
 		enddo
-		print*,lam(j),tot/tot2
 		p%Ksca(iopac,j)=p%Ksca(iopac,j)*tot/tot2
 		p%Kext(iopac,j)=p%Kabs(iopac,j)+p%Ksca(iopac,j)
 		do i=1,180

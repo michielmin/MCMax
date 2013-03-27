@@ -324,6 +324,10 @@
 	keyword(i)='emptylower'
 	i=i+1
 	keyword(i)='dirparticle'
+	i=i+1
+	keyword(i)='nphotuv'
+	i=i+1
+	keyword(i)='maxlamuv'
 	
 	Nnormal=i
 c from here on keywords with numbers

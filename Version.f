@@ -6,3 +6,14 @@
 	
 	return
 	end
+	
+	
+	subroutine VersionGIT(string)
+	character*500 string
+#include "gitversion.h"
+
+	string=gitversion
+	
+	return
+	end
+	

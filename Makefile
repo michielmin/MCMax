@@ -1,6 +1,9 @@
 # makefile for mcmax (with comments!)
 # Tested on MacOSX 10.6 with ifort 11.1.080 (20/12/2012)
 # Tested on Fedora Core 8 with ifort 10.1.015 (20/12/2012)
+	
+#GITVERSION = $(echo "#define gitversion = \"$(shell git rev-parse HEAD)\"" > gitversion.h)
+GITVERSION = $(ls -l)
 
 # compiler= FC, flags = FFlags
 # linker= LINKER, flags= LDFLAGS, libraries=LIBS
@@ -70,7 +73,8 @@ PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)
 DEST	      = ${HOME}/bin
 
 # make actions 
-all:		$(PROGRAM)
+all:		version $(PROGRAM)
+version:;	echo "#define gitversion \"$(shell git rev-parse HEAD)\"" > gitversion.h
 clean:;		rm -f $(OBJS) $(PROGRAM)
 install:	$(PROGRAM)
 		mv $(PROGRAM) $(DEST)

@@ -16,14 +16,14 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
 	real*8 sin2phi(0:360),cos2phi(0:360),RmaxRefine,KDext(0:TMAX),KDabs(0:TMAX),BBint(0:TMAX)
-	real*8 alphavis,dimstar,alphavispow,E_IRF
+	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV
 	real*8 lifetime,alphaturb,qturb !Gijsexp
 	real*8 deadalpha,deadheight !Gijsexp: deadzone in midplane
 	real*8 gsd_rmin,gsd_rmax,gsd_xi,gsd_vfrag !Gijsexp
 	real*8 mrn_rmin,mrn_rmax,mrn_index !Gijsexp
 	real*8 tau1_lam(100) !Gijsexp
 	integer*8 nemit,ninteract,maxinteract,nmaxinteract
-	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal
+	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal,NphotUV
 	integer nspan,nlev,ntspan,ntlev,nexits,nruns,iTD(0:TMAX),NsigDiskstructure,nBW,nqhp
 	integer nplanets,niter0,nspike,ngrains2,nzones,maxruntime
 	integer gsd_diag !Gijsexp
