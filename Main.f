@@ -79,11 +79,11 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 		write(9,'("Time: ",a2,":",a2,":",a6)') time(1:2),time(3:4),time(5:10)
 c	endif
 	call VersionDateTime(version)
-	write(*,'("Compile date:   ",a)') version(1:len_trim(version))
-	write(9,'("Compile date:   ",a)') version(1:len_trim(version))
+	write(*,'("Compilation date: ",a)') version(1:len_trim(version))
+	write(9,'("Compilation date: ",a)') version(1:len_trim(version))
 	call VersionGIT(version)
-	write(*,'("GIT commit ID:  ",a)') version(1:len_trim(version))
-	write(9,'("GIT commit ID:  ",a)') version(1:len_trim(version))
+	write(*,'("GIT commit ID:    ",a)') version(1:len_trim(version))
+	write(9,'("GIT commit ID:    ",a)') version(1:len_trim(version))
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
