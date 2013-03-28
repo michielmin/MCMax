@@ -103,7 +103,7 @@ c changed this to mass fractions (11-05-2010)
 	write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
 	inquire(file=partfile,exist=truefalse)
 	if(truefalse) then
-		if(checkparticlefile(partfile,amin,amax,apow,fmax,blend,porosity,frac,rho,nm,filename)) then
+		if(checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename)) then
 			dummy=0d0
 			call ReadParticleFits(partfile,p,.false.,dummy,dummy,dummy,dummy,1)
 			return
@@ -371,9 +371,9 @@ c changed this to mass fractions (11-05-2010)
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	logical function checkparticlefile(partfile,amin,amax,apow,fmax,blend,porosity,frac,rho,nm,filename)
+	logical function checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename)
 	IMPLICIT NONE
-	integer nm
+	integer nm,ns
 	character*500 partfile,filename(nm),filetest
 	real*8 amin,amax,apow,fmax,porosity
 	real frac(nm),rho(nm)
@@ -439,7 +439,7 @@ c-----------------------------------------------------------------------
 	call ftgkye(unit,'r_pow',x,comment,status)
 	write(key1,'(e14.8)') x
 	write(key2,'(e14.8)') real(apow)
-	if(key1.ne.key2.or.status.ne.0) then
+	if(ns.gt.1.and.(key1.ne.key2.or.status.ne.0)) then
 		checkparticlefile=.false.
 		return
 	endif
