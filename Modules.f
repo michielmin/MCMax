@@ -35,7 +35,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat,Tsmooth,emptylower
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
-	logical fixmpset
+	logical fixmpset,inner_gas
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
 	logical deadzone	!Gijsexp

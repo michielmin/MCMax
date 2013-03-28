@@ -274,6 +274,7 @@
 	
 	computeTgas=.false.
 	useTgas=.false.
+	inner_gas=.false.
 	
 	nspike=0		!number of angles made isotropic
 	
@@ -544,6 +545,8 @@ c	endif
 	if(key.eq.'maxlamuv') read(value,*) maxlamUV
 
 	if(key.eq.'idum') read(value,*) idum
+
+	if(key.eq.'innergas') read(value,*) inner_gas
 
 	if(key.eq.'obstmc') read(value,*) use_obs_TMC
 	if(key.eq.'tracestar') read(value,*) tracestar

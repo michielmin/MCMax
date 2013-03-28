@@ -328,6 +328,8 @@
 	keyword(i)='nphotuv'
 	i=i+1
 	keyword(i)='maxlamuv'
+	i=i+1
+	keyword(i)='innergas'
 	
 	Nnormal=i
 c from here on keywords with numbers

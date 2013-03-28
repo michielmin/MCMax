@@ -27,7 +27,7 @@
 	integer nsplit,isplit,iter,l
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
-	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha
+	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha,Einner,R1,R2
 	real*8 F(ngrains),maxT,minT,determinegasfrac,Tevap,A(ngrains),ExtISM(nlam)
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
@@ -63,10 +63,23 @@
 	do i=1,nangle
 		wangle(i)=1d0/(cosangle(i)-cosangle(i-1))
 	enddo
+
+c====================================================================================
+c include the inner has disk like in the Pringle 1981, Akeson 2005 papers
+c====================================================================================
+
+	Einner=0d0
+	if(inner_gas) then
+		Einner=G*D%Mstar*D%Mdot/(4d0*D%Rstar)
+		Einner=Einner*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
+		Einner=Einner/(4d0*pi)
+	endif
+
+c====================================================================================
+c====================================================================================
 	
 !c-----------------------------------------
 !c-----------------------------------------
-
 
 
 	Evis=0d0
@@ -96,10 +109,6 @@
 			Evis=Evis+Efrac(i,j)
 		enddo
 	enddo
-	write(*,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF)
-	write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*Evis/(D%Lstar+Evis+E_IRF)
-	write(9,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF)
-	write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*Evis/(D%Lstar+Evis+E_IRF)
 
 	Er=(2d0*sqrt(D%Rstar/(AU*D%R(D%nR)))-3d0)/(3d0*D%R(D%nR)*AU)
 	Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(1)))-3d0)/(3d0*D%R(1)*AU)
@@ -175,7 +184,7 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 	enddo
 
 
-	FracVis=Evis/(D%Lstar+Evis+E_IRF)
+	FracVis=(Evis+Einner)/(D%Lstar+Evis+E_IRF+Einner)
 	if(FracVis.gt.0.5d0) then
 		FracVis=0.5d0
 		write(*,'("Increasing statistics from the star to ",f6.2,"%")') 100d0*(1d0-FracVis)
@@ -183,13 +192,20 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 	endif
 	if(use_IRF) then
 		FracIRF=E_IRF/(D%Lstar+Evis+E_IRF)
-		write(*,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF)
-		write(9,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF)
+		write(*,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF+Einner)
+		write(9,'("Energy: ",f7.3,"% from the IRF")') 100d0*E_IRF/(D%Lstar+Evis+E_IRF+Einner)
 		if(FracIRF.lt.0.01) then
 			FracIRF=0.01
 		endif
 	else
 		FracIRF=0d0
+	endif
+
+	if(viscous.or.inner_gas) then
+		write(*,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
+		write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
+		write(9,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
+		write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
 	endif
 	
 	write(*,'("Emitting ",i10," photon packages")') NphotTot
@@ -302,8 +318,10 @@ c emit from the star
 		else if(where_emit.gt.FracIRF) then
 !c emit from viscous heating
 			phot%viscous=.true.
+			Er=(Evis+Einner)*ran2(idum)
+			if(Er.lt.Evis) then
+!c emit from the viscous heating inside the dust disk
 9			continue
-			Er=Evis*ran2(idum)
 			do ii=1,D%nR-1
 				do j=1,D%nTheta-1
 					Er=Er-Efrac(ii,j)
@@ -332,10 +350,58 @@ c emit from the star
 
 			call randomdirection(phot%vx,phot%vy,phot%vz)
 
-			phot%E=Evis/(real(Nphot)*FracVis)
+			phot%E=(Evis+Einner)/(real(Nphot)*FracVis)
 
 c emit the viscous photon
 			call EmitViscous(phot)
+
+			else
+c emit from the inner gas disk (Pringle (1981), Akeson (2005)
+			phot%viscous=.false.
+
+			Er=ran2(idum)*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
+			R1=D%R(0)
+			R2=D%R(1)
+			Rad=(R1+R2)/2d0
+
+10			continue
+			tot=(1d0+2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))
+			if((abs(tot-Er)/(tot+Er)).lt.1d-4) goto 11
+			if(tot.gt.Er) then
+				R2=Rad
+			else
+				R1=Rad
+			endif
+			Rad=(R2+R1)/2d0
+			goto 10
+
+11			continue			
+			j=D%nTheta-1
+			Theta=0.5
+			Theta=D%Theta(j)*Theta+D%Theta(j+1)*(1d0-Theta)
+			phot%z=Rad*Theta
+			if(ran2(idum).lt.0.5) phot%z=-phot%z
+			phi=ran2(idum)*pi*2d0
+			phot%x=Rad*sqrt(1d0-Theta**2)*sin(phi)
+			phot%y=Rad*sqrt(1d0-Theta**2)*cos(phi)
+			call randomdirection(phot%vx,phot%vy,phot%vz)
+			phot%i=0
+			phot%j=j
+			phot%onEdge=.false.
+			icoolingtime=ii
+			ncoolingtime(ii)=ncoolingtime(ii)+1
+
+			call randomdirection(phot%vx,phot%vy,phot%vz)
+
+			phot%E=(Evis+Einner)/(real(Nphot)*FracVis)
+			T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
+
+			iT=T/dT
+			if(iT.lt.1) iT=1
+			if(iT.gt.TMAX) iT=TMAX
+			call emit(phot,BB(1:nlam,iT),BBint(iT))
+
+			endif
 		else
 c emit from the interstellar radiation field
 			phot%viscous=.false.
