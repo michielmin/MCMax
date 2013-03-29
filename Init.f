@@ -79,6 +79,7 @@
 	D%Rpow2=1d10
 	D%Rpow3=0d0		! Gijsexp
 	D%Rexp=1d10		! Gijsexp
+	D%gamma_exp=-1d0
 	D%Mtot=1d-15
 	mdustscale=.false.
 	scale_R=0
@@ -440,6 +441,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'rpow2') read(value,*) D%Rpow2
 	if(key.eq.'rpow3') read(value,*) D%Rpow3
 	if(key.eq.'rexp') read(value,*) D%Rexp
+	if(key.eq.'gamma_exp') read(value,*) D%gamma_exp
 	if(key.eq.'shpow') read(value,*) D%shpow
 	if(key.eq.'sh1au') read(value,*) D%sh1AU
 	if(key.eq.'mdust') then
@@ -1255,6 +1257,9 @@ C       End
 		mdustscale=.false.
 	endif
 
+	if(D%gamma_exp.lt.0d0) D%gamma_exp=2d0-D%denspow
+
+
 	if(viscous) forcefirst=.false. !cannot use first interaction forcing with viscous heating
 	
 C       Gijsexp, disable scaleheight scaling when doing the s.c. settling
@@ -1473,6 +1478,8 @@ C	End
 	write(9,'("Powerlaw for small R: ",f14.3)') D%denspow
 	write(*,'("Turnover point:       ",f14.3," AU")') D%Rexp
 	write(9,'("Turnover point:       ",f14.3," AU")') D%Rexp
+	write(*,'("Exponent:             ",f14.3," AU")') D%gamma_exp
+	write(9,'("Exponent:             ",f14.3," AU")') D%gamma_exp
 	else if(denstype.eq.'DOUBLEPOWSIM') then
 	write(*,'("Powerlaw for small R: ",f14.3)') D%denspow
 	write(9,'("Powerlaw for small R: ",f14.3)') D%denspow
@@ -2652,11 +2659,7 @@ c			f2=exp(-0.5*(z/hr)**2)
 		else if(denstype.eq.'POW') then
 			C(i,j)%dens=(AU/D%R_av(i))**(D%denspow+1d0)
 		else if(denstype.eq.'SIMILARITY') then
-			if(D%denspow.lt.2d0) then
-				C(i,j)%dens=(AU/D%R_av(i))**(D%denspow+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp))**(2d0-D%denspow))
-			else
-				C(i,j)%dens=(AU/D%R_av(i))**(D%denspow+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp)))
-			endif
+			C(i,j)%dens=(AU/D%R_av(i))**(D%denspow+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp))**(D%gamma_exp))
 		else if(denstype.eq.'DOUBLEPOW') then
 			if(D%R_av(i).lt.(D%Rpow2*AU) .and. D%R_av(i).gt.(D%Rpow3*AU)) then
 				C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow+1d0)
@@ -2667,12 +2670,7 @@ c			f2=exp(-0.5*(z/hr)**2)
 		   if(D%R_av(i).lt.(D%Rpow2*AU)) then
 		      C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow+1d0)
 		   else
-
-		      if(D%denspow.lt.2d0) then
-			 C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow2+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp))**(2d0-D%denspow2))
-		      else
-			 C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow2+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp)))
-		      endif
+			 C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow2+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp))**(D%gamma_exp))
 		   endif
 		else if(denstype.eq.'MASSLOSS') then
 			vexp=1d0/sqrt(sin(D%theta_av(j))**2/vexp1**2+cos(D%theta_av(j))**2/vexp2**2)
