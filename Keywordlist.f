@@ -65,6 +65,8 @@
 	i=i+1
 	keyword(i)='rexp'
 	i=i+1
+	keyword(i)='gamma_exp'
+	i=i+1
 	keyword(i)='shpow'
 	i=i+1
 	keyword(i)='sh1au'
