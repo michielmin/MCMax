@@ -11,10 +11,9 @@ FC	      = ifort
 LINKER	      = ifort
 
 # Platform specific compilation options
-#FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
-FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
+FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
+#FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
 FLAG_LINUX    = -msse3 -prefetch
-#FLAG_MAC      = -mssse3 -opt-prefetch -static-intel -openmp-link static
 FLAG_MAC      = -mssse3 -opt-prefetch
 
 ifeq ($(shell uname),Linux)
