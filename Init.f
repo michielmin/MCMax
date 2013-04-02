@@ -1160,6 +1160,7 @@ C       End
 				computepart_blend(i+ii-1)=computepart_blend(ii)
 				computepart_porosity(i+ii-1)=computepart_porosity(ii)
 				computepart_ngrains(i+ii-1)=1
+				rgrain(i+ii-1)=sqrt(computepart_amin(i+ii-1)*computepart_amax(i+ii-1))*1d-4
 				warg(i+ii-1)=warg(ii)
 				powslope(i+ii-1)=powslope(ii)
 				powrad0(i+ii-1)=powrad0(ii)
@@ -1194,7 +1195,6 @@ C       End
 				powmix(i+ii-1)=powmix(ii)
 				radmix(i+ii-1)=radmix(ii)
 				Tmix(i+ii-1)=Tmix(ii)
-				rgrain(i+ii-1)=rgrain(ii)
 				rhograin(i+ii-1)=rhograin(ii)
 			enddo
 			ngrains=ngrains+computepart_ngrains(ii)-1
@@ -1202,6 +1202,7 @@ C       End
      &				+log10(computepart_amax(ii)/computepart_amin(ii))
      &				*real(1)/real(computepart_ngrains(ii)))
      		computepart_ngrains(ii)=1
+			rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
 			goto 57
 		endif
 	enddo
