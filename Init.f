@@ -2206,10 +2206,11 @@ c	lmax  = 4000.0
 	do i=1,nlam
 		nu(i)=clight/lam(i)
 	enddo
-	do i=1,nlam-1
-		dnu(i)=(nu(i)-nu(i+1))
+	do i=2,nlam-1
+		dnu(i)=(nu(i-1)-nu(i+1))/2d0
 	enddo
-	dnu(nlam)=nu(nlam)
+	dnu(nlam)=(nu(nlam-1)-nu(nlam))
+	dnu(1)=(nu(1)-nu(2))
 
 	do i=1,nlam
 		BB(i,0)=0d0
