@@ -556,7 +556,9 @@ c         write(66,*) settletime(1:ns)
       do iz=1,nz
          ith=(nz)-(iz-1)
          do is=1,ns
-            rho(ith,is)=f(iz,is) ! ith: reverse order
+			if(do_settle(is)) then
+	            rho(ith,is)=f(iz,is) ! ith: reverse order
+			endif
          enddo
       enddo
 

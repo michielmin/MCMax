@@ -28,7 +28,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	character*500 input,denstempfile,tau1file,tmp,tau1fileR,version
 	character*500 comm,gasdenstempfile
 	character*500 photfile,output,pshfile,logfile,kappafile,errfile
-	character*500 denstempfileND,radgridfile,qhpfile
+	character*500 denstempfileND,radgridfile,qhpfile,donefile
 	character*500,allocatable :: denstempfileP(:)
 	character*10 date,time
 	real*8 determineT,tottime,errT,errRho,radialtau,tau,radtau,Rmax,Mass,tau0
@@ -60,6 +60,12 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	i=i+1
 	goto 3
 4	continue
+
+	write(donefile,'(a,"done")') outdir(1:len_trim(outdir))
+	inquire(file=donefile,exist=truefalse)
+	if(truefalse) then
+		write(tmp,'("rm ",a)') trim(donefile)
+	endif
 
 	call date_and_time(date,time)
 	write(logfile,'(a,"log.dat")') outdir(1:len_trim(outdir))
@@ -696,6 +702,7 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 	endif
 
 
+
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0
 
@@ -751,6 +758,10 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 	enddo
 	if(.not.tcontact) deallocate(denstempfileP)
 	deallocate(DustMass)
+
+	open(file=donefile,unit=90)
+	write(90,'("all done!")')
+	close(unit=90)
 
 	end
 	

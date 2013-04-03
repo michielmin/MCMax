@@ -364,18 +364,16 @@ c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			R2=D%R(1)
 			Rad=(R1+R2)/2d0
 
-10			continue
-			tot=(1d0+2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))
-			if((abs(tot-Er)/(tot+Er)).lt.1d-4) goto 11
-			if(tot.gt.Er) then
-				R2=Rad
-			else
-				R1=Rad
-			endif
-			Rad=(R2+R1)/2d0
-			goto 10
+			do iter=1,10
+				tot=(1d0+2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))
+				if(tot.gt.Er) then
+					R2=Rad
+				else
+					R1=Rad
+				endif
+				Rad=(R2+R1)/2d0
+			enddo
 
-11			continue			
 			j=D%nTheta-1
 			Theta=0.5
 			Theta=D%Theta(j)*Theta+D%Theta(j+1)*(1d0-Theta)
@@ -1138,7 +1136,11 @@ c ------------------------------------------------
 	endif
 	endif
 
-	if(.not.hitR2) print*,'Cannot hit outer boundary...'
+	if(.not.hitR2) then
+		print*,'Cannot hit outer boundary...'
+		print*,sqrt(phot%x**2+phot%y**2+phot%z**2),D%R(phot%i),D%R(phot%i+1)
+		print*,sqrt(phot%vx**2+phot%vy**2+phot%vz**2)
+	endif
 
 	if(.not.hitR1.and..not.hitR2.and..not.hitT1.and..not.hitT2) then
 		print*,'nothing to hit!',vT1,vT2,vR1,vR2
@@ -1286,10 +1288,10 @@ c ------------------------------------------------
 	
 	r=phot%x**2+phot%y**2+phot%z**2
 	theta=phot%z**2/r
-	R1=C(phot%i,phot%j)%xedge(1)**2*0.9
-	R2=C(phot%i,phot%j)%xedge(2)**2*1.1
-	T1=C(phot%i,phot%j)%xedge(3)**2*1.01
-	T2=C(phot%i,phot%j)%xedge(4)**2*0.99
+	R1=C(phot%i,phot%j)%xedge(1)**2*0.999
+	R2=C(phot%i,phot%j)%xedge(2)**2*1.001
+	T1=C(phot%i,phot%j)%xedge(3)**2*1.001
+	T2=C(phot%i,phot%j)%xedge(4)**2*0.999
 	if(theta.gt.T1) print*,'oeps! T1',theta,T1,T2,phot%i,phot%j
 	if(theta.lt.T2) print*,'oeps! T2',theta,T1,T2,phot%i,phot%j
 	if(r.lt.R1) print*,'oeps! R1',r,R1,R2,phot%i,phot%j
