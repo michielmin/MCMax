@@ -20,7 +20,7 @@ c--------------------------------------------------------------------
 	integer k,i1,i2,ii,itot,jj,l,inext,nrefine,nused,iopac
 	character*100 surfdensfile
 	real*8 tau,tau0,lam0,Kext,dens,w(ngrains),taumax,R
-	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg
+	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg,ran2
 	real*8 taustart,dtaumax,tauend,ct,Rmultmax,dtaumaxabs
 	logical escape,hitstar,locfield,RNDWBackup,checkfix
 	integer iT,irefine,inormal
