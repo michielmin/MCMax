@@ -323,7 +323,8 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 	error=.false.
 	do i=1,D%nR-1
 		if(Rnew(i-1).eq.Rnew(i)) then
-			Rnew(i)=(Rnew(i+1)+Rnew(i))/2d0
+c			Rnew(i)=(Rnew(i+1)+Rnew(i))/2d0
+			Rnew(i)=D%Rin+(D%Rout-D%Rin)*ran2(idum)
 			error=.true.
 		endif
 	enddo
@@ -335,12 +336,14 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 71	continue
 	call sort(Rnew(0:D%nR),D%nR+1)
 	if(Rnew(1).eq.Rnew(2)) then
-		Rnew(2)=(Rnew(2)+Rnew(3))/2d0
+c		Rnew(2)=(Rnew(2)+Rnew(3))/2d0
+		Rnew(2)=D%Rin+(D%Rout-D%Rin)*ran2(idum)
 		goto 71
 	endif
 	do i=1,D%nR-1
 		if(Rnew(i).eq.Rnew(i+1)) then
-			Rnew(i)=(Rnew(i-1)+Rnew(i))/2d0
+c			Rnew(i)=(Rnew(i-1)+Rnew(i))/2d0
+			Rnew(i)=D%Rin+(D%Rout-D%Rin)*ran2(idum)
 			goto 71
 		endif
 	enddo
