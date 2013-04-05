@@ -1972,11 +1972,11 @@ c in the theta grid we actually store cos(theta) for convenience
 	enddo
 	j0=j-1
 
-	if(j0.eq.0) return
+	if(j0.le.0.or.j0.ge.D%nTheta-1) return
 	
 1	continue
 
-	theta0=D%theta_av(j)
+	theta0=D%theta_av(j0)
 	if((theta0/real(n)).lt.(pi/2d0-theta0)/real(D%nTheta-n)) then
 		return
 		n=0
@@ -1989,7 +1989,7 @@ c		D%Theta(j)=1d0-cos(theta0)*real(j-1)/real(n-1)
 	do j=n+1,D%nTheta
 c		D%Theta(j)=theta0+(pi/2d0-theta0)*real(j-n-1)/real(D%nTheta-n-1)
 c		D%Theta(j)=cos(D%Theta(j))
-		D%Theta(j)=cos(theta0)-cos(theta0)*(real(j-n-1)/real(D%nTheta-n-1))**0.5
+		D%Theta(j)=cos(theta0)-cos(theta0)*(real(j-n)/real(D%nTheta-n))**0.5
 	enddo
 	call sort(D%Theta(1:D%nTheta),D%nTheta)
 	do j=1,D%nTheta-1
