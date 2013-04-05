@@ -14,7 +14,7 @@ LINKER	      = ifort
 FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
 #FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
 FLAG_LINUX    = -msse3 -prefetch
-FLAG_MAC      = -mssse3 -opt-prefetch
+FLAG_MAC      = -mssse3 -opt-prefetch -openmp-link=static 
 
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec

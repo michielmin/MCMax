@@ -1245,6 +1245,7 @@ c				if(fBW(ii,j).lt.1d0) fBW(ii,j)=1d0
 			W=0.5d0*(1d0-sqrt(1d0-(D%Rstar/r)**2))
 			if(tcontact) then
 				spec(1:nlam)=0d0
+				BBgrains=.false.
 				do ii=1,ngrains
 					if(.not.Grain(ii)%qhp.and.C(i,j)%w(ii).gt.0d0) then
 						do iopac=1,Grain(ii)%nopac
