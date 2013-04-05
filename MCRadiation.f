@@ -362,7 +362,7 @@ c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			Er=ran2(idum)*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
 			R1=D%R(0)
 			R2=D%R(1)
-			Rad=(R1+R2)/2d0
+			Rad=R1+ran2(idum)*(R2-R1)
 
 			do iter=1,10
 				tot=(1d0+2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))
