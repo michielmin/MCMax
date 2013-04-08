@@ -91,6 +91,7 @@
 	D%Mdot=1d-8		!Msun/yr
 	vexp1=10d0		!km/s
 	vexp2=-10d0		!don't use vexp2
+	D%Minfall=-1d0		!defaults to the value of Mdot
 
 	struct_iter=.false.
 	raditer=.false.
@@ -451,6 +452,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'tau550') read(value,*) tau550
 	if(key.eq.'reprocess') read(value,*) reprocess
 	if(key.eq.'mdot') read(value,*) D%Mdot
+	if(key.eq.'minfall') read(value,*) D%Minfall
 	if(key.eq.'mu0max') read(value,*) D%mu0max
 	if(key.eq.'vexp'.or.key.eq.'vexp1') read(value,*) vexp1
 	if(key.eq.'vexp2') read(value,*) vexp2
@@ -1234,6 +1236,7 @@ C       End
 		enddo
 	endif
 
+	if(D%Minfall.lt.0d0) D%Minfall=D%Mdot
 
 	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(MeixD.le.0d0) MeixD=MeixE
@@ -1521,9 +1524,9 @@ C	End
 	write(9,'("    at the pole:      ",f14.3," km/s")') vexp2
 	endif
 	else if(denstype.eq.'INFALL') then
-	write(*,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Mdot
+	write(*,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Minfall
 	write(*,'("Centrifugal radius:   ",f14.3," AU")') D%Rexp
-	write(9,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Mdot
+	write(9,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Minfall
 	write(9,'("Centrifugal radius:   ",f14.3," AU")') D%Rexp
 	else if(denstype.eq.'MEIXNER') then
 	write(*,'("Meixner A:            ",f14.3)') MeixA
@@ -2099,6 +2102,7 @@ c	endif
 	D%Mtot=D%Mtot*Msun
 	
 	D%Mdot=D%Mdot*Msun/(365.25d0*24d0*60d0*60d0)
+	D%Minfall=D%Minfall*Msun/(365.25d0*24d0*60d0*60d0)
 	if(vexp2.le.0d0) vexp2=vexp1
 	vexp1=vexp1*100000d0
 	vexp2=vexp2*100000d0
@@ -2698,7 +2702,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			mu=cos(D%theta_av(j))
 			if(mu.gt.1d0) print*,mu,D%theta_av(j)
 			call solve_mu0(D%R_av(i)/(AU*D%Rexp),mu,mu0)
-			C(i,j)%dens=((D%Mdot/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
+			C(i,j)%dens=((D%Minfall/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))/gas2dust
 		else if(denstype.eq.'MEIXNER') then
 			r=D%R_av(i)/AU-timeshift*vexp1*0.210944839d-5
@@ -3388,7 +3392,7 @@ c Add a possible infalling cloud
 					mu=cos(D%theta_av(j))
 					call solve_mu0(D%R_av(i)/(AU*D%Rexp),mu,mu0)
 					if(mu0.lt.D%mu0max) then
-						rho=((D%Mdot/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
+						rho=((D%Minfall/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))
 					else
 						rho=1d-60

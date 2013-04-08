@@ -79,6 +79,8 @@
 	i=i+1
 	keyword(i)='mdot'
 	i=i+1
+	keyword(i)='minfall'
+	i=i+1
 	keyword(i)='mu0max'
 	i=i+1
 	keyword(i)='vexp'
