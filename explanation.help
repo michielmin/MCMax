@@ -1,7 +1,5 @@
   This is the central repository for the MCMax code (Min et al 2009). 
   Changes to the code are monitored by a version control system called git.
-  Don't use this folder as your working directory: keep a local copy of 
-  the files, and only update these files with a stable version!
 
 ## How to use:
 
@@ -29,4 +27,70 @@
 
    - you can now check the new status and logfile, which contains your entry:
    > git status
-   > git log / gitk
+   > git log
+   > gitk     (graphical)
+
+## Downloading the source code for the first time
+
+   - This command will download the source code to a directory MCMax-source, 
+     after entering your password (you've probably already done this 
+     otherwise you would not be reading this!)
+
+   > git clone username@michielmin.nl:/MCMax/git MCMax-source
+
+   
+## Getting the latest version of MCMax
+
+   - if you're not editing the code yourself
+   > git pull
+
+   - if have edited the code, are not on the main branch etc.
+   > git fetch
+
+## Editing the code
+
+     The stable version of the code is always located in the branch
+     master.  It is recommended to make a new branch of the code every
+     you start working on a bugfix/update. This way, you can always
+     get updates of the code without having to merge everything before
+     your own update/bugfix is finished. You can merge it into the
+     main branch once its finished
+    
+   - make a new branch, called experimental_branch
+   > git checkout -b experimental_branch
+   
+   - you can now change files, make commits etc. wihout affecting the
+     main branch. You can now swith back an forth between branches:
+   > git checkout master
+   > git checkout experimental_branch
+
+## Updating the code
+
+   - Make sure you have the latest version of the code. This leaves
+     any experimental branches you have made intact.
+   > git fetch
+
+   - Merge your changes with the ones others made since you
+     started editing (If you work in the main branch only?)
+   > git merge
+
+   - Optionally, merge an experimental branch into the main branch
+   > git checkout master
+   > git merge experimental_branch
+
+   - Everything should now be up to date, synchronize it with the server
+   > git push origin
+   
+     Everyone who uses git pull or fetch will now have your update/bugfix!
+
+## Updating experimental branches
+
+   - If you push without merging something into the main branch, your
+     branch will be copied to the server, while the main branch stays
+     unaffected.
+   > git push -u origin experimental_branch
+
+   - Someone else can now download this branch with:
+   > git fetch origin
+   > git checkout --track origin/experimental_branch
+
