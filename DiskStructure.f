@@ -1952,6 +1952,7 @@ c in the theta grid we actually store cos(theta) for convenience
 	real*8 Kext,tau,theta0,Vold
 	character*500 thetagridfile
 
+	return
 	n=n1
 	if(n.gt.(D%nTheta/2)) n=D%nTheta/2
 	

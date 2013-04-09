@@ -332,6 +332,8 @@
 	keyword(i)='maxlamuv'
 	i=i+1
 	keyword(i)='innergas'
+	i=i+1
+	keyword(i)='multicore'
 	
 	Nnormal=i
 c from here on keywords with numbers
