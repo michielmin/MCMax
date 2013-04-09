@@ -311,6 +311,8 @@
 	
 	particledir=outdir
 	
+	multicore=.true.
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -1047,6 +1049,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
 	if(key.eq.'outputfits') read(value,*) outputfits
+	if(key.eq.'multicore') read(value,*) multicore
 
 	if(key(1:4).eq.'zone') then
 		read(key(5:index(key,":")-1),*) i
