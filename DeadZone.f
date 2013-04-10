@@ -20,9 +20,7 @@ c     --------------------------------------------------------------
 
       ! height of cells
       do j=1,D%nTheta-1
-         dcostheta(j)=(D%thet(j+1)-D%thet(j)) 
-c         write(*,*) j,D%theta_av(j),D%theta_av(j+1),D%thet(j),dcostheta(j)
-c         write(*,*) j,D%thet(j),dcostheta(j)
+         dcostheta(j)=(D%Theta(j)-D%Theta(j+1)) 
       enddo
 
       ! Global turbulent mixing strength and active layers
@@ -36,14 +34,10 @@ c         write(*,*) j,D%thet(j),dcostheta(j)
             do j=1,D%nTheta-1
                
                ! vertical column
-               col=col+ C(i,j)%gasdens*(D%R_av(i)*dcostheta(j))
+               col=col+ C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))
 
                if (C(i,j)%T.lt.deadtemp.and.col.gt.deadcolumn) then
                   C(i,j)%alpha=deadalpha
-                  if (j.eq.D%nTheta-1) then
-                     write(*,'("deadzone at r= ",f8.2," z/r= ",f4.2)') 
-     &                    D%R_av(i)/AU, D%theta_av(j)
-                  endif
                endif
        
             enddo

@@ -311,6 +311,8 @@
 	
 	particledir=outdir
 	
+	multicore=.true.
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -1047,6 +1049,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
 	if(key.eq.'outputfits') read(value,*) outputfits
+	if(key.eq.'multicore') read(value,*) multicore
 
 	if(key(1:4).eq.'zone') then
 		read(key(5:index(key,":")-1),*) i
@@ -3255,9 +3258,11 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		call MakeDeadZone()
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-		call RegridTheta(D%nTheta/3)
+		call RegridTheta(D%nTheta/4)
 		call MakeDeadZone()
 		if(gsd) call GrainsizeDistribution() ! GijsExp
+		call DiskStructure()
+		call RegridTheta(D%nTheta/4)
 		call DiskStructure()
 		dosmooth=.true.
 	endif
@@ -3472,7 +3477,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 		if(struct_iter) then
 			dosmooth=.false.
 			call OpticallyThin(.false.)
-			call RegridTheta(D%nTheta/3)
+			call RegridTheta(D%nTheta/4)
 			call TempAverage(1d0)
 			call DiskStructure()
 			dosmooth=.true.

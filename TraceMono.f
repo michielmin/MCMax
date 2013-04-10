@@ -185,7 +185,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		enddo
 	endif
 
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iT,wT1,wT2,iopac)
 !$OMP& SHARED(C,D,BB,Grain,scat,emis,storescatt,wl1,ilam1,wl2,ilam2,traceemis,tracegas,
@@ -285,19 +285,16 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
      &			/(D%Theta(j)-D%Theta(j+1))
 		enddo
 	enddo
-	call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
 !$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac)
 !$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
 !$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,
-!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar)
+!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,multicore)
 !$OMP DO
 	do i=1,image%nr
-!$OMP CRITICAL
-	call tellertje(i+1,image%nr+2)
-!$OMP END CRITICAL
+	if(.not.multicore)call tellertje(i,image%nr)
 	do j=1,image%nphi
 		image%image(i,j)=0d0
 		if(scat_how.eq.2) then
@@ -452,7 +449,6 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	call tellertje(100,100)
 
 	flux=0d0
 	scatflux=0d0
@@ -600,7 +596,7 @@ c-----------------------------------------------------------------------
 		phot%nu=1d0/lam0
 	endif
 
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,ia)
 !$OMP& SHARED(D,C,ngrains,Grain,phot,scattering,scat_how,useobspol)
@@ -721,17 +717,14 @@ c-----------------------------------------------------------------------
 c Start tracing the photons
 
 	photinit=phot
-	call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,
-!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit)
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,multicore)
 !$OMP DO
 	do iphot=1,Nphot
-!$OMP CRITICAL
-	call tellertje(iphot+1,Nphot+2)
-!$OMP END CRITICAL
+	if(.not.multicore) call tellertje(iphot,Nphot)
 	phot=photinit
 
 	phot%nr=iphot
@@ -815,7 +808,6 @@ c	fstop=C(phot%i,phot%j)%Albedo
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	call tellertje(100,100)
 
 
 	if(.not.storescatt.and.scat_how.eq.1) then
@@ -859,18 +851,15 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
-	if(nexits.ne.0) call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
 !$OMP& SHARED(nexits,D,C,Grain,EmisDis,EnergyTot,EnergyTot2,Tcontact,ngrains,
-!$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB)
+!$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB,multicore)
 
 !$OMP DO
 	do i=1,D%nR-1
-!$OMP CRITICAL
-		if(nexits.ne.0) call tellertje(i+1,D%nR+1)
-!$OMP END CRITICAL
+		if(nexits.ne.0.and..not.multicore) call tellertje(i+1,D%nR+1)
 		do j=1,D%nTheta-1
 			if(C(i,j)%T.ne.0d0) then
 			if(.not.tcontact) then
@@ -980,7 +969,6 @@ c eliminating 'dark-zone'
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	if(nexits.ne.0) call tellertje(100,100)
 
 	return
 	end
@@ -1394,19 +1382,16 @@ c-----------------------------------------------------------------------
 
 	Emin=1d-10*Estar/real(Nphot)
 
-	call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,tautot,tau,xsn,ysn,zsn,
 !$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
 !$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
 !$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,idum,
-!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
+!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot,multicore)
 !$OMP DO
 	do iphot=1,Nphot
-!$OMP CRITICAL
-		call tellertje(iphot+1,Nphot+2)
-!$OMP END CRITICAL
+		if(.not.multicore) call tellertje(iphot+1,Nphot+2)
 		phot%E=Estar/real(Nphot)
 		phot%scatt=.false.
 
@@ -1578,7 +1563,6 @@ c		if(phot%E.lt.Emin) goto 2
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	call tellertje(100,100)
 
 	if(nplanets.gt.0) then
 	write(*,'("Planet scattered starlight")')
@@ -1904,16 +1888,13 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		endif
 	enddo
 	
-	call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(Rad,phot,ct,j,k,theta,photcount)
-!$OMP& SHARED(C,D,image,angle)
+!$OMP& SHARED(C,D,image,angle,multicore)
 !$OMP DO
 	do i=1,image%nr
-!$OMP CRITICAL
-	call tellertje(i+1,image%nr+2)
-!$OMP END CRITICAL
+	if(.not.multicore)call tellertje(i+1,image%nr+2)
 	do k=1,image%nPhi
 		image%phi(k)=1d-5+pi*(real(k)-0.5)/real(image%nPhi)
 		Rad=image%R(i)
@@ -1962,7 +1943,6 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	call tellertje(100,100)
 
 	return
 	end
@@ -2480,19 +2460,16 @@ c	sinwi=sin(wi)
 		imV=0d0
 	endif
 
-	call tellertje(1,100)
-!$OMP PARALLEL
+!$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM)
+!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,multicore)
 
 !$OMP DO
 	do i=1,image%nr-1
-!$OMP CRITICAL
-	call tellertje(i+1,image%nr+1)
-!$OMP END CRITICAL
+	if(.not.multicore) call tellertje(i+1,image%nr+1)
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
 		do k=1,nintegrate
@@ -2656,7 +2633,6 @@ c			wy=gasdev(idum)*widthx
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
-	call tellertje(100,100)
 
 	call AddPlanet(image,im,imQ,imU,imV,Rmax,IMDIM)
 
