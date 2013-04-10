@@ -166,8 +166,9 @@
 	gsd_diag=-1		! Gijsexp
 
 	deadzone=.false.	! Gijsexp
-	deadheight=0.1		! Gijsexp: z/r
-	deadalpha=1d-4		! Gijsexp: alpha in deadzone (near midplane)
+	deadcolumn=50d0		! Gijsexp: gas column in gr/cm^2
+	deadtemp=1d3		! Gijsexp
+	deadalpha=1d-5		! Gijsexp: alpha in deadzone (near midplane)
 
 	ngap=0
 	gap(1:100)=0.1d0
@@ -1015,7 +1016,8 @@ C       Gijsexp, read in parameters for s.c. settling
 
 	!dead zone near the midplane
 	if(key.eq.'deadzone') read(value,*) deadzone
-	if(key.eq.'deadheight') read(value,*) deadheight
+	if(key.eq.'deadcolumn') read(value,*) deadcolumn
+	if(key.eq.'deadtemp') read(value,*) deadtemp
 	if(key.eq.'deadalpha') read(value,*) deadalpha
 
 
@@ -1722,8 +1724,10 @@ C       Gijsexp
 	   write(*,'("q (Turbulent)             ",f8.1)') qturb
 	   write(9,'("q (Turbulent)             ",f8.1)') qturb
 	   if (deadzone) then
-	      write(*,'("Deadzone height:          ",f9.2)') deadheight
-	      write(9,'("Deadzone height:          ",f9.2)') deadheight
+	      write(*,'("Deadzone column:          ",f9.2)') deadcolumn 
+	      write(9,'("Deadzone column:          ",f9.2)') deadcolumn 
+	      write(*,'("Deadzone temperature:     ",f9.2)') deadtemp
+	      write(9,'("Deadzone temperature:     ",f9.2)') deadtemp
 	      write(*,'("Deadzone alpha:           ",e14.3)') deadalpha
 	      write(9,'("Deadzone alpha:           ",e14.3)') deadalpha
 	   endif
@@ -3248,9 +3252,11 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		call OpticallyThin(.false.)
 		dosmooth=.false.
 		call TempAverage(f_weight)
+		call MakeDeadZone()
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
 		call RegridTheta(D%nTheta/3)
+		call MakeDeadZone()
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
 		dosmooth=.true.

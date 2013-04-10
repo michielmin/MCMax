@@ -136,10 +136,10 @@ c-------------------------------------------------------------------
          enddo
          
          !  Alpha: global or some gradient (deadzone)
-         if (deadzone .and. zc(iz) / radius.le.deadheight) then
-            alpha(iz)=deadalpha
+         if (deadzone) then
+            alpha(iz)=C(ir,ith)%alpha
          else
-            alpha(iz)=alphaturb ! no radial dependence alfa, for now
+            alpha(iz)=alphaturb ! no radial dependence on alpha, for now
          endif
       enddo
 

@@ -118,6 +118,13 @@
 						write(20,*) C(i,j)%V
 					enddo
 				enddo
+			case ('ALPHA')
+				write(20,'("# Turbulent mixing strength array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%alpha
+					enddo
+				enddo
 			case ('dTEMP')
 				write(20,'("# Relative dT (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
 				do i=1,D%nR-1

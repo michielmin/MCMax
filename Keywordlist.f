@@ -273,7 +273,9 @@
 	i=i+1
 	keyword(i)='deadzone'
 	i=i+1
-	keyword(i)='deadheight'
+	keyword(i)='deadcolumn'
+	i=i+1
+	keyword(i)='deadtemp'
 	i=i+1
 	keyword(i)='deadalpha'
 	i=i+1

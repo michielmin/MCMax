@@ -2,5 +2,6 @@
 \#*
 *.o
 *.mod
+_*
 gitversion.h
 MCMax*

@@ -610,6 +610,7 @@ c -------------------------------------------------------------
 		else
 			call TempAverage(1d0)
 		endif
+                if(struct_iter)	call MakeDeadZone()
 		if(struct_iter.and.gsd) call GrainsizeDistribution()  ! GijsExp
 		if(struct_iter) call DiskStructure()
 		do i=1,ngrains

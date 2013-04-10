@@ -46,6 +46,8 @@
 
    - if have edited the code, are not on the main branch etc.
    > git fetch
+   > git checkout master
+   > git merge origin/master
 
 ## Editing the code
 
@@ -71,26 +73,38 @@
    > git fetch
 
    - Merge your changes with the ones others made since you
-     started editing (If you work in the main branch only?)
-   > git merge
+     started editing (If you work in the main branch only)
+   > git merge origin/master
 
    - Optionally, merge an experimental branch into the main branch
    > git checkout master
    > git merge experimental_branch
 
+   - Check what will be synchronised with the server:
+   > git diff --stat origin/master master
+
    - Everything should now be up to date, synchronize it with the server
    > git push origin
    
-     Everyone who uses git pull or fetch will now have your update/bugfix!
+     Everyone who uses git pull or fetch will now have your
+     update/bugfix!  (if you want to see what will happen with push,
+     without actually copying any data, use: git push origin --dry-run )
 
-## Updating experimental branches
+## Experimental branches
 
-   - If you push without merging something into the main branch, your
-     branch will be copied to the server, while the main branch stays
-     unaffected.
+   # Push an experimental branch to the server
+   - You can copy a branch to the server, while the main branch stays
+     unaffected:
    > git push -u origin experimental_branch
 
-   - Someone else can now download this branch with:
+   # Download an experimental branch from the server
+
+   - An overview of all experimental branches:
    > git fetch origin
+   > git branch -r
+
+   - Use an experimental branch from the server:
    > git checkout --track origin/experimental_branch
 
+     Subsequent push/pull commands should now keep this
+     experimental branch updated on both sides.
