@@ -84,6 +84,10 @@ echo:;		@echo $(SUFFIX)
 fit_module.o:	fit_module.f90
 		${FC} $(FFLAGS) -c fit_module.f90 -o fit_module.o
 
+# special rule to make Regrid.f files for fast compilation
+#RegridR.o:	RegridR.f
+#		${FC} $(FFLAGS) -O0 -c RegridR.f -o RegridR.o
+
 # how to compile program 
 $(PROGRAM):     $(OBJS)
 		$(LINKER) $(LDFLAGS) $(OBJS) $(LIBS) -o $(PROGRAM)

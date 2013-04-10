@@ -3257,8 +3257,10 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		call TempAverage(f_weight)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-		call RegridTheta(D%nTheta/3)
+		call RegridTheta(D%nTheta/4)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
+		call DiskStructure()
+		call RegridTheta(D%nTheta/4)
 		call DiskStructure()
 		dosmooth=.true.
 	endif
@@ -3475,7 +3477,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 		if(struct_iter) then
 			dosmooth=.false.
 			call OpticallyThin(.false.)
-			call RegridTheta(D%nTheta/3)
+			call RegridTheta(D%nTheta/4)
 			call TempAverage(1d0)
 			call DiskStructure()
 			dosmooth=.true.

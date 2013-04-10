@@ -57,6 +57,18 @@ c     --------------------------------------------------------------
       doubleprecision vdrift
       integer number_invalid
 
+      do iz=1,nz
+         ith=(nz)-(iz-1)
+         do is=0,ns
+	            if(number_invalid(rho(ith,is)).ne.0) then
+   	    	        write(*,*) 'ERROR: NaN or Inf value detected (2)'
+					print*,ith,is,mgrain(is),agrain(is)
+   	        	    stop 
+   		         endif
+			if(rho(ith,is).lt.1d-50) rho(ith,is)=1d-50
+         enddo
+      enddo
+
 c-------------------------------------------------------------------
 c     Here starts the initialisation
 c-------------------------------------------------------------------
@@ -315,6 +327,7 @@ c-------------------------------------------------------------------
             !
             tempg        = 0.5d0 * ( tgas(iz-1) + tgas(iz) )
             rhog         = 0.5d0 * ( rhogas(iz-1) + rhogas(iz) )
+            if(rhog.lt.1d-50) rhog=1d-50
 
             !  Compute the force on the grain at the interface
             !  NOTE: includes radiation pressure
@@ -564,6 +577,7 @@ c         write(66,*) settletime(1:ns)
 
       !  Deallocate arrays
       deallocate(timestep)
+
 
  333  continue                  ! arrive here if no settling at all
       end
