@@ -14,7 +14,7 @@ LINKER	      = ifort
 FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
 #FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
 FLAG_LINUX    = -msse3 -prefetch
-FLAG_MAC      = -mssse3 -opt-prefetch -openmp-link=static 
+FLAG_MAC      = -mssse3 -opt-prefetch
 
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec
@@ -83,6 +83,10 @@ echo:;		@echo $(SUFFIX)
 # special rule to make fortran 90 files
 fit_module.o:	fit_module.f90
 		${FC} $(FFLAGS) -c fit_module.f90 -o fit_module.o
+
+# special rule to make Regrid.f files for fast compilation
+#RegridR.o:	RegridR.f
+#		${FC} $(FFLAGS) -O0 -c RegridR.f -o RegridR.o
 
 # how to compile program 
 $(PROGRAM):     $(OBJS)
