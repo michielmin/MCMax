@@ -1952,44 +1952,48 @@ c in the theta grid we actually store cos(theta) for convenience
 	real*8 Kext,tau,theta0,Vold
 	character*500 thetagridfile
 	
-	real*8 d0,d1,z(D%nTheta),dens,sh0(D%nR-1),t_sh,sh,sh_tmp(D%nR-1)
+	real*8 d0,d1,z(D%nTheta),dens,sh0(ngrains*(D%nR-1)),t_sh,sh,sh_tmp(ngrains*(D%nR-1))
 
 	n=n1
 
 	do i=1,D%nR-1
-		d0=C(i,D%nTheta-1)%gasdens
-		d1=d0
-		d0=d0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
-		z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
-		do j=D%nTheta-2,1,-1
-			z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
-			dens=C(i,j)%gasdens
-			if(dens.lt.d0) then
-				sh=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
-				goto 2
-			endif
-			d1=dens
+		do ii=1,ngrains
+			d0=C(i,D%nTheta-1)%dens*C(i,D%nTheta-1)%w(ii)
+			d1=d0
+			d0=d0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
+			z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
+			do j=D%nTheta-2,1,-1
+				z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
+				dens=C(i,j)%dens*C(i,j)%w(ii)
+				if(dens.lt.d0) then
+					sh=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
+					goto 2
+				endif
+				d1=dens
+			enddo
+2			continue
+			sh_tmp((i-1)*ngrains+ii)=sh/(D%R_av(i)/AU)
 		enddo
-2		continue
-		sh_tmp(i)=sh/(D%R_av(i)/AU)
 	enddo
 
 	sh_tmp=abs(sh_tmp)
-	call sort(sh_tmp,D%nR-1)
+	call sort(sh_tmp,(D%nR-1)*ngrains)
 	
+	nii=ngrains*(D%nR-1)
+
 	sh0(1)=sh_tmp(1)
 	sh_tmp(1)=-1d0
-	sh0(2)=sh_tmp(D%nR-1)
-	sh_tmp(D%nR-1)=-1d0
-	sh0(3)=sh_tmp(D%nR/2)
-	sh_tmp(D%nR/2)=-1d0
-	sh0(4)=sh_tmp(D%nR/4)
+	sh0(2)=sh_tmp(nii)
+	sh_tmp(nii)=-1d0
+	sh0(3)=sh_tmp(nii/2)
+	sh_tmp(nii/2)=-1d0
+	sh0(4)=sh_tmp(nii/4)
 	sh_tmp(D%nR/4)=-1d0
-	sh0(5)=sh_tmp(3*D%nR/4)
-	sh_tmp(3*D%nR/4)=-1d0
+	sh0(5)=sh_tmp(3*nii/4)
+	sh_tmp(3*nii/4)=-1d0
 
 	ii=5
-	do i=1,D%nR-1
+	do i=1,nii
 		if(sh_tmp(i).gt.0d0) then
 			ii=ii+1
 			sh0(ii)=sh_tmp(i)
@@ -2037,7 +2041,6 @@ c		D%Theta(j)=1d0-cos(theta0)*real(j-1)/real(n-1)
 c		D%Theta(j)=theta0+(pi/2d0-theta0)*real(j-n)/real(D%nTheta-n)
 c		D%Theta(j)=cos(D%Theta(j))
 		D%Theta(j)=cos(theta0)-cos(theta0)*(real(j-n)/real(D%nTheta-n-nii))
-		print*,j
 	enddo
 
 
@@ -2046,7 +2049,7 @@ c		D%Theta(j)=cos(D%Theta(j))
 	call sort(D%Theta(1:ii),ii)
 
 	nii=0
-	do i=1,D%nR-1
+	do i=1,ngrains*(D%nR-1)
 		sh=sh0(i)*0.1
 		j0=1
 3		t_sh=atan(1d0/sh)
