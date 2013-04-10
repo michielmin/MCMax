@@ -2025,12 +2025,10 @@ c in the theta grid we actually store cos(theta) for convenience
 1	continue
 
 	theta0=D%theta_av(j0)/1.25d0
-	print*,theta0
-c	if((theta0/real(n)).lt.(pi/2d0-theta0)/real(D%nTheta-n)) then
-c		return
-c		n=0
-c		theta0=(pi/2d0)/real(D%nTheta)
-c	endif
+	if((theta0/real(n)).lt.(pi/2d0-theta0)/real(D%nTheta-n)) then
+		n=0
+		theta0=(pi/2d0)/real(D%nTheta)
+	endif
 	do j=1,n
 c		D%Theta(j)=1d0-cos(theta0)*real(j-1)/real(n-1)
 		D%Theta(j)=cos(theta0*real(j-1)/real(n-1))
