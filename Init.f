@@ -3388,6 +3388,7 @@ c		call PAHMCMax(0)
 	if(startiter.ne.' ') read(startiter,*) iter0
 
 c Add a possible infalling cloud
+	if(Nphot.gt.0) then
 	do ii=1,ngrains
 		if(Grain(ii)%shtype.eq.'INFALL') then
 			do i=0,D%nR-1
@@ -3427,6 +3428,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 			enddo
 		endif
 	enddo
+	endif
 
 	write(file,'(a,"betas.dat")') outdir(1:len_trim(outdir))
 	open(unit=90,file=file,RECL=6000)
