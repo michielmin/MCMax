@@ -1952,7 +1952,11 @@ c in the theta grid we actually store cos(theta) for convenience
 	real*8 Kext,tau,theta0,Vold
 	character*500 thetagridfile
 	
-	real*8 d0,d1,z(D%nTheta),dens,sh0(ngrains*(D%nR-1)),t_sh,sh,sh_tmp(ngrains*(D%nR-1))
+	real*8 d0,d1,z(D%nTheta),dens,t_sh,sh
+	real*8,allocatable :: sh0(:),sh_tmp(:)
+
+	allocate(sh0(ngrains*(D%nR-1)))
+	allocate(sh_tmp(ngrains*(D%nR-1)))
 
 	n=n1
 
@@ -2024,7 +2028,11 @@ c in the theta grid we actually store cos(theta) for convenience
 
 4	j0=j-1
 
-	if(j0.le.0.or.j0.ge.D%nTheta-1) return
+	if(j0.le.0.or.j0.ge.D%nTheta-1) then
+		deallocate(sh0)
+		deallocate(sh_tmp)
+		return
+	endif
 	
 1	continue
 
@@ -2122,6 +2130,9 @@ c in the theta grid we actually store cos(theta) for convenience
 			call CheckMinimumDensity(i,j)
 		enddo
 	enddo
+
+	deallocate(sh0)
+	deallocate(sh_tmp)
 	
 	return
 	end

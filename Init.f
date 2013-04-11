@@ -4282,7 +4282,7 @@ c-----------------------------------------------------------------------
 
 	recursive subroutine MakeMatrixCoupled(abunA,coupledabun,i,k,ngrains)
 	IMPLICIT NONE
-	integer ngrains,i,j,k,coupledabun(MAXPART)
+	integer ngrains,i,j,k,coupledabun(*)
 	real*8 abunA(ngrains,ngrains)
 
 	do j=1,ngrains
