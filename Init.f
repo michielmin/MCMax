@@ -18,40 +18,40 @@
 	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid,njj
 	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)
 	real*8 T,Planck,Vtot,clight,MassTot,thet,tot,Tmax_R,RTmax,stretch,Kext,Kabs
-	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(100),scale,Luminosity,MassTot0
-	real*8 powslope(100),powrad0(100),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
+	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(MAXPART),scale,Luminosity,MassTot0
+	real*8 powslope(MAXPART),powrad0(MAXPART),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
 	real*8 gap1(100),gap2(100),gap(100),Rdes,Rmin,zlam1,zlam2,dummy
-	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup,theta
+	real*8 TdesA(MAXPART),TdesB(MAXPART),int1,int2,f_weight_backup,theta
 	real*8 gapshape(100),gaproundpow(100)
-	real*8 asym(100),asym2(100),wasym2(100),Pmax(100),tdes_fast(100),powinner(100)
-	integer npow,powclose(100),powfar(100),ilam1,ilam2,ngap,nzlam,nr,nt
-	character*500 particlefile,gridfile,input,partarg(100),thetagridfile
+	real*8 asym(MAXPART),asym2(MAXPART),wasym2(MAXPART),Pmax(MAXPART),tdes_fast(MAXPART),powinner(MAXPART)
+	integer npow,powclose(MAXPART),powfar(MAXPART),ilam1,ilam2,ngap,nzlam,nr,nt
+	character*500 particlefile,gridfile,input,partarg(MAXPART),thetagridfile
 	character*500 densfile,opacityfile,surfdensfile,output,compositionfile
-	character*500 scalesh,shscalefile,starfile,radfile,settlefile(100)
-	character*20 denstype,abuntype,lamtype,scattype,startype,material(100),startiter
-	character*20 shtype(100)
+	character*500 scalesh,shscalefile,starfile,radfile,settlefile(MAXPART)
+	character*20 denstype,abuntype,lamtype,scattype,startype,material(MAXPART),startiter
+	character*20 shtype(MAXPART)
 	character*20 gaproundtype(100),roundtype(100)
 	character*1000 line
 	character*500 key,value,file,keyzone
-	logical truefalse,opacity_set,arg_abun,force_vert_gf(100)
-	logical mdustscale,settle(100),trace(100)
-	integer coupledabun(100),coupledfrac(100),info,nrhs,nl,parttype(100),nRfix,iopac
-	real*8 frac(100),f,phi,shscalevalue,part_shscale(100),shpow,minrad(100),maxrad(100)
-	real*8 roundwidth(100),roundpow(100),roundpeak(100) !Gijsexp
-	real*8 powmix(100),radmix(100),DiffCoeff,Tmix(100),Rfix(100),rimscale,rimwidth
-	real*8 rgrain(100),rgrain_edges(101),rhograin(100) ! Gijsexp
+	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
+	logical mdustscale,settle(MAXPART),trace(MAXPART)
+	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
+	real*8 frac(MAXPART),f,phi,shscalevalue,part_shscale(MAXPART),shpow,minrad(MAXPART),maxrad(MAXPART)
+	real*8 roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
+	real*8 powmix(MAXPART),radmix(MAXPART),DiffCoeff,Tmix(MAXPART),Rfix(100),rimscale,rimwidth
+	real*8 rgrain(MAXPART),rgrain_edges(101),rhograin(MAXPART) ! Gijsexp
 	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
 	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:),zonedens(:,:,:,:)
 	integer,allocatable :: IPIV(:)
-	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
+	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(MAXPART),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
-	real*8 computepart_amin(100),computepart_amax(100),computepart_apow(100),computepart_fmax(100)
-	real*8 computepart_porosity(100)
-	integer computepart_ngrains(100)
-	logical computepart_blend(100)
+	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
+	real*8 computepart_porosity(MAXPART)
+	integer computepart_ngrains(MAXPART)
+	logical computepart_blend(MAXPART)
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -317,8 +317,8 @@ c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
 		ZoneTemp(i)%sizedis=.false.
-		allocate(ZoneTemp(i)%abun(100))
-		allocate(ZoneTemp(i)%inc_grain(100))
+		allocate(ZoneTemp(i)%abun(MAXPART))
+		allocate(ZoneTemp(i)%inc_grain(MAXPART))
 		ZoneTemp(i)%inc_grain(1:100)=.true.
 		ZoneTemp(i)%abun(1:100)=1d0
 		ZoneTemp(i)%Rsh=1d0
@@ -4282,7 +4282,7 @@ c-----------------------------------------------------------------------
 
 	recursive subroutine MakeMatrixCoupled(abunA,coupledabun,i,k,ngrains)
 	IMPLICIT NONE
-	integer ngrains,i,j,k,coupledabun(100)
+	integer ngrains,i,j,k,coupledabun(MAXPART)
 	real*8 abunA(ngrains,ngrains)
 
 	do j=1,ngrains

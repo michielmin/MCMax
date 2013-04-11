@@ -41,7 +41,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Photon) phot
 	type(Cell),allocatable :: Cprev(:,:)
 	type(Telescope) tel(MAXOBS)
-	real*8 T,kappa,KappaGas,w(100)
+	real*8 T,kappa,KappaGas,w(MAXPART)
 
 	arraysallocated=.false.
 	prevalloc=.false.

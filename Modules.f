@@ -1,8 +1,8 @@
 	module Parameters
 	IMPLICIT NONE
-	integer nlam,idum,TMAX,MAXOBS,NPHISCATT,NTQHP
+	integer nlam,idum,TMAX,MAXOBS,NPHISCATT,NTQHP,MAXPART
 	real*8 pi,AU,Rsun,Msun,Lsun,sigma,parsec,kb,dT,RWmax,gas2dust,totaldist
-	parameter(TMAX=10000,dT=1d0,NTQHP=100)
+	parameter(TMAX=10000,dT=1d0,NTQHP=100,MAXPART=500)
 	parameter(MAXOBS=100,NPHISCATT=180)
 	parameter(pi=3.14159265358979323846264338328d0)
 	parameter(AU=1.49598e13)
