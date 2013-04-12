@@ -140,7 +140,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type path
 		real*8 x,y,z,vx,vy,vz
-		real*8,allocatable :: v(:),phi1(:),phi2(:)
+		real*8,allocatable :: v(:),phi1(:),phi2(:),rad(:)
 		real*8,allocatable :: velo1(:),velo2(:)
 		integer,allocatable :: i(:),j(:),jphi1(:),jphi2(:),k(:),irg(:)
 		integer n

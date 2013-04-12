@@ -91,7 +91,7 @@
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
 		open(unit=30,file=specfile,RECL=6000)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		fstar1=arrinterpol(tel%lam1,lam(nlam),D%Fstar,nlam,1)
 		fstar2=arrinterpol(tel%lam2,lam(nlam),D%Fstar,nlam,1)
@@ -105,7 +105,7 @@
 		endif
 		do j=1,nlam
 		   if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-		      call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening)
+		      call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		      ExtISM=Reddening(lam(j),compute_dlam(lam(j)),D%Av)
 		      if(scat_how.ne.2) then
 			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
@@ -118,7 +118,7 @@
 		      call flush(30)
 		   endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		if(scat_how.ne.2) then
 		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
@@ -133,7 +133,7 @@
 		readmcscat=.false.
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
 		if(tel%opening.ne.0d0) call opendisk(image,tel%opening)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
@@ -150,7 +150,7 @@
 	else if(tel%kind(1:5).eq.'IFU') then
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
@@ -165,7 +165,7 @@
 		enddo
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 				do i=1,tel%nfov
 					if(tel%scaletype.eq.1) then
 						image%rscale=1d0
@@ -178,7 +178,7 @@
 				enddo
 			endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
@@ -204,7 +204,7 @@
      1                  k+2,k+2+tel%nbaseline,tel%b(k),180d0*tel%theta(k)/pi
 		enddo
 
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam1,V(k),phase(k))
@@ -212,7 +212,7 @@
 		write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening)
+				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
 				do k=1,tel%nbaseline
 					call Visibility(image,tel%b(k),tel%theta(k),lam(j),V(k),phase(k))
 				enddo
@@ -220,7 +220,7 @@
 				call flush(30)
 			endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam2,V(k),phase(k))
@@ -244,10 +244,10 @@ c       Gijsexp:
      &		j+2,j+2+tel%nlam,tel%lam(j),180d0*tel%theta(j)/pi
 		enddo
 c$$$		write(30,'("# column ",i3," and further: phase")') tel%nlam+3
-		Call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		Call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		do j=1,tel%nlam
 		   if (j.ne.1.and.tel%lam(j).ne.tel%lam(j-1)) then
-		      call TraceFlux(image,tel%lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		      call TraceFlux(image,tel%lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		   endif
 
 		   nbase=100
@@ -273,7 +273,7 @@ c is still without interstellar extinction
 			image%zscale=1d3*(D%distance/parsec)**2
 		endif
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		call FWHM(image,tel%npixel,tel%nint,FWHM1,FWHM2,tel%width*(2d0*sqrt(-2d0*log(0.5d0)))/parsec*D%Distance)
 	else if(tel%kind(1:8).eq.'SPECFWHM') then
 c is still without interstellar extinction
@@ -294,18 +294,18 @@ c is still without interstellar extinction
 		write(30,'("# column   2: long axis")')
 		write(30,'("# column   3: short axis")')
 
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		call FWHM(image,tel%npixel,tel%nint,FWHM1,FWHM2,tel%width*(2d0*sqrt(-2d0*log(0.5d0)))/parsec*D%Distance)
 		write(30,*) tel%lam1,FWHM1*image%rscale,FWHM2*image%rscale,flux
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening)
+				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
 				call FWHM(image,tel%npixel,tel%nint,FWHM1,FWHM2,tel%width*(2d0*sqrt(-2d0*log(0.5d0)))/parsec*D%Distance)
 				write(30,*) lam(j),FWHM1*image%rscale,FWHM2*image%rscale,spec(j)
 				call flush(30)
 			endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		call FWHM(image,tel%npixel,tel%nint,FWHM1,FWHM2,tel%width*(2d0*sqrt(-2d0*log(0.5d0)))/parsec*D%Distance)
 		write(30,*) tel%lam2,FWHM1*image%rscale,FWHM2*image%rscale,flux
 		close(unit=30)
@@ -322,13 +322,13 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 			image%zscale=1d3*(D%distance/parsec)**2
 		endif
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		call TELFWHM(image,tel,tel%fov(1)/2d0,FWHM1,FWHM2)
 	else if(tel%kind(1:11).eq.'TELSPECFWHM') then
 c is still without interstellar extinction
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		write(specfile,'(a,"FWHM",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
@@ -350,13 +350,13 @@ c		tel%fov(1)=D%R(D%nR)*2d0
 		call flush(30)
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 				call TELFWHM(image,tel,tel%fov(1)/2d0,FWHM1,FWHM2)
 				write(30,*) lam(j),FWHM1*image%rscale,FWHM2*image%rscale,spec(j)
 				call flush(30)
 			endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening)
+		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		call TELFWHM(image,tel,tel%fov(1)/2d0,FWHM1,FWHM2)
 		write(30,*) tel%lam2,FWHM1*image%rscale,FWHM2*image%rscale,flux
 		close(unit=30)

@@ -5,10 +5,10 @@ c					 increase the accuracy of the determination of
 c					 the diffuse field.
 c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
-	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening)
+	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening,inc)
 	use Parameters
 	IMPLICIT NONE
-	real*8 lam0,tau,phi,flux,opening
+	real*8 lam0,tau,phi,flux,opening,inc
 	integer i,j,k,ii,jj,Nphot,NphotStar
 	type(RPhiImage) image
 	real*8 tau_e,tau_s,tau_a,w1,w2,nu0,exptau_e
@@ -23,6 +23,8 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	integer il10,il100,il1000,il10000,i10
 	real*8 i1,il1,Planck,frac_opening
 	logical alltrace
+	real*8 Tgas,G
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 
 	tau_max=1d8
 
@@ -289,10 +291,10 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
-!$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac)
+!$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac,Tgas,iT)
 !$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
 !$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,
-!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar)
+!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,lam0,inner_gas,BB,inc)
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
@@ -438,6 +440,11 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			fact=fact*exptau_e
 		endif
 		tau=tau+tau_e
+		else
+			if(inner_gas.and.jp.eq.D%nTheta-1.and.irg.eq.1) then
+				Tgas=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(image%p(i,j)%rad(k)*AU)))/(8d0*pi*(image%p(i,j)%rad(k)*AU)**3*sigma))**0.25
+				image%image(i,j)=image%image(i,j)+Planck(Tgas,lam0)*fact/(8d0*cos(inc))
+			endif
 		endif
 		if(tau.gt.tau_max) goto 10
 		enddo
@@ -1735,7 +1742,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 input,tmp,specfile
-	integer i,j,k,l,t1,t2,nstar
+	integer i,j,k,l,t1,t2,nstar,ninner
 	real*8 tau,angle,spec(nlam),distance,tottime,ct,lam0
 	real*8 ph,inp,determineT,lam1,lam2,v
 	integer starttime,stoptime,starttrace,cr,l1,l2,nj0,ip,jp
@@ -1745,7 +1752,10 @@ c-----------------------------------------------------------------------
 	logical hitstar
 	real*8 extstar(nlam),R01(D%nTheta)
 	type(RPhiImage) image
+
 	nstar=30
+	ninner=0
+	if(inner_gas) ninner=30
 
 	write(*,'("Creating photon paths for image")')
 	write(*,'("Inclination angle:",f8.1)') 180d0*angle/pi
@@ -1795,9 +1805,9 @@ c	enddo
 c	image%nr=image%nr+1
 
 	if(nj0.gt.0) then
-		image%nr=nj0*(D%nR-1)+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar
+		image%nr=nj0*(D%nR-1)+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar+ninner
 	else
-		image%nr=(D%nR-2)/(-nj0)+1+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar
+		image%nr=(D%nR-2)/(-nj0)+1+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar+ninner
 	endif
 	
 	allocate(image%image(image%nr,image%nphi))
@@ -1887,6 +1897,13 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 	nj=nj+1
 	image%R(nj)=D%R(0)*1.001
 
+	if(inner_gas) then
+		do i=1,ninner
+			nj=nj+1
+			image%R(nj)=D%R(0)+(D%R(1)-D%R(0))*real(i)/real(ninner+1)
+		enddo
+	endif
+
 	image%R(image%nr)=D%R(D%nR)*0.9999
 	call sort(image%R,image%nr)
 
@@ -1955,6 +1972,7 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		allocate(image%p(i,k)%phi2(image%p(i,k)%n))
 		allocate(image%p(i,k)%jphi1(image%p(i,k)%n))
 		allocate(image%p(i,k)%jphi2(image%p(i,k)%n))
+		allocate(image%p(i,k)%rad(image%p(i,k)%n))
 
 		call trace2dpath(phot,image%p(i,k))
 	enddo
@@ -2070,6 +2088,7 @@ c-----------------------------------------------------------------------
 	x=phot%x+phot%vx*v
 	y=phot%y+phot%vy*v
 	z=phot%z+phot%vz*v
+	p%rad(p%n)=sqrt(x*x+y*y+z*z)
 	if(z.gt.0d0) then
 		p%k(p%n)=1
 	else
