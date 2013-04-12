@@ -30,7 +30,7 @@
 	character*500 scalesh,shscalefile,starfile,radfile,settlefile(MAXPART)
 	character*20 denstype,abuntype,lamtype,scattype,startype,material(MAXPART),startiter
 	character*20 shtype(MAXPART)
-	character*20 gaproundtype(100),roundtype(100)
+	character*20 gaproundtype(MAXPART),roundtype(MAXPART)
 	character*1000 line
 	character*500 key,value,file,keyzone
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
