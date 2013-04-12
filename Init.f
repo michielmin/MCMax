@@ -127,19 +127,19 @@
 	tdes_iter=.false.
 
 !c Default values are those of olivine
-	TdesA(1:100)=4.4491649
-	TdesB(1:100)=0.35676055
-	force_vert_gf(1:100)=.true.
-	tdes_fast(1:100)=0d0
+	TdesA(1:MAXPART)=4.4491649
+	TdesB(1:MAXPART)=0.35676055
+	force_vert_gf(1:MAXPART)=.true.
+	tdes_fast(1:MAXPART)=0d0
 
 	arg_abun=.false.
 	warg=0d0
 	ngrains=0
 	npow=0
 
-	powslope(1:100)=1d0
-	powrad0(1:100)=1d0
-	powinner(1:100)=1d0	! Gijsexp
+	powslope(1:MAXPART)=1d0
+	powrad0(1:MAXPART)=1d0
+	powinner(1:MAXPART)=1d0	! Gijsexp
 
 	shell1D=.false.
 	FLD=.false.
@@ -178,24 +178,24 @@
 	gap1(1:100)=0d0
 	gap2(1:100)=0d0
 	
-	coupledabun(1:100)=0
-	coupledfrac(1:100)=0
-	frac(1:100)=0d0
+	coupledabun(1:MAXPART)=0
+	coupledfrac(1:MAXPART)=0
+	frac(1:MAXPART)=0d0
 	RNDW=.false.
 	factRW=10d0
 	scalesh='NO'
 
-	minrad(1:100)=0d0
-	maxrad(1:100)=1d50
-	shaperad(1:100)=0d0
-	roundtype(1:100)=' '	! Gijsexp: round off rim at minrad 
-	roundwidth(1:100)=0d0	! Gijsexp
-	roundpow(1:100)=10d0	! Gijsexp
-	roundpeak(1:100)=0d0	! Gijsexp
-	settle(1:100)=.false.
-	settlefile(1:100)=' '
-	part_shscale(1:100)=1d0
-	shtype(1:100)='DISK'
+	minrad(1:MAXPART)=0d0
+	maxrad(1:MAXPART)=1d50
+	shaperad(1:MAXPART)=0d0
+	roundtype(1:MAXPART)=' '	! Gijsexp: round off rim at minrad 
+	roundwidth(1:MAXPART)=0d0	! Gijsexp
+	roundpow(1:MAXPART)=10d0	! Gijsexp
+	roundpeak(1:MAXPART)=0d0	! Gijsexp
+	settle(1:MAXPART)=.false.
+	settlefile(1:MAXPART)=' '
+	part_shscale(1:MAXPART)=1d0
+	shtype(1:MAXPART)='DISK'
 	gridrefine=.true.
 	nruns=1
 
@@ -211,9 +211,9 @@
 	etrace=.false.
 	iTD(0:TMAX)=0
 
-	powmix(1:100)=0.65
-	radmix(1:100)=1d0
-	Tmix(1:100)=real(TMAX)*dT*2d0
+	powmix(1:MAXPART)=0.65
+	radmix(1:MAXPART)=1d0
+	Tmix(1:MAXPART)=real(TMAX)*dT*2d0
 
 	f_weight=0.5d0
 	NphotFinal=0
@@ -257,12 +257,12 @@
 	traceemis=.true.
 	tracescat=.true.
 	tracegas=.false.
-	trace(1:100)=.true.
+	trace(1:MAXPART)=.true.
 	
-	asym(1:100)=2d0
-	asym2(1:100)=2d0
-	wasym2(1:100)=0d0
-	Pmax(1:100)=1d0
+	asym(1:MAXPART)=2d0
+	asym2(1:MAXPART)=2d0
+	wasym2(1:MAXPART)=0d0
+	Pmax(1:MAXPART)=1d0
 	
 	radpress=.false.
 
@@ -319,8 +319,8 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%sizedis=.false.
 		allocate(ZoneTemp(i)%abun(MAXPART))
 		allocate(ZoneTemp(i)%inc_grain(MAXPART))
-		ZoneTemp(i)%inc_grain(1:100)=.true.
-		ZoneTemp(i)%abun(1:100)=1d0
+		ZoneTemp(i)%inc_grain(1:MAXPART)=.true.
+		ZoneTemp(i)%abun(1:MAXPART)=1d0
 		ZoneTemp(i)%Rsh=1d0
 		ZoneTemp(i)%sh=0.01d0
 		ZoneTemp(i)%shpow=1.1
