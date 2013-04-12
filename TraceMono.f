@@ -73,13 +73,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	if(storescatt) then
 		if(.not.scattcomputed(ilam1)) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
 			call TraceMono(lam(ilam1),Nphot,image%angle,NphotStar)
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,ilam1,1)=C(i,j)%scattfield(1,0,1)
 				C(i,j)%scattfield(1,ilam1,2)=C(i,j)%scattfield(1,0,2)
 			enddo
@@ -88,13 +88,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			nscattcomputed(ilam1)=Nphot+NphotStar
 		else if(nscattcomputed(ilam1).lt.Nphot) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
 			call TraceMono(lam(ilam1),Nphot-nscattcomputed(ilam1),image%angle,NphotStar)
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,ilam1,1:2)=
      &	(C(i,j)%scattfield(1,ilam1,1:2)*real(nscattcomputed(ilam1))+
      &	 C(i,j)%scattfield(1,0,1:2)*real(Nphot-nscattcomputed(ilam1)))/real(Nphot)
@@ -105,7 +105,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		endif
 		if(.not.scattcomputed(ilam2)) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
@@ -119,7 +119,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			nscattcomputed(ilam2)=Nphot+NphotStar
 		else if(nscattcomputed(ilam2).lt.Nphot) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
@@ -154,7 +154,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		enddo
 	else if(scattering.and.(Nphot.ne.0.or.NphotStar.ne.0)) then
 		do i=0,D%nR
-		do j=0,D%nTheta
+		do j=1,D%nTheta-1
 			C(i,j)%scattfield=0d0
 			if(scat_how.eq.2) then
 				C(i,j)%scattQ=0d0
@@ -558,6 +558,7 @@ c-----------------------------------------------------------------------
 	integer ilam,nabs,iopac
 	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
+	real*8 Einner
 	integer NEmisDis(0:D%nR+1,0:D%nTheta+1),Nstar,ip,np,jj,Nmin
 	type(Mueller) M
 	
@@ -711,7 +712,7 @@ c-----------------------------------------------------------------------
 		print*,Planets(i)%j
 	enddo
 
-	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
+	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 
 	call MakeStarScatter(Estar,NphotStar)
 
@@ -725,7 +726,7 @@ c Start tracing the photons
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
-!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,
+!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,idum,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit)
 !$OMP DO
 	do iphot=1,Nphot
@@ -735,7 +736,7 @@ c Start tracing the photons
 	phot=photinit
 
 	phot%nr=iphot
-	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
+	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
 	phot%E=phot%E/real(Nphot)
 	if(scat_how.eq.2) then
 		phot%pol=.false.
@@ -833,12 +834,12 @@ c	fstop=C(phot%i,phot%j)%Albedo
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
+	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 	use Parameters
 	IMPLICIT NONE
 	real*8 lam0
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,EnergyTot2
-	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf
+	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf,Einner
 	real*8 tau,taumin,ran2,Rad,Theta,phi
 	integer i,j,ii,k,iopac
 	type(Photon) phot,phot2
@@ -852,6 +853,11 @@ c		write(9,'("Finding shortest route to observer")')
 c	endif
 c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	Estar=D%Fstar(phot%ilam1)*phot%wl1+D%Fstar(phot%ilam2)*phot%wl2
+	if(inner_gas) then
+		call InitInnerGasDisk(phot%lam,Einner)
+	else
+		Einner=0d0
+	endif
 	if(use_IRF) then
 		Eirf=IRF(phot%ilam1)*phot%wl1+IRF(phot%ilam2)*phot%wl2
 	else
@@ -988,22 +994,24 @@ c eliminating 'dark-zone'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 	
-	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
+	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
 	use Parameters
 	IMPLICIT NONE
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet,Eirf,fact_IRF
 	real*8 inp,ct,r,Rad,Theta,ran2,phi,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
-	integer i,j
+	real*8 Einner,Etot,Er2,tot,RadInnerGasDisk,R1,R2
+	integer i,j,iter
 	type(photon) phot
 	logical ignore
 	
 	fact_IRF=10d0
 	ignore=.false.
 	phot%pol=.false.
-	
-	Er=(EnergyTot2+Estar+Eirf*fact_IRF)*ran2(idum)
+
+	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)
+	Er=Etot*ran2(idum)
 	if(Er.lt.Estar) then
-		phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)
+		phot%E=Etot
 		phot%scatt=.false.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(0)*phot%x
@@ -1036,7 +1044,7 @@ c-----------------------------------------------------------------------
 			endif
 		enddo
 	else if(Er.lt.(Estar+Eirf*fact_IRF)) then
-		phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)/fact_IRF
+		phot%E=Etot/fact_IRF
 		phot%scatt=.true.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(D%nR)*phot%x
@@ -1068,9 +1076,47 @@ c-----------------------------------------------------------------------
 				return
 			endif
 		enddo
+	else if(Er.lt.(Estar+Eirf*fact_IRF+Einner)) then
+		phot%E=Etot
+		phot%scatt=.true.
+
+		Er2=ran2(idum)*Einner
+		Rad=RadInnerGasDisk(Er2)
+
+		j=D%nTheta-1
+		Theta=0.5
+		Theta=D%Theta(j)*Theta+D%Theta(j+1)*(1d0-Theta)
+		phot%z=Rad*Theta
+		if(ran2(idum).lt.0.5) phot%z=-phot%z
+		phi=ran2(idum)*pi*2d0
+		phot%x=Rad*sqrt(1d0-Theta**2)*sin(phi)
+		phot%y=Rad*sqrt(1d0-Theta**2)*cos(phi)
+		call randomdirection(phot%vx,phot%vy,phot%vz)
+		phot%i=0
+		phot%j=j
+		phot%onEdge=.false.
+
+		call randomdirection(phot%vx,phot%vy,phot%vz)
+
+		ct=abs(phot%z)/D%R(D%nR)
+		do j=1,D%nTheta-1
+			if(ct.lt.D%Theta(j).and.ct.ge.D%Theta(j+1)) then
+				phot%i=D%nR-1
+				phot%j=j
+				if(C(phot%i,phot%j)%nrg.gt.1) then
+					thet=acos(abs(phot%z)/sqrt(phot%x**2+phot%y**2+phot%z**2))
+					phot%irg=int(real(C(phot%i,phot%j)%nrg)*(thet-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
+					if(phot%irg.gt.C(phot%i,phot%j)%nrg) phot%irg=C(phot%i,phot%j)%nrg
+					if(phot%irg.lt.1) phot%irg=1
+				else
+					phot%irg=1
+				endif
+				return
+			endif
+		enddo
 	else
 		phot%scatt=.true.
-		Er=Er-Estar-Eirf*fact_IRF
+		Er=Er-Estar-Eirf*fact_IRF-Einner
 		Et=0d0
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
