@@ -1768,7 +1768,50 @@ c=======================================================================
 	end
 	
 
+	module InnerGasDiskEmission
+		integer NRAD
+		parameter(NRAD=250)
+		real*8 R(NRAD),Ftot(NRAD)
+	end module InnerGasDiskEmission
+
+
+	subroutine InitInnerGasDisk(lam0,Etot)
+	use InnerGasDiskEmission
+	use Parameters
+	IMPLICIT NONE
+	integer i
+	real*8 lam0,T,G,Planck,F(NRAD),Etot
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 	
+	do i=1,NRAD
+		R(i)=D%R(0)+(D%R(1)-D%R(0))*real(i-1)/real(NRAD-1)
+		T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(R(i)*AU)))/(8d0*pi*(R(i)*AU)**3*sigma))**0.25
+		F(i)=Planck(T,lam0)
+	enddo
+	Ftot(1)=0d0
+	do i=1,NRAD-1
+		Ftot(i+1)=Ftot(i)-pi*(R(i+1)**2*((F(i)+2d0*F(i+1))*R(i+1)-3d0*F(i+1)*R(i)))/(3d0*(R(i)-R(i+1)))
+		Ftot(i+1)=Ftot(i+1)+pi*(R(i)**2*((2d0*F(i)+F(i+1))*R(i)-3d0*F(i)*R(i+1)))/(3d0*(R(i)-R(i+1)))
+	enddo
+	Etot=Ftot(NRAD)
+
+	return
+	end
+
+	real*8 function RadInnerGasDisk(E)
+	use InnerGasDiskEmission
+	use Parameters
+	IMPLICIT NONE
+	integer i
+	real*8 E,eps
 	
-	
+	call hunt(Ftot,NRAD,E,i)
+
+	eps=(E-Ftot(i))/(Ftot(i+1)-Ftot(i))
+	RadInnerGasDisk=R(i)+eps*(R(i+1)-R(i))
+
+	return
+	end
+
+
 
