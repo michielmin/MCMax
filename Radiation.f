@@ -1768,7 +1768,29 @@ c=======================================================================
 	end
 	
 
+	real*8 function IntegrateInnerGasDisk(lam0,R)
+	use Parameters
+	IMPLICIT NONE
+	integer NRAD,i
+	parameter(NRAD=50)
+	real*8 lam0,Rad,R(NRAD),tot,T,F(NRAD),G
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 	
-	
-	
+	do i=1,NRAD
+		R(i)=D%Rstar+(R*AU-D%Rstar)*real(i-1)/real(NRAD-1)
+		T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
+		F(i)=Planck(T,lam0)
+	enddo
+	tot=0d0
+	do i=1,NRAD-1
+		tot=tot-pi*(R(i+1)**2*((F(i)+2d0*F(i+1))*R(i+1)-3d0*F(i+1)*R(i)))/(3d0*(R(i)-R(i+1)))
+		tot=tot+pi*(R(i)**2*((2d0*F(i)+F(i+1))*R(i)-3d0*F(i)*R(i+1)))/(3d0*(R(i)-R(i+1)))
+	enddo
+
+	IntegrateInnerGasDisk=tot
+
+	return
+	end
+
+
 
