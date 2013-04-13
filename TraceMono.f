@@ -1094,7 +1094,6 @@ c-----------------------------------------------------------------------
 		Theta=0.5
 		Theta=D%Theta(j)*Theta+D%Theta(j+1)*(1d0-Theta)
 		phot%z=Rad*Theta
-		if(ran2(idum).lt.0.5) phot%z=-phot%z
 		phi=ran2(idum)*pi*2d0
 		phot%x=Rad*sqrt(1d0-Theta**2)*sin(phi)
 		phot%y=Rad*sqrt(1d0-Theta**2)*cos(phi)
@@ -1105,10 +1104,12 @@ c-----------------------------------------------------------------------
 
 		call randomdirection(phot%vx,phot%vy,phot%vz)
 
-		ct=abs(phot%z)/D%R(D%nR)
+		phot%z=abs(phot%z)
+		if(phot%vz.lt.0d0) phot%z=-phot%z
+
+		ct=abs(phot%z)/Rad
 		do j=1,D%nTheta-1
 			if(ct.lt.D%Theta(j).and.ct.ge.D%Theta(j+1)) then
-				phot%i=D%nR-1
 				phot%j=j
 				if(C(phot%i,phot%j)%nrg.gt.1) then
 					thet=acos(abs(phot%z)/sqrt(phot%x**2+phot%y**2+phot%z**2))
@@ -1150,7 +1151,7 @@ c-----------------------------------------------------------------------
 					phot%irg=1
 				endif
 				phot%onEdge=.false.
-				phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)/vismass(i,j)
+				phot%E=Etot/vismass(i,j)
 				return
 			endif
 		enddo

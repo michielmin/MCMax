@@ -394,7 +394,7 @@ c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			phot%E=(Evis+Einner)/(real(Nphot)*FracVis)
 			T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
 
-			iT=T/dT
+			iT=(T/dT+0.5)
 			if(iT.lt.1) iT=1
 			if(iT.gt.TMAX) iT=TMAX
 			call emit(phot,BB(1:nlam,iT),BBint(iT))
