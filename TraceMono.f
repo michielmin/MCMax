@@ -1084,6 +1084,7 @@ c-----------------------------------------------------------------------
 			endif
 		enddo
 	else if(Er.lt.(Estar+Eirf*fact_IRF+Einner)) then
+		print*,'Inner disk'
 		phot%E=Etot
 		phot%scatt=.true.
 
