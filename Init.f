@@ -277,6 +277,7 @@
 	computeTgas=.false.
 	useTgas=.false.
 	inner_gas=.false.
+	Rinner_gas=1d0
 	
 	nspike=0		!number of angles made isotropic
 	
@@ -553,6 +554,7 @@ c	endif
 	if(key.eq.'idum') read(value,*) idum
 
 	if(key.eq.'innergas') read(value,*) inner_gas
+	if(key.eq.'rinnergas') read(value,*) Rinner_gas		!inner radius of the gas disk in Stellar radii
 
 	if(key.eq.'obstmc') read(value,*) use_obs_TMC
 	if(key.eq.'tracestar') read(value,*) tracestar
@@ -1379,6 +1381,14 @@ C	End
 	write(*,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
 	write(9,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
 	endif
+	endif
+	if(inner_gas) then
+	write(*,'("Using inner accreting gas disk")')
+	write(9,'("Using inner accreting gas disk")')
+	write(*,'("Disk inwards to ",f5.2," stellar radii")') Rinner_gas
+	write(9,'("Disk inwards to ",f5.2," stellar radii")') Rinner_gas
+	write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
+	write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
 	endif
 	
 	write(*,'("--------------------------------------------------------")')

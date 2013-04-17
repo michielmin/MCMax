@@ -1441,6 +1441,29 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 	use Parameters
 	IMPLICIT NONE
 	type(photon) phot
+	real*8 Rad,G,T
+	integer iT
+	parameter(G=6.67300d-8) ! in cm^3/g/s
+
+	Rad=sqrt(phot%x**2+phot%y**2+phot%z**2)
+
+	T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
+	iT=(T/dT+0.5)
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX) iT=TMAX
+
+	call emit(phot,BB(1:nlam,iT),BBint(iT))
+
+	return
+	end
+
+
+
+
+	subroutine EmitViscousOld(phot)
+	use Parameters
+	IMPLICIT NONE
+	type(photon) phot
 	real*8 spec(nlam),ran2,T0,T1,increaseT,increaseTP
 	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,A(ngrains)
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),Egas,Efrac
@@ -1784,7 +1807,7 @@ c=======================================================================
 	parameter(G=6.67300d-8) ! in cm^3/g/s
 
 	do i=1,NRAD
-		R(i)=D%R(0)+(D%R(1)-D%R(0))*real(i-1)/real(NRAD-1)
+		R(i)=D%R(0)*Rinner_gas+(D%R(1)-D%R(0)*Rinner_gas)*real(i-1)/real(NRAD-1)
 	enddo
 	Ftot(1)=0d0
 	do i=1,NRAD-1

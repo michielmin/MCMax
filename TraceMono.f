@@ -293,7 +293,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
 !$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac,Tgas,iT)
 !$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
-!$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,
+!$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,Rinner_gas,
 !$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,lam0,inner_gas,BB,inc)
 !$OMP DO
 	do i=1,image%nr
@@ -442,8 +442,10 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		tau=tau+tau_e
 		else
 			if(inner_gas.and.jp.eq.D%nTheta-1.and.irg.eq.1) then
-				Tgas=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(image%p(i,j)%rad(k)*AU)))/(8d0*pi*(image%p(i,j)%rad(k)*AU)**3*sigma))**0.25
-				image%image(i,j)=image%image(i,j)+Planck(Tgas,lam0)*fact/(8d0*cos(inc))
+				if(image%p(i,j)%rad(k).gt.(Rinner_gas*D%Rstar/AU)) then
+					Tgas=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(image%p(i,j)%rad(k)*AU)))/(8d0*pi*(image%p(i,j)%rad(k)*AU)**3*sigma))**0.25
+					image%image(i,j)=image%image(i,j)+Planck(Tgas,lam0)*fact/(8d0*cos(inc))
+				endif
 			endif
 		endif
 		if(tau.gt.tau_max) goto 10

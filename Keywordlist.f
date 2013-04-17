@@ -335,6 +335,8 @@
 	i=i+1
 	keyword(i)='innergas'
 	i=i+1
+	keyword(i)='rinnergas'
+	i=i+1
 	keyword(i)='multicore'
 	
 	Nnormal=i

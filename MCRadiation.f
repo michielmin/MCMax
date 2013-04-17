@@ -18,7 +18,7 @@
 	real*8 clight
 	parameter(nangle=30,clight=2.9979d8)
 	real*8 angle(0:nangle),wangle(nangle),spec(nlam,nangle),cosangle(0:nangle)
-	real*8 wlam(nlam),scatspec(nlam,nangle),spectemp(nlam),tot
+	real*8 wlam(nlam),scatspec(nlam,nangle),spectemp(nlam),tot,EUV
 	real*8 dspec(nlam),spec2(nlam,nangle),Mdot,FracVis,starttime,checktime
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
 	character*500 specfile,pressurefile,timefile
@@ -73,6 +73,13 @@ c===============================================================================
 		Einner=G*D%Mstar*D%Mdot/(4d0*D%Rstar)
 		Einner=Einner*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
 		Einner=Einner/(4d0*pi)
+
+c EUV is the energy from the innermost region, probably comes out in the UV
+		EUV=G*D%Mstar*D%Mdot/(4d0*D%Rstar)
+		EUV=EUV*(1d0+2d0*(1d0/(Rinner_gas))**(3d0/2d0)-3d0*(1d0/(Rinner_gas)))
+		EUV=EUV/(4d0*pi)
+
+		Einner=Einner-EUV
 	endif
 
 c====================================================================================
@@ -203,9 +210,11 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 
 	if(viscous.or.inner_gas) then
 		write(*,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
-		write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
+		write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*(Einner+Evis)/(D%Lstar+Evis+E_IRF+Einner)
 		write(9,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
-		write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
+		write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*(Einner+Evis)/(D%Lstar+Evis+E_IRF+Einner)
+		write(*,'("Energy: ",f7.3,"% not included (innermost region)")') 100d0*(EUV)/(D%Lstar+Evis+E_IRF+Einner+EUV)
+		write(9,'("Energy: ",f7.3,"% not included (innermost region)")') 100d0*(EUV)/(D%Lstar+Evis+E_IRF+Einner+EUV)
 	endif
 	
 	write(*,'("Emitting ",i10," photon packages")') NphotTot
@@ -359,13 +368,15 @@ c emit the viscous photon
 c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			phot%viscous=.false.
 
-			Er=ran2(idum)*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
-			R1=D%R(0)
+			Er=ran2(idum)*(2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))-
+     &					  (2d0*(1d0/(Rinner_gas))**(3d0/2d0)-3d0*(1d0/(Rinner_gas)))
+			R1=D%Rstar*Rinner_gas/AU
 			R2=D%R(1)
-			Rad=R1+ran2(idum)*(R2-R1)
 
+			Rad=R1+ran2(idum)*(R2-R1)
 			do iter=1,10
-				tot=(1d0+2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))
+				tot=(2d0*(D%Rstar/(Rad*AU))**(3d0/2d0)-3d0*(D%Rstar/(Rad*AU)))-
+     &					  (2d0*(1d0/(Rinner_gas))**(3d0/2d0)-3d0*(1d0/(Rinner_gas)))
 				if(tot.gt.Er) then
 					R2=Rad
 				else
@@ -392,12 +403,9 @@ c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			call randomdirection(phot%vx,phot%vy,phot%vz)
 
 			phot%E=(Evis+Einner)/(real(Nphot)*FracVis)
-			T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
 
-			iT=(T/dT+0.5)
-			if(iT.lt.1) iT=1
-			if(iT.gt.TMAX) iT=TMAX
-			call emit(phot,BB(1:nlam,iT),BBint(iT))
+c emit the viscous photon
+			call EmitViscous(phot)
 
 			endif
 		else

@@ -16,7 +16,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
 	real*8 sin2phi(0:360),cos2phi(0:360),RmaxRefine,KDext(0:TMAX),KDabs(0:TMAX),BBint(0:TMAX)
-	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV
+	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV,Rinner_gas
 	real*8 lifetime,alphaturb,qturb !Gijsexp
 	real*8 deadalpha,deadheight !Gijsexp: deadzone in midplane
 	real*8 gsd_rmin,gsd_rmax,gsd_xi,gsd_vfrag !Gijsexp
