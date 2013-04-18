@@ -368,8 +368,8 @@ c emit the viscous photon
 c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			phot%viscous=.false.
 
-			Er=ran2(idum)*(2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))-
-     &					  (2d0*(1d0/(Rinner_gas))**(3d0/2d0)-3d0*(1d0/(Rinner_gas)))
+			Er=ran2(idum)*((2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))-
+     &					  (2d0*(1d0/(Rinner_gas))**(3d0/2d0)-3d0*(1d0/(Rinner_gas))))
 			R1=D%Rstar*Rinner_gas/AU
 			R2=D%R(1)
 
@@ -397,8 +397,8 @@ c emit from the inner gas disk (Pringle (1981), Akeson (2005)
 			phot%i=0
 			phot%j=j
 			phot%onEdge=.false.
-			icoolingtime=ii
-			ncoolingtime(ii)=ncoolingtime(ii)+1
+			icoolingtime=0
+			ncoolingtime(0)=ncoolingtime(0)+1
 
 			call randomdirection(phot%vx,phot%vy,phot%vz)
 
