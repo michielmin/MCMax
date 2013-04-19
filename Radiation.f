@@ -1632,7 +1632,7 @@ c Thermal contact (single temperature)
 	subroutine determineTgas(i,j)
 	use Parameters
 	IMPLICIT NONE
-	real*8 H,Tgas,alpha,Mdot,nH,nd,mH,T,abar,KappaGas,A,G,mu,diff,mindiff,Sig
+	real*8 H,Tgas,Mdot,nH,nd,mH,T,abar,KappaGas,A,G,mu,diff,mindiff,Sig
 	real*8 Evisc,Egas
 	parameter(mH=1.67d-24)
 	parameter(G=6.67300d-8) ! in cm^3/g/s
@@ -1646,7 +1646,6 @@ c Thermal contact (single temperature)
 	endif
 
 	Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
-	alpha=alphavis*(D%R_av(i)/AU)**alphavispow
 	Evisc=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
 	Evisc=Evisc-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
 	Evisc=2d0*pi*Evisc*3d0*G*D%Mstar*Mdot/(4d0*pi)

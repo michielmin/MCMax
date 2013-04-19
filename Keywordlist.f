@@ -279,6 +279,8 @@
 	i=i+1
 	keyword(i)='deadalpha'
 	i=i+1
+	keyword(i)='prandtl'
+	i=i+1
 	keyword(i)='hotgasminrad'
 	i=i+1
 	keyword(i)='hotgasmaxrad'

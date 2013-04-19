@@ -441,47 +441,101 @@ c	dydx=-mu*G*D%Mstar*x/(scale**2*kb*T*D%R_av(i)**3)-dlnT
 	end
 
 
-	!  This routine calculates the radial structure of the disk,
-	!    for a given viscous alpha
-	!  If getalpha=.true., this radial structure is ignored, 
-	!    and only used to calculate what alpha would be necessary
-	!    to obtain the current density structure (radialalpha.dat) 
+	!  This routine calculates the radial structure of the disk, for
+	!    a given viscous alpha. The surface density is capped off at
+	!    Toomre=2
+	!  If getalpha=.true., this radial structure is ignored, and
+	!    only used to calculate what alpha would be necessary to
+	!    obtain the current density structure (radialalpha.dat)
 	!
 	subroutine RadialStruct()
 	use Parameters
 	use DiskStruct
 	IMPLICIT NONE
 	real*8 dens(D%nR,D%nTheta),Eint,Er,mu,G,DiskMass,alpha,Mdot
-	real*8 surfscale(1:D%nR)	! surface dens
+	real*8 Sig(1:D%nR),surfscale(1:D%nR)
+	real*8 Q,unstable,fac		! surface dens
+	real*8 ToomreQ ! function
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
 	real*8 infall_rho,infall_mu,infall_mu0,infall_tot
-	integer ii
+	integer ii,imin,imax
 	character*100 file
+
+	! Radii where disk is gravitationally unstable
+	imin=D%nR
+	imax=0
 	
+	! Loop to calculate surface density scaling
 	do i=1,D%nR-1
-	Eint=0d0
-	alpha=alphavis*(D%R_av(i)/AU)**alphavispow
-	if(alpha.gt.1d0) alpha=1d0
-	Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
-	do j=1,D%nTheta-1
-		dens(i,j)=C(i,j)%gasdens
-		Eint=Eint+sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
-     &		*C(i,j)%gasdens*C(i,j)%V*gas2dust*alpha*kb*Temp(i,j)/(4d0*mu)
-	enddo
-c	Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
+	   Eint=0d0
+	   Sig(i)=0d0
 
-	Er=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
-	Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
-	Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
+	   !  Calculate viscous energy (Eint) in a column for given surface
+	   !   density, alpa and temperature
+	   do j=1,D%nTheta-1
+	      alpha=min(1d0,C(i,j)%alphavis)
+	      dens(i,j)=C(i,j)%gasdens
+	      Sig(i)=Sig(i)+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+	      Eint=Eint+sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+     &		   *C(i,j)%gasdens*C(i,j)%V*gas2dust*alpha*kb*Temp(i,j)/(4d0*mu)
+	   enddo
+c           Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
 
-	dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*Er/Eint
+	   !  Calculate viscous energy (Er) in a column corresponding to the mass accretion rate.
+	   Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
+	   Er=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
+	   Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
+	   Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
+	   
+	   !  Rescale the density so Er=Eint
+	   dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*Er/Eint
+	   
+	   !  Keep density above Q=2
+	   if (deadzone) then
+	      Q=ToomreQ(i) / (Er/Eint)
+	      if (Q.le.2d0) then
+		 dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*(Q/2d0)
+		 D%MdotR(i)=D%Mdot*(Q/2d0)
+		 imin=min(i,imin)
+		 imax=max(i,imax)
+	      else
+		 D%MdotR(i)=D%Mdot
+	      endif
+	   endif
 
-	if (getalpha) then
-	   surfscale(i)=Er/Eint ! equal to dens(i,j)/C(i,j)%gasdens
+	   if (getalpha) then
+	      surfscale(i)=Er/Eint ! equal to dens(i,j)/C(i,j)%gasdens
+	   endif
+
+c	   write(*,'("r=",f6.2," Eint=",e14.3," Er=",e14.3)') D%R_av(i)/AU,Eint,Er
+c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
+	enddo ! i=1,D%nR-1
+
+	!  Print if grav unstable
+	if(imin.le.imax) then
+	   write(*,'("Grav unstable between:    ",f6.2," and ",f6.2," AU")') 
+     &               D%R_av(imin)/AU,D%R_av(imax)/AU
+	   write(9,'("Grav unstable between:    ",f6.2," and ",f6.2," AU")') 
+     &               D%R_av(imin)/AU,D%R_av(imax)/AU
 	endif
 
-	enddo
+	!  Lower mass accretion rate interior to the deadzone?
+	if (deadzone.and..true.) then
+	   do i=D%nR-2,1,-1
+
+	      ! higher accretion rate then further out -> scale down dens, mdot
+	      fac= D%MdotR(i+1)/D%MdotR(i)
+	      if (fac.lt.1d0) then
+		 dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1) *fac
+		 D%MdotR(i)=D%MdotR(i) *fac
+		 if(i.eq.1) then
+		    write(*,'("Reduced accretion rate: ",e14.3,"Msun/yr")') D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
+		    write(9,'("Reduced accretion rate: ",e14.3,"Msun/yr")') D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
+		 endif
+	      endif
+	   enddo
+	endif ! deadzone and false
 	
 	if (.not.getalpha) then ! Set the radial structure
 
@@ -515,7 +569,7 @@ c	Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
 	   write(66,*) "# Value of alpha for current surface density"
 	   write(66,*) "# It prints radius, alpha"
 	   do i=1,D%nR-1
-	      write(66,*) D%R_av(i)/AU,alphavis*surfscale(i)
+	      write(66,*) D%R_av(i)/AU,surfscale(i) * alphavis*(D%R_av(i)/AU)**alphavispow
 	   enddo
 	   close(unit=66)
 
@@ -914,61 +968,127 @@ c	write(file,'(a,i4)') filename(1:len_trim(filename)),it+1000
 
 
 c-----------------------------------------------------------------------
-c This subroutine outputs the pressure scaleheight of the disk using
-c the temperature and density structure. Note that the temperature
-c is needed for this. Output is written to filename.
+c This subroutine outputs the pressure and density scaleheight of the
+c disk using the temperature and density structure. It also stores the
+c Toomre Q parameter. Note that the temperature is needed for
+c this. Output is written to filename. 
+c
+c The scaleheight is defined as the height at which the pressure/density
+c drops off by a factor e^-0.5
 c-----------------------------------------------------------------------
 	subroutine scaleheight(filename)
 	use Parameters
 	IMPLICIT NONE
 	character*500 filename
-	real*8 sh(2,D%nR),z(D%nTheta),ct,tau,lr0,lr1
-	real*8 Mtot,Mtot2,Fsc,p,p0,p1,Sig(D%nR),Q,dens,d0,d1
-	logical escape,hitstar,shset(2)
-	type(photon) phot
+	real*8 sh(2,D%nR),Sig(D%nR),Q,shgas,shdust
+	real*8 ToomreQ ! function
+	logical shset(2)
 	integer i,j
 	
 	do i=1,D%nR-1
-		p0=C(i,D%nTheta-1)%gasdens*C(i,D%nTheta-1)%T
-		p1=p0
-		p0=p0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
-		d0=C(i,D%nTheta-1)%gasdens
-		d1=d0
-		d0=d0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
-		shset=.false.
-		z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
-		do j=D%nTheta-2,1,-1
-			z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
-			p=C(i,j)%gasdens*C(i,j)%T
-			if(p.lt.p0.and..not.shset(1)) then
-				sh(1,i)=(z(j+1)+(z(j)-z(j+1))*(p1-p0)/(p1-p))
-				shset(1)=.true.
-			endif
-			p1=p
-			dens=C(i,j)%gasdens
-			if(dens.lt.d0.and..not.shset(2)) then
-				sh(2,i)=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
-				shset(2)=.true.
-			endif
-			d1=dens
-		enddo
-1		continue
-		Sig(i)=0d0
-		do j=1,D%nTheta-1
-			Sig(i)=Sig(i)+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
-		enddo
+	   call calcscaleheight(i,shgas,shdust)
+	   sh(1,i)=shgas
+	   sh(2,i)=shdust
+
+	   Sig(i)=0d0
+	   do j=1,D%nTheta-1
+	      Sig(i)=Sig(i)+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+	   enddo
 	enddo
+
 	open(unit=80,file=filename,RECL=1000)
-	write(80,'("# R[AU], pressure scaleheight, density scaelheight, Q")')
+	write(80,'("# R[AU], pressure scaleheight, density scaleheight, Toomre Q")')
 	do i=1,D%nR-1
-		Q=(sh(1,i)*AU*D%Mstar)/(D%R_av(i)**3*pi*Sig(i)*gas2dust)
-		write(80,*) D%R_av(i)/AU,sh(1,i),sh(2,i),Q
+!		Q=(sh(1,i)*AU*D%Mstar)/(D%R_av(i)**3*pi*Sig(i)*gas2dust)
+	   Q=ToomreQ(i)
+	   write(80,*) D%R_av(i)/AU,sh(1,i),sh(2,i),Q
 	enddo
 	close(unit=80)
 	return
 	end
+
+c-----------------------------------------------------------------------
+c This subroutine calculates the pressure scaleheight of the disk using
+c the temperature and density structure at one radius.
+c The scaleheight is defined as the height at which the pressure/density
+c drops off by a factor e^-0.5
+c-----------------------------------------------------------------------
+	subroutine calcscaleheight(i,shgas,shdust)
+	use Parameters
+	IMPLICIT NONE
+
+	real*8 z(D%nTheta)
+	real*8 p,p0,p1,d0,d1,dens,shgas,shdust
+	logical shset(2)
+	integer i,j
 	
+	p0=C(i,D%nTheta-1)%gasdens*C(i,D%nTheta-1)%T
+	p1=p0
+	p0=p0/exp(0.5d0)	! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
+	d0=C(i,D%nTheta-1)%gasdens
+	d1=d0
+	d0=d0/exp(0.5d0)	! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
+	shset=.false.
+	z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
+	do j=D%nTheta-2,1,-1
+	   z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
+	   p=C(i,j)%gasdens*C(i,j)%T
+	   if(p.lt.p0.and..not.shset(1)) then
+	      shgas=(z(j+1)+(z(j)-z(j+1))*(p1-p0)/(p1-p))
+	      shset(1)=.true.
+	   endif
+	   p1=p
+	   dens=C(i,j)%gasdens
+	   if(dens.lt.d0.and..not.shset(2)) then
+	      shdust=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
+	      shset(2)=.true.
+	   endif
+	   d1=dens
+	enddo
 	
+	return
+	end
+
+c-----------------------------------------------------------------------
+c This subroutine calculate the Toomre Q parameter for the disk.
+c It requires the temperature to be set! (through the scaleheight)
+c-----------------------------------------------------------------------
+	real*8 function ToomreQ(i)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j
+	real*8 sh(2,D%nR),Sig(D%nR),shgas,shdust
+	
+	! integrate surface density
+	Sig(i)=0d0
+	do j=1,D%nTheta-1
+	   Sig(i)=Sig(i)+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+	enddo
+	
+	call calcscaleheight(i,shgas,shdust)
+	sh(1,i)=shgas
+	sh(2,i)=shdust
+
+        ! Calc Toomre Q parameter
+	ToomreQ=(sh(1,i)*AU*D%Mstar)/(D%R_av(i)**3*pi*Sig(i)*gas2dust)
+
+	return
+	end
+
+c-----------------------------------------------------------------------
+c  This subroutine returns the temperature, even if C()%T is not well
+c  defined by using the module DiskStruct
+c
+c-----------------------------------------------------------------------
+	
+c$$$	subroutine GetTemp(gettemp)
+c$$$	use Parameters
+c$$$	use Diskstruct
+c$$$	IMPLICIT NONE
+c$$$	real*8 gettemp(1:D%nR,1:D%nTheta-1)
+c$$$	
+c$$$	end
+
 c-----------------------------------------------------------------------
 c This subroutine computes the optical depth through the midplane of
 c the disk. It does this at lambda=0.55 micron.
@@ -1416,7 +1536,7 @@ c end Mihkelexp
 			if(f_gas(i,j,ii).lt.minf(ii).and.T.gt.1000d0) minf(ii)=f_gas(i,j,ii)
 		enddo
 	enddo
-	print*,(1d0-minf(1:ngrains))
+c	print*,(1d0-minf(1:ngrains))
 
 	call DestroyDustR()		
 
@@ -2025,7 +2145,7 @@ c in the theta grid we actually store cos(theta) for convenience
 1	continue
 
 	theta0=D%theta_av(j0)/1.25d0
-	print*,theta0
+c	print*,theta0
 c	if((theta0/real(n)).lt.(pi/2d0-theta0)/real(D%nTheta-n)) then
 c		return
 c		n=0
@@ -2039,7 +2159,7 @@ c		D%Theta(j)=1d0-cos(theta0)*real(j-1)/real(n-1)
 c		D%Theta(j)=theta0+(pi/2d0-theta0)*real(j-n)/real(D%nTheta-n)
 c		D%Theta(j)=cos(D%Theta(j))
 		D%Theta(j)=cos(theta0)-cos(theta0)*(real(j-n)/real(D%nTheta-n-nii))
-		print*,j
+c		print*,j
 	enddo
 
 
@@ -2598,12 +2718,17 @@ c	character*500 s
 	return
 	end
 
+c-----------------------------------------------------------------------
+c  Compute the temperature in the midplane according to a
+c  Shakura-Sunyaev disk (alpha-disk)
+c  This is a test routine, it doesn't affect disk temperature
+c-----------------------------------------------------------------------
 
 	subroutine ShakuraSunyaev()
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,iopac
-	real*8 T,Surfdens,mu,G,tau,T2,T3
+	real*8 T,Surfdens,WeightedAlpha,mu,G,tau,T2,T3
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
 	character*500 file
@@ -2665,19 +2790,25 @@ c	character*500 s
 		goto 1
 2		continue
 
+		!  Calculate surface density and density-weighted viscosity (in case of deadzones)
 		Surfdens=0d0
+		WeightedAlpha=0d0
 		do j=1,D%nTheta-1
 			Surfdens=Surfdens+C(i,j)%gasdens*gas2dust*C(i,j)%V
+			WeightedAlpha=WeightedAlpha+C(i,j)%gasdens*gas2dust*C(i,j)%V*C(i,j)%alphavis
 		enddo
+		WeightedAlpha=WeightedAlpha/Surfdens
+c		print*,i,D%R_av(i),WeightedAlpha
 		Surfdens=Surfdens/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+		
 
-		T=( tau*27d0*kb*alphavis*Surfdens*sqrt(G*D%Mstar/D%R_av(i)**3)/(32d0*mu*sigma) )**(1d0/3d0)
+		T=( tau*27d0*kb*WeightedAlpha*Surfdens*sqrt(G*D%Mstar/D%R_av(i)**3)/(32d0*mu*sigma) )**(1d0/3d0)
 		
 		T2=(3d0*tau*D%Mdot*(G*D%Mstar/D%R_av(i)**3)/(32d0*pi*sigma))**0.25d0
 		
 		KR=2d0*tau/Surfdens
 
-		T3=(D%Mdot**2*KR*mu/(pi**2*64d0*sigma*alphavis*kb))**(1d0/5d0) * (G*D%Mstar/D%R_av(i)**3)**(3d0/10d0)
+		T3=(D%Mdot**2*KR*mu/(pi**2*64d0*sigma*WeightedAlpha*kb))**(1d0/5d0) * (G*D%Mstar/D%R_av(i)**3)**(3d0/10d0)
 		
 		iT=int(T/dT)+1
 		if(iT.lt.1) iT=1
@@ -2689,8 +2820,8 @@ c	character*500 s
 		
 	enddo
 
-	print*,(G*D%Mstar)**(1d0/3d0)*(mu/(pi**2*64d0*sigma*kb))**(10d0/45d0)
-     &			/AU*(Msun/(365d0*24d0*3600d0))**(20d0/45d0)/(160d0**(10d0/9d0))
+c	print*,(G*D%Mstar)**(1d0/3d0)*(mu/(pi**2*64d0*sigma*kb))**(10d0/45d0)
+c     &			/AU*(Msun/(365d0*24d0*3600d0))**(20d0/45d0)/(160d0**(10d0/9d0))
 	
 	close(unit=42)
 	

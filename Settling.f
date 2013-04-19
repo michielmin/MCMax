@@ -149,7 +149,7 @@ c-------------------------------------------------------------------
          
          !  Alpha: global or some gradient (deadzone)
          if (deadzone) then
-            alpha(iz)=C(ir,ith)%alpha
+            alpha(iz)=C(ir,ith)%alphaturb
          else
             alpha(iz)=alphaturb ! no radial dependence on alpha, for now
          endif

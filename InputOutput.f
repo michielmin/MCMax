@@ -118,11 +118,18 @@
 						write(20,*) C(i,j)%V
 					enddo
 				enddo
-			case ('ALPHA')
+			case ('ALPHAT')
 				write(20,'("# Turbulent mixing strength array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
-						write(20,*) C(i,j)%alpha
+						write(20,*) C(i,j)%alphaturb
+					enddo
+				enddo
+			case ('ALPHAV')
+				write(20,'("# Viscosity array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%alphavis
 					enddo
 				enddo
 			case ('dTEMP')

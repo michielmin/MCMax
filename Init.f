@@ -2,7 +2,7 @@
 !c MK 20071003:	introducing 'tfit' keyword for exponential Tevp dependence.
 !c 		Find all changes with search string 'Mihkelexp'
 !c-----------------------------------------------------------------------
-!c Initialize the using input file.
+!c Initialize the disk using input file.
 !c Set are:
 !c - The wavelength grid.
 !c - The spatial grid.
@@ -242,6 +242,7 @@
 	alphavis=0.01
 	alphavispow=0d0
 	getalpha=.false.        ! Gijsexp retrieve alpha for current surface density
+	prandtl=-1		! relates alphaturb to alphavis (if gt 0)
 	alphaturb=1d-4		! Gijsexp
 	qturb=0.5		! Gijsexp
 	lifetime=1d8		! Gijsexp  (large, equilibrium dust settling)
@@ -1022,6 +1023,8 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'deadtemp') read(value,*) deadtemp
 	if(key.eq.'deadalpha') read(value,*) deadalpha
 
+	if(key.eq.'prandtl') read(value,*) prandtl
+
 
 	!have a hot/shocked radius region (hot gas)
 	if(key.eq.'hotgasminrad') read(value,*) HotGasMinRad
@@ -1371,14 +1374,19 @@ C	End
 	write(9,'("Using viscous heating")')
 	write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
 	write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
-	if(alphavispow.eq.0d0) then
-	write(*,'("Alpha:                ",e14.3)') alphavis
-	write(9,'("Alpha:                ",e14.3)') alphavis
+	if(prandtl.le.0) then
+	   if(alphavispow.eq.0d0) then
+	      write(*,'("Alpha:                ",e14.3)') alphavis
+	      write(9,'("Alpha:                ",e14.3)') alphavis
+	   else
+	      write(*,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
+	      write(9,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
+	   endif
 	else
-	write(*,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
-	write(9,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
-	endif
-	endif
+	   write(*,'("Using alphavis=alphaturb")')
+	   write(9,'("Using alphavis=alphaturb")')
+	endif ! prandtl
+	endif ! viscous
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -3195,6 +3203,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	enddo
 	enddo
 
+	! allocate gap arrays
 	if(Nphot.ne.0.and.startiter.eq.' ') then
 		allocate(D%gap(ngap))
 		allocate(D%gap1(ngap))
@@ -3212,6 +3221,11 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			D%gaproundpow(k)=gaproundpow(k)
 		enddo
 		call MakeGaps()
+	endif
+
+	! allocate accretion profile array (deadzone, raditer)
+	if(raditer.and.deadzone.and.Nphot.ne.0.and.startiter.eq.' ') then
+	   allocate(D%MdotR(D%nR))
 	endif
 	
 	MassTot=0d0
@@ -3234,23 +3248,29 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 	endif
 
-
+c-----------------------------------------------------------------------
+c Calculate the disk density structure?
+c-----------------------------------------------------------------------
+	
 	if(Nphot.gt.0) then
 	if(denstype.eq.'POW'.or.denstype.eq.'DOUBLEPOW'.or.
      &     denstype.eq.'SURFFILE'.or.denstype.eq.'SIMILARITY'.or.
-     &     denstype.eq.'DOUBLEPOWSIM'.or. ! Gijsexp
-     &     struct_iter.or.mpset.or.scset.or.fixmpset.or.gsd.or.nzones.ne.0) then ! Gijsexp
-		do i=1,D%nR-1
-		do j=1,D%nTheta-1
-			C(i,j)%dens0=C(i,j)%dens
-			if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens0
-			C(i,j)%gasfrac=0d0
-			C(i,j)%T=D%Tstar*sqrt(D%R_av(1)/D%R_av(i))/10d0
-			if(.not.tcontact) then
-				C(i,j)%TP(1:ngrains)=C(i,j)%T
-			endif
-		enddo
-		enddo
+     &     denstype.eq.'DOUBLEPOWSIM'.or.
+     &     struct_iter.or.mpset.or.scset.or.fixmpset.or.gsd.or.nzones.ne.0) then
+
+           ! Set the disk temperature to the optically thin temperature
+	   do i=1,D%nR-1
+	      do j=1,D%nTheta-1
+		 C(i,j)%dens0=C(i,j)%dens
+		 if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens0
+		 C(i,j)%gasfrac=0d0
+		 C(i,j)%T=D%Tstar*sqrt(D%R_av(1)/D%R_av(i))/10d0
+		 if(.not.tcontact) then
+		    C(i,j)%TP(1:ngrains)=C(i,j)%T
+		 endif
+	      enddo
+	   enddo
+
 		call BackWarming(1d0)
 		call OpticallyThin(.false.)
 		dosmooth=.false.
@@ -3853,6 +3873,8 @@ c-----------------------------------------------------------------------
 		deallocate(D%gaproundtype)
 		deallocate(D%gaproundpow)
 	endif
+
+	if (allocated(D%MdotR)) deallocate(D%MdotR)
 
 	deallocate(lam)
 	deallocate(BB)

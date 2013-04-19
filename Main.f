@@ -43,6 +43,10 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Telescope) tel(MAXOBS)
 	real*8 T,kappa,KappaGas,w(100)
 
+c ---------------------------------------------------------------------
+c Read in keywords, print header of the log file
+c ---------------------------------------------------------------------
+
 	arraysallocated=.false.
 	prevalloc=.false.
 	coralloc=.false.
@@ -104,9 +108,16 @@ c	endif
 	call get_command_argument(2,tmp)
 	read(tmp,*) Nphot
 
+c ---------------------------------------------------------------------
+c Initialize the disk using input file. (Init.f)
+c ---------------------------------------------------------------------
 		
 	call initialize(input,Nphot,NphotFirst,NFirst,niter)	
 
+c ---------------------------------------------------------------------
+c Read in observation keywords
+c ---------------------------------------------------------------------
+		
 	nobs=0
 	i=0
 2	call get_command_argument(3+i,output)
@@ -136,6 +147,9 @@ c	endif
 		enddo
 	endif
 	
+c ---------------------------------------------------------------------
+c Finish initialisation
+c ---------------------------------------------------------------------
 
 	Mass=0d0
 	do i=0,D%nR-1
@@ -162,6 +176,11 @@ c	endif
 	if(.not.tcontact) allocate(denstempfileP(ngrains))
 
 	allocate(DustMass(0:ngrains))
+
+c ---------------------------------------------------------------------
+c The main iteration loop starts here
+c It writes output, files and does the MC simulation
+c ---------------------------------------------------------------------
 
 1	continue
 
@@ -593,13 +612,13 @@ c
 	write(9,'("--------------------------------------------------------")')
 
 
-
-c -------------------------------------------------------------
-c Compute the temperature in the midplane according to Shakura-Sunyaev disk
-c -------------------------------------------------------------
+	! Calculate Tmidplane for comparison (doesn't modify disk temperature)
 	call ShakuraSunyaev()
-c -------------------------------------------------------------
-c -------------------------------------------------------------
+
+c ---------------------------------------------------------------------
+c Recalculate the disk structure after the MC simulation. 
+c (Unless it's the final iteration)
+c ---------------------------------------------------------------------
 
 	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.ne.0.and..not.lastiter.and.maxiter.gt.0) then
 		niter=niter+1
@@ -665,6 +684,8 @@ c Regridding now only when error larger than 2 times epsiter
 10			continue
 		endif
 		if (use_topac) call Topac()
+
+		!
 		write(*,'("--------------------------------------------------------")')
 		write(9,'("--------------------------------------------------------")')
 c		write(*,'("Error on the density structure:     ",f5.1," sigma")') errRho
@@ -673,6 +694,11 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 		write(9,'("Error on the energy structure:      ",f5.1," sigma")') errE
 		write(*,'("Error on the temperature structure: ",f5.1," sigma")') errT
 		write(9,'("Error on the temperature structure: ",f5.1," sigma")') errT
+
+c ---------------------------------------------------------------------
+c Perform another iteration on the density/temperature structure?
+c ---------------------------------------------------------------------
+
 		lastiter=.false.
 		if(((errT.lt.epsiter.and.finaliter).and..not.(tdes_iter.and.niter.le.(nBW+2))).or.niter.gt.maxiter) then
 			lastiter=.true.
@@ -686,9 +712,10 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 		call InitRandomWalk()
 		goto 1
 	else
-!c -------------------------------------------------------------
-!c Make the observations
-!c -------------------------------------------------------------
+
+c ---------------------------------------------------------------------
+c Make the observations (and export density/temp structure)
+c ---------------------------------------------------------------------
 		if(exportProDiMo.and.Nphot.gt.0) call DoExportProdimo()
 		if(use_obs_TMC) then
 		do j=1,D%nTheta-1
@@ -702,7 +729,9 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 		enddo
 	endif
 
-
+c ---------------------------------------------------------------------
+c Finalize and close the log file
+c ---------------------------------------------------------------------
 
 	call cpu_time(stoptime)
 	tottime=stoptime-starttime0
@@ -721,6 +750,10 @@ c		write(9,'("Error on the density structure:     ",f5.1," sigma")') errRho
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 	close(unit=9)
+
+c ---------------------------------------------------------------------
+c Deallocate all arrays before closing the program
+c ---------------------------------------------------------------------
 
 	call FreeAllMem()
 	if(prevalloc) then

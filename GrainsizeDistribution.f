@@ -33,7 +33,7 @@ c-----------------------------------------------------------------------
       implicit none
       integer, parameter :: nm=250 ! ~40 per order of magnitude (6)
       doubleprecision    :: fit(1:nm),m_grid(1:nm),a_grid(1:nm),a_dr(1:nm)
-      doubleprecision    :: xi,T,alpha,sigma_g,sigma_d,rho_s,m_star,R,v_frag
+      doubleprecision    :: xi,T,alpha(1:D%nR-1),sigma_g,sigma_d,rho_s,m_star,R,v_frag
       doubleprecision    :: a_01,a_12,a_l,a_p,a_r,a_sett
       doubleprecision    :: conc,cond,m_min,m_max
       integer            :: i
@@ -43,6 +43,7 @@ c-----------------------------------------------------------------------
       doubleprecision logstep,abun(1:ngrains),r_int(1:ngrains+1)
       doubleprecision surf0,surf(1:D%nR-1),tmp
       doubleprecision, PARAMETER :: micron=1d-4 ! confusing! (also MPSet)
+      doubleprecision shdust,shgas,col
 
       !  Tests for diagnosing bugs
       logical runonce,printgrid
@@ -74,10 +75,33 @@ c     gsd_plot=.true.           ! make plots of detailed gsd?
       !  Fixed input parameters
       !
       xi      = gsd_xi
-      alpha   = alphaturb
       rho_s   = Grain(1)%rho
       m_star  = D%mstar
       v_frag  = gsd_vfrag
+
+      !  Deadzone: average turbulence over 1st scale height
+      if(deadzone) then
+
+         do i=1,nr
+            call calcscaleheight(i,shgas,shdust)
+            col=0d0
+            alpha(i)=0d0
+
+            do j=D%nTheta-1,1,-1
+!               dcostheta(j)=(D%Theta(j)-D%Theta(j+1)) 
+               if(D%R_av(i)*cos(D%theta_av(j))/AU.lt.shgas) then
+!                  col=col+ C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))
+                  col=col+ C(i,j)%mass
+                  alpha(i)=alpha(i) + C(i,j)%mass*C(i,j)%alphaturb
+               endif
+            enddo
+            alpha(i)=alpha(i)/col
+            print*,i,D%R_av(i),alpha(i)
+         enddo
+      else
+         alpha(1:nr) = alphaturb         
+      endif
+      
 
       !   Grain size grid for the simulation, based on radius
       !   NOTE: lower limit MRN distribution = 0.025 micron
@@ -160,7 +184,7 @@ c-------------------------------------------------------------------
          fit(1:nm)=0d0
          if (gsd_diag.le.0) then
             call fit_function(fit,a_01,a_12,a_l,a_p,a_r,a_sett,
-     1       nm,xi,T,alpha,sigma_g,sigma_d,rho_s,m_grid,a_grid,m_star,R,v_frag)
+     1       nm,xi,T,alpha(ir),sigma_g,sigma_d,rho_s,m_grid,a_grid,m_star,R,v_frag)
          endif
 
          !  Check for NaN values (shouldn't occur)
@@ -186,7 +210,7 @@ c-------------------------------------------------------------------
          if (ir .eq. gsd_diag) then
             write(*,'(/,"  M= ",F6.3)') m_star / Msun
             write(*,'("  gas2dust= ",F6.1)') gas2dust
-            write(*,'("  alpha= ",e10.3)')  alpha 
+            write(*,'("  alpha= ",e10.3)')  alpha(ir) 
             write(*,'(/,"  nm= ",I3)')  nm 
             write(*,'("  Grid from rmin= ",f10.3," to rmax= ",f10.3)') a_grid(1)/micron,a_grid(nm)/micron
             write(*,'("  Grid from mmin= ",e10.3," to mmax= ",e10.3)') m_grid(1),m_grid(nm)
@@ -196,7 +220,7 @@ c-------------------------------------------------------------------
             write(*,'(/,"  sigma dust= ",F10.5)') sigma_d
             write(*,'("  temp= ",F6.1,/)') T
             call fit_function(fit,a_01,a_12,a_l,a_p,a_r,a_sett,
-     1           nm,xi,T,alpha,sigma_g,sigma_d,rho_s,m_grid,a_grid,m_star,R,v_frag)
+     1           nm,xi,T,alpha(ir),sigma_g,sigma_d,rho_s,m_grid,a_grid,m_star,R,v_frag)
             write(*,'(/,"  im,  mass fraction= ",/)')
             do i=1,nm
                write(*,'(x,i4,x,f10.7)') i,fit(i) / sigma_d

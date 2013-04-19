@@ -106,3 +106,54 @@
 	return
 	end
 
+c ---------------------------------------------------------------------
+c A general 2D smoothing routine, using kernel:
+c
+c  (1,2,1)
+c  (2,4,2) / 16
+c  (1,2,1)
+c
+c ---------------------------------------------------------------------
+
+	subroutine LogSmooth2D(array,nx,ny)
+	implicit none
+	integer i,j,nx,ny
+	real*8 array(1:nx,1:ny),temp(0:nx+1,0:ny+1)
+
+	! Needs to be positive
+	if(minval(array).le.0d0) then
+	   print*,"LogSmooth2D: no log smoothing with negative or zero values!!"
+	   stop
+	endif
+
+	!  Copy array into larger array
+c$$$	temp(1:nx  ,1:ny)=log(array(1:nx  ,1:ny)) ! core array
+c$$$	temp(0     ,1:ny)=log(array(1     ,1:ny)) ! left
+c$$$	temp(nx+1  ,1:ny)=log(array(nx    ,1:ny)) ! right
+c$$$	temp(0:nx+1,0   )=log( temp(0:nx+1,1   )) ! top+corner
+c$$$	temp(0:nx+1,ny+1)=log( temp(0:nx+1,ny  )) ! bottom+corner
+
+	! *sigh...
+	do i=1,nx
+	   do j=1,ny
+	      temp(i,j)=log(array(i,j))	! core array
+	   enddo
+	enddo
+
+	! array boundaries
+	temp(0     ,1:ny)= temp(1     ,1:ny) ! left
+	temp(nx+1  ,1:ny)= temp(nx    ,1:ny) ! right
+	temp(0:nx+1,0   )= temp(0:nx+1,1   ) ! top+corner
+	temp(0:nx+1,ny+1)= temp(0:nx+1,ny  ) ! bottom+corner
+	
+	!  Smooth with the kernel
+	do i=1,nx
+	   do j=1,ny
+	      array(i,j)=    temp(i-1,j-1)+2d0*temp(i,j-1)+    temp(i+1,j-1)+
+     &	                 2d0*temp(i-1,j  )+4d0*temp(i,j  )+2d0*temp(i+1,j  )+
+     &	                     temp(i-1,j+1)+2d0*temp(i,j+1)+    temp(i+1,j+1)
+	      array(i,j)=exp(array(i,j)/16d0)
+	   enddo
+	enddo
+
+	end subroutine

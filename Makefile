@@ -10,9 +10,14 @@ GITVERSION = $(ls -l)
 FC	      = ifort
 LINKER	      = ifort
 
+# enforce single core compilation with:
+# cl> make multi=false
+ifneq ($(multi),false)
+  MULTICORE = -openmp -fp-model strict
+endif
+
 # Platform specific compilation options
-FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div -fp-model strict -openmp
-#FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div
+FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div $(MULTICORE)
 FLAG_LINUX    = -msse3 -prefetch
 FLAG_MAC      = -mssse3 -opt-prefetch
 

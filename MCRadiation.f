@@ -27,11 +27,12 @@
 	integer nsplit,isplit,iter,l
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
 
-	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,alpha,Einner,R1,R2
+	real*8 mu,G,Rad,phi,Evis,Efrac(0:D%nR,0:D%nTheta),Er,Sig,Einner,R1,R2
 	real*8 F(ngrains),maxT,minT,determinegasfrac,Tevap,A(ngrains),ExtISM(nlam)
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
 	real*8 Reddening,compute_dlam
+	real*8 WeightedAlpha
 
 6	continue
 
@@ -65,7 +66,7 @@
 	enddo
 
 c====================================================================================
-c include the inner has disk like in the Pringle 1981, Akeson 2005 papers
+c include the inner disk like in the Pringle 1981, Akeson 2005 papers
 c====================================================================================
 
 	Einner=0d0
@@ -76,12 +77,9 @@ c===============================================================================
 	endif
 
 c====================================================================================
+c  Compute the viscous heating per cell
 c====================================================================================
 	
-!c-----------------------------------------
-!c-----------------------------------------
-
-
 	Evis=0d0
 	if(viscous) then
 	do i=1,D%nR-1
@@ -90,19 +88,28 @@ c===============================================================================
 			allocate(C(i,j)%FE(0:ngrains))
 			C(i,j)%useFE=.false.
 		endif
-		Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
-		alpha=alphavis*(D%R_av(i)/AU)**alphavispow
+		if (deadzone) then
+		   Mdot=D%MdotR(i) 
+		else 
+		   Mdot=D%Mdot
+		endif
+
 		Er=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
 		Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
 		Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
 		Er=Er/(4d0*pi)
 
+                !  Calculate surface density and density-weighted viscosity (in case of deadzones)
 		Sig=0d0
+		WeightedAlpha=0d0
 		do j=1,D%nTheta-1
 			Sig=Sig+C(i,j)%gasdens*C(i,j)%V
+			WeightedAlpha=WeightedAlpha+C(i,j)%gasdens*C(i,j)%V*C(i,j)%alphavis
 		enddo
+		WeightedAlpha=WeightedAlpha/Sig
+
 		do j=1,D%nTheta-1
-			Efrac(i,j)=Er*C(i,j)%gasdens*C(i,j)%V/Sig
+			Efrac(i,j)=Er*C(i,j)%gasdens*C(i,j)%V/Sig *C(i,j)%alphavis/WeightedAlpha
 			do ii=1,ngrains
 				C(i,j)%EviscDirect(ii)=0d0
 			enddo
@@ -203,9 +210,9 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 
 	if(viscous.or.inner_gas) then
 		write(*,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
-		write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
+		write(*,'("Energy: ",f7.3,"% from the disk")') 100d0*(Evis+Einner)/(D%Lstar+Evis+E_IRF+Einner)
 		write(9,'("Energy: ",f7.3,"% from the star")') 100d0*D%Lstar/(D%Lstar+Evis+E_IRF+Einner)
-		write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*Einner/(D%Lstar+Evis+E_IRF+Einner)
+		write(9,'("Energy: ",f7.3,"% from the disk")') 100d0*(Evis+Einner)/(D%Lstar+Evis+E_IRF+Einner)
 	endif
 	
 	write(*,'("Emitting ",i10," photon packages")') NphotTot
