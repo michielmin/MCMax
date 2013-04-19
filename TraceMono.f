@@ -3992,6 +3992,7 @@ c			wy=gasdev(idum)*widthx
 	enddo
 	close(unit=90)
 	
+	deallocate(im)
 	deallocate(im1)
 	deallocate(im2)
 	deallocate(xx)

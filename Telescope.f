@@ -435,6 +435,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 				deallocate(image%p(i,j)%phi2)
 				deallocate(image%p(i,j)%jphi1)
 				deallocate(image%p(i,j)%jphi2)
+				deallocate(image%p(i,j)%rad)
 				if(allocated(image%p(i,j)%velo1)) deallocate(image%p(i,j)%velo1)
 				if(allocated(image%p(i,j)%velo2)) deallocate(image%p(i,j)%velo2)
 			enddo

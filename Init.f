@@ -313,6 +313,8 @@
 	particledir=outdir
 	
 	multicore=.true.
+
+	NMAX_CONVOLUTION=8000
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
@@ -568,6 +570,8 @@ c	endif
 	endif
 
 	if(key.eq.'radpress') read(value,*) radpress
+
+	if(key.eq.'nmax_conv') read(value,*) NMAX_CONVOLUTION
 	
 	if(key.eq.'fluxcontr') read(value,*) outfluxcontr
 	if(key.eq.'topac_interpol') read(value,*) topac_interpol	

@@ -338,6 +338,8 @@
 	keyword(i)='rinnergas'
 	i=i+1
 	keyword(i)='multicore'
+	i=i+1
+	keyword(i)='nmax_conv'
 	
 	Nnormal=i
 c from here on keywords with numbers
