@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       doubleprecision logstep,abun(1:ngrains),r_int(1:ngrains+1)
       doubleprecision surf0,surf(1:D%nR-1),tmp
       doubleprecision, PARAMETER :: micron=1d-4 ! confusing! (also MPSet)
-      doubleprecision shdust,shgas,col
+      doubleprecision shdust,shgas,col,dcostheta(1:D%nTheta-1)
 
       !  Tests for diagnosing bugs
       logical runonce,printgrid
@@ -88,11 +88,13 @@ c     gsd_plot=.true.           ! make plots of detailed gsd?
             alpha(i)=0d0
 
             do j=D%nTheta-1,1,-1
-!               dcostheta(j)=(D%Theta(j)-D%Theta(j+1)) 
+               dcostheta(j)=(D%Theta(j)-D%Theta(j+1)) 
                if(D%R_av(i)*cos(D%theta_av(j))/AU.lt.shgas) then
-!                  col=col+ C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))
-                  col=col+ C(i,j)%mass
-                  alpha(i)=alpha(i) + C(i,j)%mass*C(i,j)%alphaturb
+                  col=col+ C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))
+                  alpha(i)=alpha(i) + C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))*C(i,j)%alphaturb
+
+!                  col=col+ C(i,j)%mass
+!                  alpha(i)=alpha(i) + C(i,j)%mass*C(i,j)%alphaturb
                endif
             enddo
             alpha(i)=alpha(i)/col

@@ -1083,8 +1083,35 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 filename
-	real*8 tau1(D%nR*10),r(D%nR*10),ct,tau,lr0,lr1
-	real*8 Mtot,Mtot2,Fsc,p,p0,p1,Kext,lam0
+	real*8 lam0,tau1(D%nR)
+	integer i,jtau1(D%nR)
+	
+	call calctau1R(jtau1,lam0)
+	do i=1,D%nR-1
+	   tau1(i)=C(i,jtau1(i))%T
+	enddo
+
+	open(unit=80,file=filename,RECL=6000)
+	write(80,'("# temperature at the tau=1 surface, midplane, opt thin")')
+	write(80,'("# wavelength: ",f7.1," micron")') lam0
+	do i=1,D%nR-1
+		write(80,*) D%R_av(i)/AU,(tau1(i)),C(i,D%nTheta-1)%T,C(i,1)%T
+	enddo
+	close(unit=80)
+		
+	return
+	end
+
+c-----------------------------------------------------------------------
+c This subroutine returns the location of the tau=1 surface, at each
+c radius, at wavelength lam0 
+c-----------------------------------------------------------------------
+	subroutine calctau1R(jtau1,lam0)
+	use Parameters
+	IMPLICIT NONE
+	integer jtau1(D%nR)
+	real*8 r(D%nR),ct,tau
+	real*8 p,p0,p1,Kext,lam0
 	logical escape,hitstar
 	type(photon) phot
 	integer i,j,l,n,ii,nl,iopac
@@ -1130,18 +1157,11 @@ c-----------------------------------------------------------------------
 		enddo
 		call trace2d(phot,tau,escape,hitstar,.false.)
 		if (phot%z.ge.0d0) then
-		   tau1(i)=C(phot%i,phot%j)%T
+		   jtau1(i)=phot%j
 		else
-		   tau1(i)=C(i,D%nTheta-1)%T
+		   jtau1(i)=D%nTheta-1
 		endif
 	enddo
-	open(unit=80,file=filename,RECL=6000)
-	write(80,'("# temperature at the tau=1 surface, midplane, opt thin")')
-	write(80,'("# wavelength: ",f7.1," micron")') lam0
-	do i=1,D%nR-1
-		write(80,*) r(i),(tau1(i)),C(i,D%nTheta-1)%T,C(i,1)%T
-	enddo
-	close(unit=80)
 		
 	return
 	end

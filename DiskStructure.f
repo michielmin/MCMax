@@ -95,6 +95,9 @@ c-----------------------------------------------------------------------
 	
 	real*8 totG,xxx,yyy,zzz,xx0,yy0,zz0,sint
 	integer iii,jjj,kkk
+
+	character*500 surfdensfile ! remove after testing
+	real*8 Masstot,Vtot ! remove after testing
 	
 	write(*,'("Solving vertical structure")')
 	write(9,'("Solving vertical structure")')
@@ -137,13 +140,15 @@ c	enddo
 		do j=1,D%nTheta-1
 			Temp2(j)=Temp(i,j)
 		enddo
-c       Gijsexp: use T=Tmidplane for vertical structure
+
+		! Use T=Tmidplane for vertical structure
 		if (mpstr) then
 		   do j=1,D%nTheta-1
 		      Temp2(j)=Temp(i,D%nTheta-1)
 		   enddo
 		endif
-c       end
+
+		! Scale factor for grain ii
 		if(ii.ne.0) then
 			scale=shscale(i)
 			if(Grain(ii)%settle) scale=scale*Grain(ii)%shscale(i)
@@ -151,6 +156,8 @@ c       end
 		else
 			scale=1d0*shscale(i)
 		endif
+
+		! Total dust mass for grain ii in cells i
 		M0(ii)=0d0
 		M(ii)=0d0
 		do j=1,D%nTheta-1
@@ -162,6 +169,8 @@ c       end
 			endif
 			z(j)=D%R_av(i)*cos(D%theta_av(j))
 		enddo
+
+		! Use zones?
 		fix=0
 		do iz=1,nzones
 			if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
@@ -176,6 +185,8 @@ c       end
 		enddo
 		if(fix.eq.0) then
 c	go ahead, no zones with fixed structure
+
+		! Solve the vertical structure of the gas 
 		if(ii.eq.0) then
 			if(scale.gt.0d0) then
 				rho(D%nTheta-1,ii)=0d0
@@ -188,7 +199,7 @@ c	go ahead, no zones with fixed structure
 					call odeint(ystart,1,z(j1),z(j2),eps,h1,hmin,derivs)
 					rho(j2,ii)=ystart(1)
 				enddo
-			else
+			else ! wedge
 				rho(D%nTheta-1,ii)=0d0
 				do j=D%nTheta-2,1,-1
 					if((1d0/tan(D%theta_av(j))).lt.(-scale)) then
@@ -198,6 +209,8 @@ c	go ahead, no zones with fixed structure
 					endif
 				enddo
 			endif
+
+		! Solve the vertical structure of the dust
 		else if(Grain(ii)%shtype.eq.'DISK') then
 			if(scale.gt.0d0) then
 				rho(D%nTheta-1,ii)=0d0
@@ -210,7 +223,7 @@ c	go ahead, no zones with fixed structure
 					call odeint(ystart,1,z(j1),z(j2),eps,h1,hmin,derivs)
 					rho(j2,ii)=ystart(1)
 				enddo
-			else
+			else ! wedge
 				rho(D%nTheta-1,ii)=0d0
 				do j=D%nTheta-2,1,-1
 					if((1d0/tan(D%theta_av(j))).lt.(-scale)) then
@@ -315,7 +328,9 @@ c			enddo
 				endif
 			enddo
 c			stop
-		endif
+		endif ! end setting dust scale height
+
+		! continue with zones
 		else
 c	fix scaleheight to the one defined in Zone(fix)
 			do j=1,D%nTheta-1
@@ -329,23 +344,26 @@ c	fix scaleheight to the one defined in Zone(fix)
 			enddo
 		endif
 		
+		! Recalculate mass of grain ii in cells i
 		M1(ii)=0d0
 		do j=1,D%nTheta-1
 			M1(ii)=M1(ii)+exp(rho(j,ii))*C(i,j)%V
 		enddo
 
+		! Renormalize mass of grain ii in cells i
 		do j=1,D%nTheta-1
 			rho(j,ii)=exp(rho(j,ii))*M0(ii)/M1(ii)
 		enddo
 
-		enddo
+		enddo ! ii
 
-C       Gijsexp
+		! Settling in a vertical slab, for all grains
 		if (scset) then
 		   call settling(rho(1:D%nTheta-1,0:ngrains),
      &		                 D%nTheta-1,ngrains,i)
 		endif
-C       end
+
+		! Set density, abundance etc.
 		do j=1,D%nTheta-1
 			do ii=1,ngrains
 				if(C(i,j)%w0(ii).ge.1d-100) then
@@ -395,8 +413,8 @@ c			endif
 			endif
 			C(i,j)%dens=C(i,j)%dens0*tot
 			call CheckMinimumDensity(i,j)
-		enddo
-	enddo
+		enddo ! j
+	enddo ! i
 
 	if(haloswitch) call MakeHalo()
 
@@ -409,6 +427,22 @@ c			endif
 	call CheckCells()
 
 	if(raditer.or.getalpha) call RadialStruct()
+
+	! Write surface density file (testing only)
+	write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
+	open(unit=90,file=surfdensfile,RECL=100)
+	do i=1,D%nR-1
+	Vtot=0d0
+	MassTot=0d0
+	tot=0d0
+	do j=1,D%nTheta
+		MassTot=MassTot+C(i,j)%mass
+		tot=tot+C(i,j)%dens0*C(i,j)%V
+	enddo
+	write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),tot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+	enddo
+	close(unit=90)
+c	stop 99198
 
 	return
 	end
@@ -441,20 +475,24 @@ c	dydx=-mu*G*D%Mstar*x/(scale**2*kb*T*D%R_av(i)**3)-dlnT
 	end
 
 
-	!  This routine calculates the radial structure of the disk, for
-	!    a given viscous alpha. The surface density is capped off at
-	!    Toomre=2
-	!  If getalpha=.true., this radial structure is ignored, and
-	!    only used to calculate what alpha would be necessary to
-	!    obtain the current density structure (radialalpha.dat)
-	!
+c-----------------------------------------------------------------------
+c This routine calculates the radial structure of the disk, for a given
+c viscous alpha. The surface density can be capped off at Toomre=2 with
+c gravstable=.true.
+c
+c If getalpha=.true., this radial structure is ignored, and only used to
+c calculate what alpha would be necessary to obtain the current density
+c structure (radialalpha.dat)	
+c-----------------------------------------------------------------------
+
 	subroutine RadialStruct()
 	use Parameters
 	use DiskStruct
 	IMPLICIT NONE
-	real*8 dens(D%nR,D%nTheta),Eint,Er,mu,G,DiskMass,alpha,Mdot
+	real*8 dens(D%nR,D%nTheta),Eint,Er(1:D%nR),mu,G,DiskMass,alpha,Mdot,Eint0
 	real*8 Sig(1:D%nR),surfscale(1:D%nR)
-	real*8 Q,unstable,fac		! surface dens
+	real*8 Sig_old(1:D%nR),Sig_lin(1:D%nR),Sig_dead(1:D%nR),Sig_used(1:D%nR) ! check only
+	real*8 Q,fac,Eact,Sigact,Edead,Sigdead
 	real*8 ToomreQ ! function
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
@@ -462,55 +500,178 @@ c	dydx=-mu*G*D%Mstar*x/(scale**2*kb*T*D%R_av(i)**3)-dlnT
 	integer ii,imin,imax
 	character*100 file
 
+	logical testscale
+	integer itest
+	testscale=.true.
+	itest=140
+
+	! Loop to calculate surface density scaling
+	do i=1,D%nR-1
+	   Mdot=D%MdotR(i)
+	   do j=1,D%nTheta-1
+	      dens(i,j)=C(i,j)%gasdens
+	   enddo
+
+	   !  Calculate viscous energy (Eint) in a column for given surface
+	   !   density, alpa and temperature
+	   call VisHeatColumn(i,dens(i,1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac)
+
+	   !  Calculate viscous energy (Er) in a column corresponding to the mass accretion rate.
+	   Er(i)=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
+	   Er(i)=Er(i)-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
+	   Er(i)=2d0*pi*Er(i)*3d0*G*D%Mstar*Mdot/(4d0*pi)
+
+	   !  Rescale the density so Er=Eint
+	   if (deadzone.and.D%MPdead(i)) then
+              !  MP is dead, assume extra mass ends up in deadzone
+	      surfscale(i)=1d0 + (Er(i)-Eint)/(fac*Sig(i))
+
+	   else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.Temp(i,D%nTheta-1).lt.deadtemp) then
+!	   else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.D%MPzombie(i)) then
+	      !  MP becomes dead after rescaling
+	      !  Energy/Surface denisty in rest of active layer
+	      Sigact=2d0*deadcolumn/gas2dust - Sig(i)
+	      Eact=Sigact *Eint/Sig(i)
+
+	      !  Energy/Surface density of deadzone
+	      Edead=Er(i)-Eint-Eact
+	      Sigdead=Edead/fac
+
+	      !  Calculate scale factor from active and dead layer:
+!	      surfscale(i)=1d0+(Sigact+Sigdead)/Sig(i)
+	      surfscale(i)=(2d0*deadcolumn/gas2dust+Sigdead)/Sig(i)
+
+	   else 
+              ! midplane is active
+	      surfscale(i)=Er(i)/Eint ! equal to dens(i,j)/C(i,j)%gasdens
+	   endif
+
+	   ! Store the old and new surface density profile (check only)
+	   if (testscale) then
+	      Sig_old(i)=Sig(i)
+	      Sig_lin(i)=Sig(i)*(Er(i)/Eint)
+	      Sig_dead(i)=Sig(i)*(1d0 + (Er(i)-Eint)/(fac*Sig(i)))
+	      Sig_used(i)=Sig(i)*surfscale(i)
+	   endif
+
+	enddo ! i=1,D%nR-1
+
+	print*,itest,' surfscale= ',surfscale(itest)
+
+	!  Check/recalculate the surface density scaling in case of a deadzone
+	if(deadzone) then
+	   
+	   ! set density and calculate deadzone location
+	   do i=1,D%nR-1
+	      do j=1,D%nTheta-1
+		 C(i,j)%gasdens=dens(i,j)*surfscale(i) ! used by MakeDeadZone
+		 C(i,j)%mass=C(i,j)%mass*surfscale(i) ! used by VisHeatColumn
+	      enddo
+	   enddo
+
+	   call MakeDeadZone(.true.) ! set to false (not printing location)
+
+	   do i=1,D%nR-1
+
+	      if(.false..and.testscale) then
+		 if(D%MPdead(i)) then
+		    write(*,'("Midplane dead at r:      ",f15.3," AU")') D%R_av(i)/AU
+		 else
+		    write(*,'("Midplane      at r:      ",f15.3," AU")') D%R_av(i)/AU
+		 endif
+		 write(*,'("Surface density was:     ",f16.4," gr/cm^2")') Sig_old(i)
+		 write(*,'("     linear scaling:     ",f16.4," gr/cm^2")') Sig_lin(i)
+		 write(*,'("   deadzone scaling:     ",f16.4," gr/cm^2")') Sig_dead(i)
+	      endif
+
+	      ! Recalculate viscous energy (Eint) in a column for new density and deadzone location
+	      call VisHeatColumn(i,dens(i,1:D%nTheta-1)*surfscale(i),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac)
+
+	      ! MP is dead, assume extra mass ends up in deadzone
+	      if (deadzone.and.D%MPdead(i)) then
+		 surfscale(i)=surfscale(i)* (1d0 + (Er(i)-Eint)/(fac*Sig(i))) 
+
+	      !  MP becomes dead after rescaling
+	      else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.Temp(i,D%nTheta-1).lt.deadtemp) then
+!	      else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.D%MPzombie(i)) then
+
+	         !  Energy/Surface denisty in rest of active layer
+		 Sigact=2d0*deadcolumn/gas2dust - Sig(i)
+		 Eact=Sigact *Eint/Sig(i)
+
+	         !  Energy/Surface density of deadzone
+		 Edead=Er(i)-Eint-Eact
+		 Sigdead=Edead/fac
+
+	         !  Calculate scale factor from active and dead layer:
+!	         surfscale(i)=1d0+(Sigact+Sigdead)/Sig(i)
+		 surfscale(i)=surfscale(i)*(2d0*deadcolumn/gas2dust+Sigdead)/Sig(i)
+
+	      else ! midplane is active 
+		 surfscale(i)=surfscale(i)* (Er(i)/Eint)
+		 if (i.eq.itest) print*,itest,' surfscale= ',surfscale(itest)
+	      endif
+
+	      if(.false..and.testscale) then
+c		 write(*,'("       recalculated:     ",f16.4," gr/cm^2")') Sig_old(i)*surfscale(i)
+c		 print*
+		 if(D%MPdead(i)) then 
+		    write(*,'("  MP dead:   i=",i3," r=",f6.2," Off by: ",f8.4," %")') 
+     &                   i,D%R_av(i)/AU,100* (1d0- Sig_used(i)/(Sig_old(i)*surfscale(i)) )
+!		    if (abs(100* (1d0- Sig_dead(i)/(Sig_old(i)*surfscale(i)))).gt.1) then
+		 else
+c		    write(*,'("  MP active: i=",i3," r=",f6.2," Off by: ",f8.4," %")') 
+c     &                   i,D%R_av(i)/AU,100* (1d0- Sig_dead(i)/(Sig_old(i)*surfscale(i)) )
+		 endif
+
+		 if (.false..and.(i.eq.52.or.i.eq.53)) then
+		    print*
+		    write(*,'("Surface density was:     ",f16.4," gr/cm^2")') Sig_old(i)
+		    write(*,'("     linear scaling:     ",f16.4," gr/cm^2")') Sig_lin(i)
+		    write(*,'("   deadzone scaling:     ",f16.4," gr/cm^2")') Sig_dead(i)
+		    write(*,'("       used scaling:     ",f16.4," gr/cm^2")') Sig_used(i)
+		    write(*,'("       recalculated:     ",f16.4," gr/cm^2")') Sig_old(i)*surfscale(i)
+		 endif
+	      endif
+
+	      if (.true..and.Eint.gt.Er(i)*1.05d0) then
+		 print*,"Houston, we have a problem!"
+		 print*,"This shouldn't happen..."
+		 write(*,'("i=",i3," r=",f6.2," Eint=",e14.3," <? Er=",e14.3)') i,D%R_av(i)/AU,Eint,Er(i)
+	      endif
+
+!	      if(D%MPdead(i)) stop
+	   enddo ! i=1,D%nR-1
+	endif ! deadzone
+
+	print*,itest,' surfscale= ',surfscale(itest)
+
+!	stop 66761
+	
 	! Radii where disk is gravitationally unstable
 	imin=D%nR
 	imax=0
 	
-	! Loop to calculate surface density scaling
-	do i=1,D%nR-1
-	   Eint=0d0
-	   Sig(i)=0d0
+	! Lower surface density and (local) Mdot in case of gravitational instabilities
+	if (gravstable) then
+	   do i=1,D%nR-1
 
-	   !  Calculate viscous energy (Eint) in a column for given surface
-	   !   density, alpa and temperature
-	   do j=1,D%nTheta-1
-	      alpha=min(1d0,C(i,j)%alphavis)
-	      dens(i,j)=C(i,j)%gasdens
-	      Sig(i)=Sig(i)+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
-	      Eint=Eint+sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
-     &		   *C(i,j)%gasdens*C(i,j)%V*gas2dust*alpha*kb*Temp(i,j)/(4d0*mu)
-	   enddo
-c           Er=3d0*G*D%Mstar*Mdot*(1d0-sqrt(D%Rstar/D%R_av(i)))/(4d0*pi*D%R_av(i)**3)
+	      !  Keep density above Q=2 for stability
+	      Q=ToomreQ(i) / surfscale(i)
 
-	   !  Calculate viscous energy (Er) in a column corresponding to the mass accretion rate.
-	   Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
-	   Er=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
-	   Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
-	   Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
-	   
-	   !  Rescale the density so Er=Eint
-	   dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*Er/Eint
-	   
-	   !  Keep density above Q=2
-	   if (deadzone) then
-	      Q=ToomreQ(i) / (Er/Eint)
-	      if (Q.le.2d0) then
-		 dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*(Q/2d0)
-		 D%MdotR(i)=D%Mdot*(Q/2d0)
+	      if (Q.gt.2d0) then ! stable
+		 D%MdotR(i)=D%Mdot
+	      else ! unstable
+		 surfscale(i)=surfscale(i)*(Q/2d0)
 		 imin=min(i,imin)
 		 imax=max(i,imax)
-	      else
-		 D%MdotR(i)=D%Mdot
+
+		 D%MdotR(i)=D%Mdot*(Q/2d0)
 	      endif
-	   endif
-
-	   if (getalpha) then
-	      surfscale(i)=Er/Eint ! equal to dens(i,j)/C(i,j)%gasdens
-	   endif
-
-c	   write(*,'("r=",f6.2," Eint=",e14.3," Er=",e14.3)') D%R_av(i)/AU,Eint,Er
+	   enddo
+	   	   
 c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
-	enddo ! i=1,D%nR-1
+	endif
 
 	!  Print if grav unstable
 	if(imin.le.imax) then
@@ -521,13 +682,13 @@ c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)
 	endif
 
 	!  Lower mass accretion rate interior to the deadzone?
-	if (deadzone.and..true.) then
+	if (gravstable.and..true.) then
 	   do i=D%nR-2,1,-1
 
 	      ! higher accretion rate then further out -> scale down dens, mdot
 	      fac= D%MdotR(i+1)/D%MdotR(i)
 	      if (fac.lt.1d0) then
-		 dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1) *fac
+		 surfscale(i)=surfscale(i)*fac
 		 D%MdotR(i)=D%MdotR(i) *fac
 		 if(i.eq.1) then
 		    write(*,'("Reduced accretion rate: ",e14.3,"Msun/yr")') D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
@@ -535,16 +696,22 @@ c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)
 		 endif
 	      endif
 	   enddo
-	endif ! deadzone and false
+	endif
 	
+	! Update the density
+	do i=1,D%nR-1
+	   print*,i,surfscale(i)
+	   dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*surfscale(i)
+	enddo
+
 	if (.not.getalpha) then ! Set the radial structure
 
 	   DiskMass=0d0
 	   do i=1,D%nR-1
 	      do j=1,D%nTheta-1
 		 if(C(i,j)%gasdens.gt.1d-50) then
-		    C(i,j)%dens=C(i,j)%dens*dens(i,j)/C(i,j)%gasdens
-		    C(i,j)%dens0=C(i,j)%dens0*dens(i,j)/C(i,j)%gasdens
+		    C(i,j)%dens=C(i,j)%dens*surfscale(i)
+		    C(i,j)%dens0=C(i,j)%dens0*surfscale(i)
 		 else
 		    C(i,j)%dens=1d-60
 		    C(i,j)%dens0=1d-60
@@ -569,7 +736,7 @@ c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)
 	   write(66,*) "# Value of alpha for current surface density"
 	   write(66,*) "# It prints radius, alpha"
 	   do i=1,D%nR-1
-	      write(66,*) D%R_av(i)/AU,surfscale(i) * alphavis*(D%R_av(i)/AU)**alphavispow
+	      write(66,*) D%R_av(i)/AU,surfscale(i) * alphavis
 	   enddo
 	   close(unit=66)
 
@@ -640,7 +807,48 @@ c================================
 	return
 	end
 	
+c-----------------------------------------------------------------------
+c A helper routine for RadialStruct() to calculate viscous energy (Eint)
+c in a column (i) for a given density, alpa and temperature
+c-----------------------------------------------------------------------
+	subroutine VisHeatColumn(i,densR,TempR,Eint,Sig,fac)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j
+	real*8 densR(1:D%nTheta-1),TempR(1:D%nTheta-1)
+	real*8 Eint,mu,G,alpha,Eint0
+	real*8 Sig,Mtot,Mtot0,fac
+	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
+	parameter(G=6.67300d-8) ! in cm^3/g/s^2
 	
+	Eint=0d0
+	Sig=0d0
+	Mtot=0d0
+	do j=1,D%nTheta-1
+	   alpha=min(1d0,C(i,j)%alphavis)
+!	   Sig=Sig+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+	   Sig=Sig+C(i,j)%gasdens*(D%R_av(i)*(D%Theta(j)-D%Theta(j+1)) )*2d0
+	   Mtot=Mtot+densR(j)*C(i,j)%V*gas2dust
+	   Eint=Eint+sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+     &		     *densR(j)*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+	   if(j.eq.D%nTheta-1) then
+	      ! heating per unit surface density in bottom cell, assuming it is a deadzone
+c	      if(D%MPdead(i).or.D%MPzombie(i)) then
+		 alpha=deadalpha/prandtl
+c	      endif
+	      Eint0=sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+     &		    *C(i,j)%gasdens*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+	      Mtot0=densR(j)*C(i,j)%V*gas2dust
+	      fac=Eint0/Mtot0*(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)*gas2dust ! why?????
+c	      fac=Eint0/(densR(j)*(D%Theta(j)-D%Theta(j+1))) ! wrong
+	   endif
+c	   print*,D%Mstar,D%R_av(i),densR(j),C(i,j)%V,gas2dust,alpha,kb,TempR(j)
+	enddo
+
+c	print*,Eint/Mtot,fac
+c	stop66167
+
+	end subroutine
 
 
 	subroutine MakeHalo()
@@ -1076,18 +1284,27 @@ c-----------------------------------------------------------------------
 	end
 
 c-----------------------------------------------------------------------
-c  This subroutine returns the temperature, even if C()%T is not well
-c  defined by using the module DiskStruct
-c
+c  This subroutine returns the temperature from the module diskstruct if
+c  it is defined, otherwise it returns C(*,*)%T
 c-----------------------------------------------------------------------
 	
-c$$$	subroutine GetTemp(gettemp)
-c$$$	use Parameters
-c$$$	use Diskstruct
-c$$$	IMPLICIT NONE
-c$$$	real*8 gettemp(1:D%nR,1:D%nTheta-1)
-c$$$	
-c$$$	end
+	subroutine GetTemp(ReturnTemp)
+	use Parameters
+	use Diskstruct
+	IMPLICIT NONE
+	real*8 ReturnTemp(1:D%nR,1:D%nTheta-1)
+		
+	if(allocated(Temp)) then
+	   ReturnTemp(1:D%nR,1:D%nTheta-1)=Temp(1:D%nR,1:D%nTheta-1)
+	else
+	   do i=1,D%nR-1
+	      do j=1,D%nTheta-1
+		 ReturnTemp(1:D%nR,1:D%nTheta-1)=C(i,j)%T
+	      enddo
+	   enddo
+	endif
+
+	end subroutine
 
 c-----------------------------------------------------------------------
 c This subroutine computes the optical depth through the midplane of

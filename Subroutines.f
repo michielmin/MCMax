@@ -2983,9 +2983,88 @@ c-----------------------------------------------------------------------
 	return
 	end
 
+c-----------------------------------------------------------------------
+c This routine sets an isothermal density structure for a given
+c temperature. Currently only works for power-law density structures.
+c-----------------------------------------------------------------------
 
+c	subroutine SetIsoTdensity(Temp(1:D%nR))
+	subroutine SetIsoTdensity()
+	use Parameters
+	implicit none
+	integer i,j,jj,njj
+	real*8 sh(1:D%nR),Temp(1:D%nR,1:D%nTheta)
+	real*8 theta,r,z,scale,f1,f2,sh1AU
+	real*8 Mtot,Mtot0
+	real*8 shgas,shdust ! test
+	real*8 arrinterpol ! function
 
+	call GetTemp(Temp(1:D%nR,1:D%nTheta))
+	call IsoTsh(Temp(1:D%nR,D%nTheta-1),sh(1:D%nR))
 
+	! sh at 1 AU	
+c	print*,'Rin: ',D%Rin 
+c	print*,'Mtot: ',D%Mtot / Msun
+c	stop
 
+	do i=1,D%nR-1
+	   ! mass before
+	   Mtot0=0d0
+	   do j=1,D%nTheta-1
+	      Mtot0=Mtot0+C(i,j)%dens*C(i,j)%V
+	   enddo
+
+	   do j=1,D%nTheta-1
+	      njj=10  ! 10 calc per grid cell
+	      C(i,j)%dens=0d0
+	      do jj=1,njj
+		 theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+		 r=D%R_av(i)*sin(theta)
+		 z=D%R_av(i)*cos(theta)
+		 f1=D%Mtot/(2d0*pi*(D%Rout-D%Rin)*AU)* r**(-D%denspow)
+		 f2=exp(-0.5*(z/sh(i))**2) / (sh(i)*sqrt(2d0*pi))
+		 C(i,j)%dens=C(i,j)%dens+f1*f2/real(njj)
+	      enddo
+	   enddo		! j
+
+	   ! mass after and rescale
+	   Mtot=0d0
+	   do j=1,D%nTheta-1
+	      Mtot=Mtot+C(i,j)%dens*C(i,j)%V
+	   enddo
+	   do j=1,D%nTheta-1
+	      C(i,j)%dens=C(i,j)%dens*Mtot0/Mtot
+	      C(i,j)%gasdens=C(i,j)%dens ! for Deadzone
+	   enddo
+!	   print*,i,'scale:',Mtot0/Mtot
+
+	   ! test if this went well
+	   call calcscaleheight(i,shgas,shdust)
+c	   print*,i,'sh correct to:',abs(1d0-sh(i)/AU / shgas) ! 7%
+
+	enddo ! i
+
+	end subroutine
+
+c-----------------------------------------------------------------------
+c This routine returns the scaleheight for a given dust temperature,
+c in cgs (cm)
+c-----------------------------------------------------------------------
+
+	subroutine IsoTsh(Temp,sh)
+	use Parameters
+	implicit none
+	integer i
+	real*8 Temp(1:D%nR)
+	real*8 sh(1:D%nR)
+	doubleprecision, PARAMETER :: GG=6.6720000d-08
+	doubleprecision, PARAMETER :: mu=2.3d0,amu=1.66053886d-24
+	
+	! H=c_s / Omega_k = sqrt(K T / mu m) / sqrt(G M_* / r^3)
+	do i=0,D%nR-1
+	   sh(i)= sqrt(kb*Temp(i)*D%R_av(i)**3d0 / (mu*amu*GG*D%Mstar))
+	enddo
+
+	end subroutine
 
 

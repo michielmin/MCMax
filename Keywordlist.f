@@ -97,6 +97,8 @@
 	i=i+1
 	keyword(i)='raditer'
 	i=i+1
+	keyword(i)='gravstable'
+	i=i+1
 	keyword(i)='epsiter'
 	i=i+1
 	keyword(i)='maxiter'

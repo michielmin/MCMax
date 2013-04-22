@@ -3,24 +3,40 @@ c     This routine computes the value of the viscosity and turbulent
 c     mixing strength in every grid cell. Both quantities are treated
 c     seperately, unless specified by setting the Prandtl number to 1.
 c
-c     For a deadzone, there are two criteria for the active layer:
+c     For a deadzone, there are three criteria for the active layer:
 c     - T > deadtemp (ionization of alkali metals)
 c     - column < deadcolumn (active column (Xrays/Cosmic rays))
-c     
+c     - radial tau=1 > 1 (exclude first 5 gridcells)
+c
 c     --------------------------------------------------------------
 
 
-      subroutine MakeDeadZone()
+      subroutine MakeDeadZone(printlocation)
       use Parameters
       implicit none
 
+      real*8 Temp(1:D%nR-1,1:D%nTheta-1)
+
       integer i,j,imin,imax,jmin,jmax
-      real*8 col,prev_col,Tint,prev_Tint
+      real*8 col,col2,prev_col,Tint,prev_Tint
       real*8 dcostheta(1:D%nTheta-1)
       real*8 talpha(1:D%nR-1,1:D%nTheta-1)
       character*500 filename
       real*8 loginterpol,lininterpol ! function
-c      logical bycol,bytemp
+      logical printlocation
+
+      ! Power law viscosity,exponential taper on mdot?
+      do i=1,D%nR-1   
+         do j=1,D%nTheta-1
+            C(i,j)%alphavis=alphavis*(D%R_av(i)/AU)**alphavispow
+         enddo
+         if(raditer) then
+            D%MdotR(i)=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rexp))**2)
+         endif
+      enddo
+
+      ! the Temperature
+      call GetTemp(Temp(1:D%nR-1,1:D%nTheta-1))
 
       ! deadzone boundaries (radial)
       imin=D%nR
@@ -33,37 +49,35 @@ c      logical bycol,bytemp
          dcostheta(j)=(D%Theta(j)-D%Theta(j+1)) 
       enddo
 
-      ! Power law viscosity
-      do i=1,D%nR-1     
-         C(i,1:D%nTheta-1)%alphavis=alphavis*(D%R_av(i)/AU)**alphavispow
-      enddo
-
       ! Set turbulence in each cell for a deadzone
       if (deadzone) then
          do i=1,D%nR-1     
 
             col=0d0
-            Tint=C(i,1)%T
+            col2=0d0
+            Tint=Temp(i,1)
 
             do j=1,D%nTheta-1
                
                ! vertical column
                prev_col=col
                col=col+ C(i,j)%gasdens*gas2dust*(D%R_av(i)*dcostheta(j))
+c               col2=col2+C(i,j)%mass*gas2dust/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+c               print*,col,col2 ! ??
 
                ! Temperature at interface
                prev_Tint=Tint
 c               print*,cos(D%theta_av(j+1)),D%Theta(j+1),cos(D%theta_av(j))
                if(j.ne.D%nTheta-1) then
                   Tint=loginterpol(D%Theta(j+1),cos(D%theta_av(j+1)),cos(D%theta_av(j)),
-     &                             C(i,j+1)%T,C(i,j)%T)
+     &                             Temp(i,j+1),Temp(i,j))
                else
-                  Tint=C(i,j)%T ! never used
+                  Tint=Temp(i,j) ! never used
                endif
-c               print*,C(i,j+1)%T,Tint,C(i,j)%T
+c               print*,Temp(i,j+1),Tint,Temp(i,j)
 
                ! deadzone or upper boundary
-               if (Tint.lt.deadtemp.and.col.gt.deadcolumn) then
+               if (i.gt.5.and.Tint.lt.deadtemp.and.col.gt.deadcolumn) then
                   if(prev_col.gt.deadcolumn) then
                      if(prev_Tint.lt.deadtemp) then ! deadzone
                         C(i,j)%alphaturb=deadalpha
@@ -71,7 +85,7 @@ c               print*,C(i,j+1)%T,Tint,C(i,j)%T
                         C(i,j)%alphaturb=lininterpol(deadtemp,prev_Tint,Tint,
      &                                               deadalpha,alphaturb)
 c                        print*,'temp: ',C(i,j)%alphaturb
-c                        print*,prev_Tint,C(i,j)%T,Tint
+c                        print*,prev_Tint,Temp(i,j),Tint
 c                        print*
                      endif
                   else ! upper deadzone boundary (column)
@@ -80,6 +94,8 @@ c                        print*
 c                     print*,'col: ',C(i,j)%alphaturb
 c                     print*,prev_col,deadcolumn,col
                   endif
+
+                  if(j.eq.D%nTheta-1) D%MPdead(i)=.true.
 
                   imin=min(i,imin)
                   imax=max(i,imax)
@@ -92,11 +108,14 @@ c                     print*,prev_col,deadcolumn,col
                   C(i,j)%alphaturb=lininterpol(deadtemp,prev_Tint,Tint,
      &                                         alphaturb,deadalpha)
 c                  print*,'temp: ',C(i,j)%alphaturb
-c                  print*,prev_Tint,C(i,j)%T,Tint
+c                  print*,prev_Tint,Temp(i,j),Tint
 c                  print*
+                  if(j.eq.D%nTheta-1) D%MPdead(i)=.true.
 
+               ! active layer
                else
                   C(i,j)%alphaturb=alphaturb
+                  if(j.eq.D%nTheta-1) D%MPdead(i)=.false.
                endif
        
             enddo ! j=1,D%nTheta-1
@@ -112,13 +131,13 @@ c     &           D%R_av(i)/AU, col
          endif
        
          !  Print dead zone location (if present)
-         if(imin.le.imax) then
+         if(printlocation.and.imin.le.imax) then
             write(*,'("Deadzone between:   ",f6.2," and ",f6.2," AU")') 
      &               D%R_av(imin)/AU,D%R_av(imax)/AU
             write(9,'("Deadzone between:   ",f6.2," and ",f6.2," AU")') 
      &               D%R_av(imin)/AU,D%R_av(imax)/AU
          endif
-         if(jmin.le.jmax) then
+         if(printlocation.and.jmin.le.jmax) then
             write(*,'("Aspect ratio between: ",f4.2," and ",f4.2)') 
      &              pi/2d0-D%thet(jmax+1),pi/2d0-D%thet(jmin)
             write(9,'("Aspect ratio between: ",f4.2," and ",f4.2)') 
@@ -127,7 +146,11 @@ c     &           D%R_av(i)/AU, col
  
          !  Viscosity folows turbulence
          if (prandtl.gt.0d0) then
-            C(1:D%nR-1,1:D%nTheta-1)%alphavis=C(1:D%nR-1,1:D%nTheta-1)%alphaturb / prandtl
+            do i=1,D%nR-1
+               do j=1,D%nTheta-1
+                  C(i,j)%alphavis=C(i,j)%alphaturb / prandtl
+               enddo
+            enddo
          endif
 
          !  Write alpha to a file, same format as denstemp

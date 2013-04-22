@@ -38,7 +38,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical fixmpset,inner_gas,multicore
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
-	logical deadzone	!Gijsexp
+	logical deadzone,gravstable
 	logical topac_interpol	!Gijsexp
 	logical,allocatable :: scattcomputed(:)
 	integer,allocatable :: nscattcomputed(:)
@@ -110,7 +110,9 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: R(:),Theta(:),thet(:),SinTheta(:)
 		integer nR,nTheta,nRfix,ngap
 		real*8,allocatable :: gap(:),gap1(:),gap2(:),gapshape(:)
-		real*8,allocatable :: gaproundpow(:),MdotR(:)
+		real*8,allocatable :: gaproundpow(:)
+		real*8,allocatable :: MdotR(:)
+		logical,allocatable :: MPdead(:)
 		character*20,allocatable :: gaproundtype(:)
 	end type Disk
 

@@ -94,6 +94,7 @@
 
 	struct_iter=.false.
 	raditer=.false.
+	gravstable=.false.
 	epsiter=3d0
 	maxiter=10
 	niter0=1000
@@ -464,6 +465,7 @@ c	Interstellar Radiation Field (IRF)
 
 	if(key.eq.'iter') read(value,*) struct_iter
 	if(key.eq.'raditer') read(value,*) raditer
+	if(key.eq.'gravstable') read(value,*) gravstable
 	if(key.eq.'epsiter') read(value,*) epsiter
 	if(key.eq.'maxiter') read(value,*) maxiter
 	if(key.eq.'niter0') read(value,*) niter0
@@ -939,7 +941,6 @@ c		possibility to empty the lower half of the density space
 	if(key.eq.'fastviscous') read(value,*) fastviscous
 	if(key.eq.'alphaviscous') read(value,*) alphavis
 	if(key.eq.'getalpha') read(value,*) getalpha
-	if(key.eq.'powviscous') read(value,*) alphavispow
 	if(key.eq.'tgas') read(value,*) computeTgas
 	if(key.eq.'g2d_heat') read(value,*) g2d_heat
 	
@@ -1369,23 +1370,37 @@ C	End
 	write(*,'("Interstellar Av:      ",f14.3)') D%Av
 	write(9,'("Interstellar Av:      ",f14.3)') D%Av
 
-	if(viscous) then
-	write(*,'("Using viscous heating")')
-	write(9,'("Using viscous heating")')
-	write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
-	write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
-	if(prandtl.le.0) then
-	   if(alphavispow.eq.0d0) then
-	      write(*,'("Alpha:                ",e14.3)') alphavis
-	      write(9,'("Alpha:                ",e14.3)') alphavis
-	   else
-	      write(*,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
-	      write(9,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
+	if(raditer) then
+	   write(*,'("Solving radial structure")')
+	   write(9,'("Solving radial structure")')
+	   if(gravstable) then
+	      write(*,'("Keeping disk gravitationally stable")')
+	      write(9,'("Keeping disk gravitationally stable")')
 	   endif
-	else
-	   write(*,'("Using alphavis=alphaturb")')
-	   write(9,'("Using alphavis=alphaturb")')
-	endif ! prandtl
+	endif
+	if(viscous) then
+	   write(*,'("Using viscous heating")')
+	   write(9,'("Using viscous heating")')
+	endif
+	if(viscous.or.raditer) then
+	   write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
+	   write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
+	   if(D%Rexp.lt.1d10) then 
+	      write(*,'("Exponential taper at:    ",f14.3," AU")') D%Rexp
+	      write(9,'("Exponential taper at:    ",f14.3," AU")') D%Rexp
+	   endif
+	   if(prandtl.le.0) then
+	      if(alphavispow.eq.0d0) then
+		 write(*,'("Alpha:                ",e14.3)') alphavis
+		 write(9,'("Alpha:                ",e14.3)') alphavis
+	      else
+		 write(*,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
+		 write(9,'("Alpha:                ",e14.3,"*(R/AU)^",f5.2)') alphavis,alphavispow
+	      endif
+	   else
+	      write(*,'("Using alphavis=alphaturb")')
+	      write(9,'("Using alphavis=alphaturb")')
+	   endif		! prandtl
 	endif ! viscous
 	
 	write(*,'("--------------------------------------------------------")')
@@ -3223,10 +3238,13 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		call MakeGaps()
 	endif
 
-	! allocate accretion profile array (deadzone, raditer)
-	if(raditer.and.deadzone.and.Nphot.ne.0.and.startiter.eq.' ') then
+	! allocate accretion profile array (raditer)
+	if(raditer.and.Nphot.ne.0.and.startiter.eq.' ') then
 	   allocate(D%MdotR(D%nR))
 	endif
+
+	! allocate deadzone location array
+	if(deadzone) allocate(D%MPdead(D%nR))
 	
 	MassTot=0d0
 	do i=0,D%nR-1
@@ -3275,11 +3293,12 @@ c-----------------------------------------------------------------------
 		call OpticallyThin(.false.)
 		dosmooth=.false.
 		call TempAverage(f_weight)
-		call MakeDeadZone()
+		if(deadzone) call SetIsoTdensity()
+		call MakeDeadZone(.true.) ! set to false
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
 		call RegridTheta(D%nTheta/4)
-		call MakeDeadZone()
+		call MakeDeadZone(.true.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
 		call RegridTheta(D%nTheta/4)
@@ -3875,6 +3894,7 @@ c-----------------------------------------------------------------------
 	endif
 
 	if (allocated(D%MdotR)) deallocate(D%MdotR)
+	if (allocated(D%MPdead)) deallocate(D%MPdead)
 
 	deallocate(lam)
 	deallocate(BB)
