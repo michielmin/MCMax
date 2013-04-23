@@ -502,12 +502,17 @@ c-----------------------------------------------------------------------
 
 	logical testscale
 	integer itest
-	testscale=.true.
+	testscale=.false.
 	itest=140
 
 	! Loop to calculate surface density scaling
 	do i=1,D%nR-1
-	   Mdot=D%MdotR(i)
+
+	   if(gravstable.or.D%Rexp.lt.1d10) then
+	      Mdot=D%MdotR(i)
+	   else
+	      Mdot=D%Mdot
+	   endif
 	   do j=1,D%nTheta-1
 	      dens(i,j)=C(i,j)%gasdens
 	   enddo
@@ -556,7 +561,7 @@ c-----------------------------------------------------------------------
 
 	enddo ! i=1,D%nR-1
 
-	print*,itest,' surfscale= ',surfscale(itest)
+c	print*,itest,' surfscale= ',surfscale(itest)
 
 	!  Check/recalculate the surface density scaling in case of a deadzone
 	if(deadzone) then
@@ -609,7 +614,7 @@ c-----------------------------------------------------------------------
 
 	      else ! midplane is active 
 		 surfscale(i)=surfscale(i)* (Er(i)/Eint)
-		 if (i.eq.itest) print*,itest,' surfscale= ',surfscale(itest)
+c		 if (i.eq.itest) print*,itest,' surfscale= ',surfscale(itest)
 	      endif
 
 	      if(.false..and.testscale) then
@@ -644,7 +649,7 @@ c     &                   i,D%R_av(i)/AU,100* (1d0- Sig_dead(i)/(Sig_old(i)*surf
 	   enddo ! i=1,D%nR-1
 	endif ! deadzone
 
-	print*,itest,' surfscale= ',surfscale(itest)
+c	print*,itest,' surfscale= ',surfscale(itest)
 
 !	stop 66761
 	
@@ -700,7 +705,7 @@ c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)
 	
 	! Update the density
 	do i=1,D%nR-1
-	   print*,i,surfscale(i)
+!	   print*,i,surfscale(i)
 	   dens(i,1:D%nTheta-1)=dens(i,1:D%nTheta-1)*surfscale(i)
 	enddo
 

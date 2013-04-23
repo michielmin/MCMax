@@ -3238,8 +3238,8 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		call MakeGaps()
 	endif
 
-	! allocate accretion profile array (raditer)
-	if(raditer.and.Nphot.ne.0.and.startiter.eq.' ') then
+	! allocate accretion profile array
+	if((deadzone.or.gravstable.or.D%Rexp.lt.1d10).and.Nphot.ne.0.and.startiter.eq.' ') then
 	   allocate(D%MdotR(D%nR))
 	endif
 
@@ -3294,7 +3294,7 @@ c-----------------------------------------------------------------------
 		dosmooth=.false.
 		call TempAverage(f_weight)
 		if(deadzone) call SetIsoTdensity()
-		call MakeDeadZone(.true.) ! set to false
+		call MakeDeadZone(.false.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
 		call RegridTheta(D%nTheta/4)

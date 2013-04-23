@@ -1084,7 +1084,7 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 	real*8 Tevap,maxT,minT,determinegasfrac,f1,f2,eps
 	real*8 Emax,Efrac,A(ngrains),Er,Sig,wtot
 	character*500 filename
-	real*8 G,mu,Mdot,ShakuraSunyaevIJ,T
+	real*8 G,mu,ShakuraSunyaevIJ,T
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
 
@@ -1645,7 +1645,12 @@ c Thermal contact (single temperature)
 		goto 2
 	endif
 
-	Mdot=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rpow2))**2)
+	if(deadzone.or.gravstable.or.D%Rexp.lt.1d10) then
+	   Mdot=D%MdotR(i)
+	else
+	   Mdot=D%Mdot
+	endif
+
 	Evisc=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
 	Evisc=Evisc-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
 	Evisc=2d0*pi*Evisc*3d0*G*D%Mstar*Mdot/(4d0*pi)

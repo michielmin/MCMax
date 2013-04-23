@@ -21,19 +21,24 @@ c     --------------------------------------------------------------
       real*8 col,col2,prev_col,Tint,prev_Tint
       real*8 dcostheta(1:D%nTheta-1)
       real*8 talpha(1:D%nR-1,1:D%nTheta-1)
+      real*8 dens(1:D%nTheta-1),Sig,fac,Eact,Edead
       character*500 filename
       real*8 loginterpol,lininterpol ! function
       logical printlocation
 
-      ! Power law viscosity,exponential taper on mdot?
+      ! Power law viscosity
       do i=1,D%nR-1   
          do j=1,D%nTheta-1
             C(i,j)%alphavis=alphavis*(D%R_av(i)/AU)**alphavispow
          enddo
-         if(raditer) then
-            D%MdotR(i)=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rexp))**2)
-         endif
       enddo
+
+      ! accretion rate
+      if(deadzone.or.gravstable.or.D%Rexp.lt.1d10) then
+         do i=1,D%nR-1   
+            D%MdotR(i)=D%Mdot*exp(-(D%R_av(i)/(AU*D%Rexp))**2)
+         enddo
+      endif
 
       ! the Temperature
       call GetTemp(Temp(1:D%nR-1,1:D%nTheta-1))
@@ -144,12 +149,32 @@ c     &           D%R_av(i)/AU, col
      &              pi/2d0-D%thet(jmax+1),pi/2d0-D%thet(jmin)
          endif
  
-         !  Viscosity folows turbulence
+         !  Set viscosity and Mdot (unless raditer=.false.)
          if (prandtl.gt.0d0) then
             do i=1,D%nR-1
+               
+               ! Heating before deadzone: (everything active)
+               if(.not.raditer) then
+                  do j=1,D%nTheta-1
+                     dens(j)=C(i,j)%gasdens
+                     C(i,j)%alphavis=alphaturb / prandtl
+                  enddo
+                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eact,Sig,fac)
+               endif
+
+               !  Viscosity follows turbulence
                do j=1,D%nTheta-1
                   C(i,j)%alphavis=C(i,j)%alphaturb / prandtl
                enddo
+
+               ! Heating after dedzone: (everything active)
+               if(.not.raditer) then
+                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Edead,Sig,fac)
+                  
+                  ! Rescale accretion rate
+                  D%MdotR(i)=D%MdotR(i)* Edead/Eact
+               endif
+
             enddo
          endif
 
@@ -158,6 +183,6 @@ c     &           D%R_av(i)/AU, col
          write(9,'("Writing alpha to: ",a)') filename(1:len_trim(filename))
          call outputstruct(filename,(/'ALPHAT ','ALPHAV '/),2,0)
 
-      endif
+      endif ! deadzone
 
       end

@@ -69,9 +69,15 @@ c===============================================================================
 c include the inner disk like in the Pringle 1981, Akeson 2005 papers
 c====================================================================================
 
+	if (deadzone.or.gravstable.or.D%Rexp.lt.1d10) then
+	   Mdot=D%MdotR(1) ! accretion at inner disk edge
+	else 
+	   Mdot=D%Mdot
+	endif
+
 	Einner=0d0
 	if(inner_gas) then
-		Einner=G*D%Mstar*D%Mdot/(4d0*D%Rstar)
+		Einner=G*D%Mstar*Mdot/(4d0*D%Rstar)
 		Einner=Einner*(1d0+2d0*(D%Rstar/(D%R(1)*AU))**(3d0/2d0)-3d0*(D%Rstar/(D%R(1)*AU)))
 		Einner=Einner/(4d0*pi)
 	endif
@@ -88,12 +94,13 @@ c===============================================================================
 			allocate(C(i,j)%FE(0:ngrains))
 			C(i,j)%useFE=.false.
 		endif
-		if (deadzone) then
+		if (deadzone.or.gravstable.or.D%Rexp.lt.1d10) then
 		   Mdot=D%MdotR(i) 
 		else 
 		   Mdot=D%Mdot
 		endif
 
+		! Viscous heating in cells i
 		Er=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
 		Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
 		Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
@@ -108,6 +115,9 @@ c===============================================================================
 		enddo
 		WeightedAlpha=WeightedAlpha/Sig
 
+		!  Verical distribution of viscous energy proportional to:
+                !   density or dens*alpha (in case of deadzone)
+		!  Temperature is ignored! (for stability?)
 		do j=1,D%nTheta-1
 			Efrac(i,j)=Er*C(i,j)%gasdens*C(i,j)%V/Sig *C(i,j)%alphavis/WeightedAlpha
 			do ii=1,ngrains
@@ -117,10 +127,9 @@ c===============================================================================
 		enddo
 	enddo
 
-	Er=(2d0*sqrt(D%Rstar/(AU*D%R(D%nR)))-3d0)/(3d0*D%R(D%nR)*AU)
-	Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(1)))-3d0)/(3d0*D%R(1)*AU)
-	Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
-
+c	Er=(2d0*sqrt(D%Rstar/(AU*D%R(D%nR)))-3d0)/(3d0*D%R(D%nR)*AU)
+c	Er=Er-(2d0*sqrt(D%Rstar/(AU*D%R(1)))-3d0)/(3d0*D%R(1)*AU)
+c	Er=2d0*pi*Er*3d0*G*D%Mstar*Mdot/(4d0*pi)
 c	print*,100d0*G*D%Mstar*D%Mdot/(2d0*D%Rstar)/(4d0*sigma*D%Tstar**4*pi*D%Rstar**2)
 c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 
