@@ -171,7 +171,7 @@ c changed this to mass fractions (11-05-2010)
 	do l=1,nm
 		if(ns.eq.1) then
 			r(1)=10d0**((minlog+maxlog)/2d0)
-			nr(l,1)=1d0
+			nr(l,1)=frac(l)
 		else
 			tot=0d0
 			do k=1,ns
