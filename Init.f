@@ -3297,11 +3297,11 @@ c-----------------------------------------------------------------------
 		call MakeDeadZone(.false.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-		call RegridTheta(D%nTheta/4)
+c		call RegridTheta(D%nTheta/4)
 		call MakeDeadZone(.true.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-		call RegridTheta(D%nTheta/4)
+c		call RegridTheta(D%nTheta/4)
 		call DiskStructure()
 		dosmooth=.true.
 	endif

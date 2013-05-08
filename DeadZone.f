@@ -21,7 +21,7 @@ c     --------------------------------------------------------------
       real*8 col,col2,prev_col,Tint,prev_Tint
       real*8 dcostheta(1:D%nTheta-1)
       real*8 talpha(1:D%nR-1,1:D%nTheta-1)
-      real*8 dens(1:D%nTheta-1),Sig,fac,Eact,Edead
+      real*8 dens(1:D%nTheta-1),Sig,fac,Eact,Edead,Er
       character*500 filename
       real*8 loginterpol,lininterpol ! function
       logical printlocation
@@ -159,7 +159,7 @@ c     &           D%R_av(i)/AU, col
                      dens(j)=C(i,j)%gasdens
                      C(i,j)%alphavis=alphaturb / prandtl
                   enddo
-                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eact,Sig,fac)
+                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eact,Sig,fac,Er)
                endif
 
                !  Viscosity follows turbulence
@@ -167,9 +167,9 @@ c     &           D%R_av(i)/AU, col
                   C(i,j)%alphavis=C(i,j)%alphaturb / prandtl
                enddo
 
-               ! Heating after dedzone: (everything active)
+               ! Heating after deadzone:
                if(.not.raditer) then
-                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Edead,Sig,fac)
+                  call VisHeatColumn(i,dens(1:D%nTheta-1),Temp(i,1:D%nTheta-1),Edead,Sig,fac,Er)
                   
                   ! Rescale accretion rate
                   D%MdotR(i)=D%MdotR(i)* Edead/Eact

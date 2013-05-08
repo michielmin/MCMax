@@ -494,6 +494,7 @@ c-----------------------------------------------------------------------
 	real*8 Sig_old(1:D%nR),Sig_lin(1:D%nR),Sig_dead(1:D%nR),Sig_used(1:D%nR) ! check only
 	real*8 Q,fac,Eact,Sigact,Edead,Sigdead
 	real*8 ToomreQ ! function
+	real*8 prevmass(D%nR-1,D%nTheta-1),prevgasdens(D%nR-1,D%nTheta-1)
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
 	real*8 infall_rho,infall_mu,infall_mu0,infall_tot
@@ -503,11 +504,12 @@ c-----------------------------------------------------------------------
 	logical testscale
 	integer itest
 	testscale=.false.
-	itest=140
+	itest=6
 
 	! Loop to calculate surface density scaling
 	do i=1,D%nR-1
-
+c	   print*,D%R_av(i),C(i,D%nTheta-1)%gasdens
+c	   print*,D%R_av(i),Temp(i,D%nTheta-1)
 	   if(gravstable.or.D%Rexp.lt.1d10) then
 	      Mdot=D%MdotR(i)
 	   else
@@ -517,17 +519,33 @@ c-----------------------------------------------------------------------
 	      dens(i,j)=C(i,j)%gasdens
 	   enddo
 
-	   !  Calculate viscous energy (Eint) in a column for given surface
-	   !   density, alpa and temperature
-	   call VisHeatColumn(i,dens(i,1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac)
-
 	   !  Calculate viscous energy (Er) in a column corresponding to the mass accretion rate.
 	   Er(i)=(2d0*sqrt(D%Rstar/(AU*D%R(i+1)))-3d0)/(3d0*D%R(i+1)*AU)
 	   Er(i)=Er(i)-(2d0*sqrt(D%Rstar/(AU*D%R(i)))-3d0)/(3d0*D%R(i)*AU)
 	   Er(i)=2d0*pi*Er(i)*3d0*G*D%Mstar*Mdot/(4d0*pi)
 
+	   !  Calculate viscous energy (Eint) in a column for given surface
+	   !   density, alpa and temperature
+	   call VisHeatColumn(i,dens(i,1:D%nTheta-1),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac,Er(i))
+	   if (testscale.and.i.eq.itest) then
+	      write(*,'("i=",i3," r=",f6.2," Er=",e10.3," Eint=",e10.3," Sig=",e10.3)') 
+     &          i,D%R_av(i)/AU,Er(i),Eint,Sig(i)
+	      do j=1,D%nTheta-1
+c		 print*,j,C(i,j)%alphavis
+c		 print*,j,dens(i,j)
+c		 print*,j,Temp(i,j)
+c		 print*,j,C(i,j)%gasdens
+	      enddo
+	   endif
+
 	   !  Rescale the density so Er=Eint
-	   if (deadzone.and.D%MPdead(i)) then
+	   !
+	   !  First for Eint > Er in a deadzone (scale down)
+	   if (deadzone.and.D%MPdead(i).and.Eint.gt.Er(i)) then
+	      surfscale(i)=fac
+	      write(*,'("i=",i3," r=",f6.2," Eint=",e10.3," > Er=",e10.3," fac=",e10.3)') i,D%R_av(i)/AU,Eint,Er(i),fac
+
+	   else if (deadzone.and.D%MPdead(i)) then
               !  MP is dead, assume extra mass ends up in deadzone
 	      surfscale(i)=1d0 + (Er(i)-Eint)/(fac*Sig(i))
 
@@ -569,12 +587,14 @@ c	print*,itest,' surfscale= ',surfscale(itest)
 	   ! set density and calculate deadzone location
 	   do i=1,D%nR-1
 	      do j=1,D%nTheta-1
+		 prevmass(i,j)=C(i,j)%mass
+		 prevgasdens(i,j)=C(i,j)%gasdens
 		 C(i,j)%gasdens=dens(i,j)*surfscale(i) ! used by MakeDeadZone
 		 C(i,j)%mass=C(i,j)%mass*surfscale(i) ! used by VisHeatColumn
 	      enddo
 	   enddo
 
-	   call MakeDeadZone(.true.) ! set to false (not printing location)
+	   call MakeDeadZone(.false.) ! set to false (not printing location)
 
 	   do i=1,D%nR-1
 
@@ -590,10 +610,25 @@ c	print*,itest,' surfscale= ',surfscale(itest)
 	      endif
 
 	      ! Recalculate viscous energy (Eint) in a column for new density and deadzone location
-	      call VisHeatColumn(i,dens(i,1:D%nTheta-1)*surfscale(i),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac)
+	      call VisHeatColumn(i,dens(i,1:D%nTheta-1)*surfscale(i),Temp(i,1:D%nTheta-1),Eint,Sig(i),fac,Er(i))
+	      if (testscale.and.i.eq.itest) then
+		 write(*,'("i=",i3," r=",f6.2," Er=",e10.3," Eint=",e10.3," Sig=",e10.3)') 
+     &                i,D%R_av(i)/AU,Er(i),Eint,Sig(i)
+		 do j=1,D%nTheta-1
+c		    print*,j,C(i,j)%alphavis
+c		    print*,j,dens(i,j)*surfscale(i)
+c		    print*,j,Temp(i,j)
+c		    print*,j,C(i,j)%gasdens
+		 enddo
+	      endif
+
+	      ! Eint > Er(i), scale down
+	      if (deadzone.and.D%MPdead(i).and.Eint.gt.Er(i)) then
+		 surfscale(i)=surfscale(i)*fac
+		 write(*,'("i=",i3," r=",f6.2," Eint=",e10.3," > Er=",e10.3," fac=",e10.3)') i,D%R_av(i)/AU,Eint,Er(i),fac
 
 	      ! MP is dead, assume extra mass ends up in deadzone
-	      if (deadzone.and.D%MPdead(i)) then
+	      else if (deadzone.and.D%MPdead(i)) then
 		 surfscale(i)=surfscale(i)* (1d0 + (Er(i)-Eint)/(fac*Sig(i))) 
 
 	      !  MP becomes dead after rescaling
@@ -647,6 +682,15 @@ c     &                   i,D%R_av(i)/AU,100* (1d0- Sig_dead(i)/(Sig_old(i)*surf
 
 !	      if(D%MPdead(i)) stop
 	   enddo ! i=1,D%nR-1
+
+	   ! Restore gasdens, mass
+	   do i=1,D%nR-1
+	      do j=1,D%nTheta-1
+		 C(i,j)%mass=prevmass(i,j) !*surfscale(i) ! used by ToomreQ
+		 C(i,j)%gasdens=prevgasdens(i,j) !*surfscale(i) ! used by ToomreQ
+	      enddo
+	   enddo
+
 	endif ! deadzone
 
 c	print*,itest,' surfscale= ',surfscale(itest)
@@ -664,18 +708,18 @@ c	print*,itest,' surfscale= ',surfscale(itest)
 	      !  Keep density above Q=2 for stability
 	      Q=ToomreQ(i) / surfscale(i)
 
-	      if (Q.gt.2d0) then ! stable
-		 D%MdotR(i)=D%Mdot
+	      if (Q.ge.2d0) then ! stable
+		 D%MdotR(i)=D%MdotR(i)
 	      else ! unstable
 		 surfscale(i)=surfscale(i)*(Q/2d0)
 		 imin=min(i,imin)
 		 imax=max(i,imax)
 
-		 D%MdotR(i)=D%Mdot*(Q/2d0)
-	      endif
-	   enddo
-	   	   
+		 D%MdotR(i)=D%MdotR(i)*(Q/2d0)
+	      endif	   	   
+	      write(*,'("r=",f6.2," Q before=",f14.3," Q after=",f14.3)') D%R_av(i)/AU,Q*surfscale(i),Q
 c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)/Msun*(365.25d0*24d0*60d0*60d0)
+	   enddo
 	endif
 
 	!  Print if grav unstable
@@ -687,7 +731,7 @@ c	   write(*,'("r=",f6.2," Q=",f14.3," Mdot=",e14.3)') D%R_av(i)/AU,Q,D%MdotR(i)
 	endif
 
 	!  Lower mass accretion rate interior to the deadzone?
-	if (gravstable.and..true.) then
+	if (gravstable.and..false.) then
 	   do i=D%nR-2,1,-1
 
 	      ! higher accretion rate then further out -> scale down dens, mdot
@@ -815,37 +859,69 @@ c================================
 c-----------------------------------------------------------------------
 c A helper routine for RadialStruct() to calculate viscous energy (Eint)
 c in a column (i) for a given density, alpa and temperature
+c It returns 
+c - Eint
+c - Sig (surface density)
+c - fac (if Eint < Er: Energy release per surface density in bottom cell
+c        if Eint >= Er: scale factor)
 c-----------------------------------------------------------------------
-	subroutine VisHeatColumn(i,densR,TempR,Eint,Sig,fac)
+	subroutine VisHeatColumn(i,densR,TempR,Eint,Sig,fac,Er)
 	use Parameters
 	IMPLICIT NONE
 	integer i,j
 	real*8 densR(1:D%nTheta-1),TempR(1:D%nTheta-1)
-	real*8 Eint,mu,G,alpha,Eint0
+	real*8 Eint,mu,G,alpha,Eint0,Er
 	real*8 Sig,Mtot,Mtot0,fac
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s^2
+	real*8 lininterpol ! function
 	
 	Eint=0d0
 	Sig=0d0
 	Mtot=0d0
+	fac=0d0
 	do j=1,D%nTheta-1
 	   alpha=min(1d0,C(i,j)%alphavis)
-!	   Sig=Sig+C(i,j)%mass/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
-	   Sig=Sig+C(i,j)%gasdens*(D%R_av(i)*(D%Theta(j)-D%Theta(j+1)) )*2d0
-	   Mtot=Mtot+densR(j)*C(i,j)%V*gas2dust
-	   Eint=Eint+sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+	   Sig=Sig+densR(j)*(D%R_av(i)*(D%Theta(j)-D%Theta(j+1)) )*2d0
+           Mtot0=densR(j)*C(i,j)%V*gas2dust
+	   Mtot=Mtot+Mtot0
+	   Eint0=sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
      &		     *densR(j)*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+	   Eint=Eint+Eint0
+
+	   ! store column where Er = Eint
+	   if (fac.eq.0d0.and.Eint.gt.Er) then
+	      fac=lininterpol(Er,Eint-Eint0,Eint,Mtot-Mtot0,Mtot)
+	   endif
+
+	   if(.false..and.i.eq.6) then
+c	      write(*,'("j=",i3," th=",f6.2," Eint=",e10.3," Sig=",e10.3)') 
+c     &                j,pi/2-D%Theta_av(j),Eint,Sig
+	      if(j.eq.D%nTheta-1) then
+c		 print*,G,D%Mstar,D%R_av(i),densR(j),C(i,j)%V,gas2dust,alpha,kb,TempR(j),mu,sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+c     &		     *densR(j)*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+		 print*,densR(j),C(i,j)%V,alpha,TempR(j),sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+     &		     *densR(j)*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+c		 write(*,'(" Eint=",e10.3," Sig=",e10.3)')
+	      endif
+	   endif
+
+	   ! return paramter fac for density scaling
 	   if(j.eq.D%nTheta-1) then
-	      ! heating per unit surface density in bottom cell, assuming it is a deadzone
-c	      if(D%MPdead(i).or.D%MPzombie(i)) then
+
+	      if (Eint.gt.Er) then
+		 !  this fraction of the surface density generates Er.
+		 fac=fac/Mtot
+	      	 
+	      else	 
+	         ! heating per unit surface density in bottom cell, assuming it is a deadzone		
 		 alpha=deadalpha/prandtl
-c	      endif
-	      Eint0=sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
-     &		    *C(i,j)%gasdens*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
-	      Mtot0=densR(j)*C(i,j)%V*gas2dust
-	      fac=Eint0/Mtot0*(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)*gas2dust ! why?????
+		 Eint0=sqrt(G*D%Mstar/D%R_av(i)**3)*9d0
+     &		    *densR(j)*C(i,j)%V*gas2dust*alpha*kb*TempR(j)/(4d0*mu)
+		 Mtot0=densR(j)*C(i,j)%V*gas2dust
+		 fac=Eint0/Mtot0*(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)*gas2dust ! why?????
 c	      fac=Eint0/(densR(j)*(D%Theta(j)-D%Theta(j+1))) ! wrong
+	      endif
 	   endif
 c	   print*,D%Mstar,D%R_av(i),densR(j),C(i,j)%V,gas2dust,alpha,kb,TempR(j)
 	enddo
