@@ -18,40 +18,40 @@
 	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid,njj
 	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)
 	real*8 T,Planck,Vtot,clight,MassTot,thet,tot,Tmax_R,RTmax,stretch,Kext,Kabs
-	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(100),scale,Luminosity,MassTot0
-	real*8 powslope(100),powrad0(100),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
+	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(MAXPART),scale,Luminosity,MassTot0
+	real*8 powslope(MAXPART),powrad0(MAXPART),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
 	real*8 gap1(100),gap2(100),gap(100),Rdes,Rmin,zlam1,zlam2,dummy
-	real*8 TdesA(100),TdesB(100),int1,int2,f_weight_backup,theta
+	real*8 TdesA(MAXPART),TdesB(MAXPART),int1,int2,f_weight_backup,theta
 	real*8 gapshape(100),gaproundpow(100)
-	real*8 asym(100),asym2(100),wasym2(100),Pmax(100),tdes_fast(100),powinner(100)
-	integer npow,powclose(100),powfar(100),ilam1,ilam2,ngap,nzlam,nr,nt
-	character*500 particlefile,gridfile,input,partarg(100),thetagridfile
+	real*8 asym(MAXPART),asym2(MAXPART),wasym2(MAXPART),Pmax(MAXPART),tdes_fast(MAXPART),powinner(MAXPART)
+	integer npow,powclose(MAXPART),powfar(MAXPART),ilam1,ilam2,ngap,nzlam,nr,nt
+	character*500 particlefile,gridfile,input,partarg(MAXPART),thetagridfile
 	character*500 densfile,opacityfile,surfdensfile,output,compositionfile
-	character*500 scalesh,shscalefile,starfile,radfile,settlefile(100)
-	character*20 denstype,abuntype,lamtype,scattype,startype,material(100),startiter
-	character*20 shtype(100)
-	character*20 gaproundtype(100),roundtype(100)
+	character*500 scalesh,shscalefile,starfile,radfile,settlefile(MAXPART)
+	character*20 denstype,abuntype,lamtype,scattype,startype,material(MAXPART),startiter
+	character*20 shtype(MAXPART)
+	character*20 gaproundtype(MAXPART),roundtype(MAXPART)
 	character*1000 line
 	character*500 key,value,file,keyzone
-	logical truefalse,opacity_set,arg_abun,force_vert_gf(100)
-	logical mdustscale,settle(100),trace(100)
-	integer coupledabun(100),coupledfrac(100),info,nrhs,nl,parttype(100),nRfix,iopac
-	real*8 frac(100),f,phi,shscalevalue,part_shscale(100),shpow,minrad(100),maxrad(100)
-	real*8 roundwidth(100),roundpow(100),roundpeak(100) !Gijsexp
-	real*8 powmix(100),radmix(100),DiffCoeff,Tmix(100),Rfix(100),rimscale,rimwidth
-	real*8 rgrain(100),rgrain_edges(101),rhograin(100) ! Gijsexp
+	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
+	logical mdustscale,settle(MAXPART),trace(MAXPART)
+	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
+	real*8 frac(MAXPART),f,phi,shscalevalue,part_shscale(MAXPART),shpow,minrad(MAXPART),maxrad(MAXPART)
+	real*8 roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
+	real*8 powmix(MAXPART),radmix(MAXPART),DiffCoeff,Tmix(MAXPART),Rfix(100),rimscale,rimwidth
+	real*8 rgrain(MAXPART),rgrain_edges(101),rhograin(MAXPART) ! Gijsexp
 	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
 	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:),zonedens(:,:,:,:)
 	integer,allocatable :: IPIV(:)
-	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(100),mu,mu0,rho,minR2,maxR2
+	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(MAXPART),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
-	real*8 computepart_amin(100),computepart_amax(100),computepart_apow(100),computepart_fmax(100)
-	real*8 computepart_porosity(100)
-	integer computepart_ngrains(100)
-	logical computepart_blend(100)
+	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
+	real*8 computepart_porosity(MAXPART)
+	integer computepart_ngrains(MAXPART)
+	logical computepart_blend(MAXPART)
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -91,6 +91,7 @@
 	D%Mdot=1d-8		!Msun/yr
 	vexp1=10d0		!km/s
 	vexp2=-10d0		!don't use vexp2
+	D%Minfall=-1d0		!defaults to the value of Mdot
 
 	struct_iter=.false.
 	raditer=.false.
@@ -127,19 +128,19 @@
 	tdes_iter=.false.
 
 !c Default values are those of olivine
-	TdesA(1:100)=4.4491649
-	TdesB(1:100)=0.35676055
-	force_vert_gf(1:100)=.true.
-	tdes_fast(1:100)=0d0
+	TdesA(1:MAXPART)=4.4491649
+	TdesB(1:MAXPART)=0.35676055
+	force_vert_gf(1:MAXPART)=.true.
+	tdes_fast(1:MAXPART)=0d0
 
 	arg_abun=.false.
 	warg=0d0
 	ngrains=0
 	npow=0
 
-	powslope(1:100)=1d0
-	powrad0(1:100)=1d0
-	powinner(1:100)=1d0	! Gijsexp
+	powslope(1:MAXPART)=1d0
+	powrad0(1:MAXPART)=1d0
+	powinner(1:MAXPART)=1d0	! Gijsexp
 
 	shell1D=.false.
 	FLD=.false.
@@ -179,24 +180,24 @@
 	gap1(1:100)=0d0
 	gap2(1:100)=0d0
 	
-	coupledabun(1:100)=0
-	coupledfrac(1:100)=0
-	frac(1:100)=0d0
+	coupledabun(1:MAXPART)=0
+	coupledfrac(1:MAXPART)=0
+	frac(1:MAXPART)=0d0
 	RNDW=.false.
 	factRW=10d0
 	scalesh='NO'
 
-	minrad(1:100)=0d0
-	maxrad(1:100)=1d50
-	shaperad(1:100)=0d0
-	roundtype(1:100)=' '	! Gijsexp: round off rim at minrad 
-	roundwidth(1:100)=0d0	! Gijsexp
-	roundpow(1:100)=10d0	! Gijsexp
-	roundpeak(1:100)=0d0	! Gijsexp
-	settle(1:100)=.false.
-	settlefile(1:100)=' '
-	part_shscale(1:100)=1d0
-	shtype(1:100)='DISK'
+	minrad(1:MAXPART)=0d0
+	maxrad(1:MAXPART)=1d50
+	shaperad(1:MAXPART)=0d0
+	roundtype(1:MAXPART)=' '	! Gijsexp: round off rim at minrad 
+	roundwidth(1:MAXPART)=0d0	! Gijsexp
+	roundpow(1:MAXPART)=10d0	! Gijsexp
+	roundpeak(1:MAXPART)=0d0	! Gijsexp
+	settle(1:MAXPART)=.false.
+	settlefile(1:MAXPART)=' '
+	part_shscale(1:MAXPART)=1d0
+	shtype(1:MAXPART)='DISK'
 	gridrefine=.true.
 	nruns=1
 
@@ -212,9 +213,9 @@
 	etrace=.false.
 	iTD(0:TMAX)=0
 
-	powmix(1:100)=0.65
-	radmix(1:100)=1d0
-	Tmix(1:100)=real(TMAX)*dT*2d0
+	powmix(1:MAXPART)=0.65
+	radmix(1:MAXPART)=1d0
+	Tmix(1:MAXPART)=real(TMAX)*dT*2d0
 
 	f_weight=0.5d0
 	NphotFinal=0
@@ -259,12 +260,12 @@
 	traceemis=.true.
 	tracescat=.true.
 	tracegas=.false.
-	trace(1:100)=.true.
+	trace(1:MAXPART)=.true.
 	
-	asym(1:100)=2d0
-	asym2(1:100)=2d0
-	wasym2(1:100)=0d0
-	Pmax(1:100)=1d0
+	asym(1:MAXPART)=2d0
+	asym2(1:MAXPART)=2d0
+	wasym2(1:MAXPART)=0d0
+	Pmax(1:MAXPART)=1d0
 	
 	radpress=.false.
 
@@ -279,6 +280,7 @@
 	computeTgas=.false.
 	useTgas=.false.
 	inner_gas=.false.
+	Rinner_gas=1d0
 	
 	nspike=0		!number of angles made isotropic
 	
@@ -314,15 +316,17 @@
 	particledir=outdir
 	
 	multicore=.true.
+
+	NMAX_CONVOLUTION=8000
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
 		ZoneTemp(i)%sizedis=.false.
-		allocate(ZoneTemp(i)%abun(100))
-		allocate(ZoneTemp(i)%inc_grain(100))
-		ZoneTemp(i)%inc_grain(1:100)=.true.
-		ZoneTemp(i)%abun(1:100)=1d0
+		allocate(ZoneTemp(i)%abun(MAXPART))
+		allocate(ZoneTemp(i)%inc_grain(MAXPART))
+		ZoneTemp(i)%inc_grain(1:MAXPART)=.true.
+		ZoneTemp(i)%abun(1:MAXPART)=1d0
 		ZoneTemp(i)%Rsh=1d0
 		ZoneTemp(i)%sh=0.01d0
 		ZoneTemp(i)%shpow=1.1
@@ -456,6 +460,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'tau550') read(value,*) tau550
 	if(key.eq.'reprocess') read(value,*) reprocess
 	if(key.eq.'mdot') read(value,*) D%Mdot
+	if(key.eq.'minfall') read(value,*) D%Minfall
 	if(key.eq.'mu0max') read(value,*) D%mu0max
 	if(key.eq.'vexp'.or.key.eq.'vexp1') read(value,*) vexp1
 	if(key.eq.'vexp2') read(value,*) vexp2
@@ -555,6 +560,7 @@ c	endif
 	if(key.eq.'idum') read(value,*) idum
 
 	if(key.eq.'innergas') read(value,*) inner_gas
+	if(key.eq.'rinnergas') read(value,*) Rinner_gas		!inner radius of the gas disk in Stellar radii
 
 	if(key.eq.'obstmc') read(value,*) use_obs_TMC
 	if(key.eq.'tracestar') read(value,*) tracestar
@@ -568,6 +574,8 @@ c	endif
 	endif
 
 	if(key.eq.'radpress') read(value,*) radpress
+
+	if(key.eq.'nmax_conv') read(value,*) NMAX_CONVOLUTION
 	
 	if(key.eq.'fluxcontr') read(value,*) outfluxcontr
 	if(key.eq.'topac_interpol') read(value,*) topac_interpol	
@@ -1243,6 +1251,7 @@ C       End
 		enddo
 	endif
 
+	if(D%Minfall.lt.0d0) D%Minfall=D%Mdot
 
 	if(MeixRin.le.0d0) MeixRin=D%Rin
 	if(MeixD.le.0d0) MeixD=MeixE
@@ -1382,6 +1391,14 @@ C	End
 	   write(*,'("Using viscous heating")')
 	   write(9,'("Using viscous heating")')
 	endif
+	if(inner_gas) then
+	write(*,'("Using inner accreting gas disk")')
+	write(9,'("Using inner accreting gas disk")')
+	write(*,'("Disk inwards to ",f5.2," stellar radii")') Rinner_gas
+	write(9,'("Disk inwards to ",f5.2," stellar radii")') Rinner_gas
+	write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
+	write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
+	endif
 	if(viscous.or.raditer) then
 	   write(*,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
 	   write(9,'("Mass accretion:       ",e14.3," Msun/yr")') D%Mdot
@@ -1402,7 +1419,7 @@ C	End
 	      write(9,'("Using alphavis=alphaturb")')
 	   endif		! prandtl
 	endif ! viscous
-	
+
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
@@ -1549,9 +1566,9 @@ C	End
 	write(9,'("    at the pole:      ",f14.3," km/s")') vexp2
 	endif
 	else if(denstype.eq.'INFALL') then
-	write(*,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Mdot
+	write(*,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Minfall
 	write(*,'("Centrifugal radius:   ",f14.3," AU")') D%Rexp
-	write(9,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Mdot
+	write(9,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Minfall
 	write(9,'("Centrifugal radius:   ",f14.3," AU")') D%Rexp
 	else if(denstype.eq.'MEIXNER') then
 	write(*,'("Meixner A:            ",f14.3)') MeixA
@@ -2129,6 +2146,7 @@ c	endif
 	D%Mtot=D%Mtot*Msun
 	
 	D%Mdot=D%Mdot*Msun/(365.25d0*24d0*60d0*60d0)
+	D%Minfall=D%Minfall*Msun/(365.25d0*24d0*60d0*60d0)
 	if(vexp2.le.0d0) vexp2=vexp1
 	vexp1=vexp1*100000d0
 	vexp2=vexp2*100000d0
@@ -2728,7 +2746,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			mu=cos(D%theta_av(j))
 			if(mu.gt.1d0) print*,mu,D%theta_av(j)
 			call solve_mu0(D%R_av(i)/(AU*D%Rexp),mu,mu0)
-			C(i,j)%dens=((D%Mdot/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
+			C(i,j)%dens=((D%Minfall/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))/gas2dust
 		else if(denstype.eq.'MEIXNER') then
 			r=D%R_av(i)/AU-timeshift*vexp1*0.210944839d-5
@@ -3431,6 +3449,7 @@ c		call PAHMCMax(0)
 	if(startiter.ne.' ') read(startiter,*) iter0
 
 c Add a possible infalling cloud
+	if(Nphot.gt.0) then
 	do ii=1,ngrains
 		if(Grain(ii)%shtype.eq.'INFALL') then
 			do i=0,D%nR-1
@@ -3438,7 +3457,7 @@ c Add a possible infalling cloud
 					mu=cos(D%theta_av(j))
 					call solve_mu0(D%R_av(i)/(AU*D%Rexp),mu,mu0)
 					if(mu0.lt.D%mu0max) then
-						rho=((D%Mdot/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
+						rho=((D%Minfall/(4d0*pi*sqrt(6.67300d-8*D%Mstar*D%R_av(i)**3)))
      &					*(1d0+mu/mu0)**(-0.5d0)*(mu/mu0+2d0*mu0**2*D%Rexp*AU/D%R_av(i))**(-1d0))
 					else
 						rho=1d-60
@@ -3470,6 +3489,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 			enddo
 		endif
 	enddo
+	endif
 
 	write(file,'(a,"betas.dat")') outdir(1:len_trim(outdir))
 	open(unit=90,file=file,RECL=6000)
@@ -4324,7 +4344,7 @@ c-----------------------------------------------------------------------
 
 	recursive subroutine MakeMatrixCoupled(abunA,coupledabun,i,k,ngrains)
 	IMPLICIT NONE
-	integer ngrains,i,j,k,coupledabun(100)
+	integer ngrains,i,j,k,coupledabun(*)
 	real*8 abunA(ngrains,ngrains)
 
 	do j=1,ngrains

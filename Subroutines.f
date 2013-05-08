@@ -918,8 +918,8 @@ c		psf(i,j)=psf(i,j)+(exp(-r**2)/2d0+3d0/(r**3+6d0))/real(nsplit**2)
 	integer nn(2),ndim,i,j,ix,iy,nsplit,isplit,isign,ii,jj,nsplitpix,n2
 	real*8 lam0,Diam,fov0,fov,width,width0,phi,rw,Diam2,SpW,dx,mask,psf2
 	integer*8 plan
-	integer FFTW_ESTIMATE,NMAX
-	parameter(FFTW_ESTIMATE=64,NMAX=8000)
+	integer FFTW_ESTIMATE
+	parameter(FFTW_ESTIMATE=64)
 	real*8 gasdev,ran2,snoise
 	character*500 filename
 	complex*16 ctot1,ctot2
@@ -932,18 +932,18 @@ c		psf(i,j)=psf(i,j)+(exp(-r**2)/2d0+3d0/(r**3+6d0))/real(nsplit**2)
 	n=IMDIM*nsplitpix
 	rscale=real(n)*lam0/(pi*1d6)*(3600d0*180d0/pi)/fov
 	x=real(n/4)*rscale*2d0*pi/real(n)
-	if(x.lt.Diam.and.IMDIM*nsplitpix*4.lt.NMAX) goto 1
-	if(mask.lt.1d0.and.(masksize*real(n)/fov).lt.10d0.and.n.lt.NMAX) goto 1
-	if(rscale.lt.(Diam/pi).and.rscale.lt.((3600d0*180d0/pi**2)*lam0/1d6/width0).and.IMDIM*nsplitpix*4.lt.NMAX) goto 1
+	if(x.lt.Diam.and.IMDIM*(nsplitpix+1)*4.lt.NMAX_CONVOLUTION) goto 1
+	if(mask.lt.1d0.and.(masksize*real(n)/fov).lt.10d0.and.IMDIM*(nsplitpix+1)*4.lt.NMAX_CONVOLUTION) goto 1
+	if(rscale.lt.(Diam/pi).and.rscale.lt.((3600d0*180d0/pi**2)*lam0/1d6/width0).and.IMDIM*(nsplitpix+1)*4.lt.NMAX_CONVOLUTION) goto 1
 
 
 	n=1
 2	n=n*2
 	fov=fov0*real(n)/real(IMDIM)/real(nsplitpix)
 	rscale=real(n)*lam0/(pi*1d6)*(3600d0*180d0/pi)/fov
-	if(n.lt.IMDIM*nsplitpix*4.and.n.lt.NMAX) goto 2
-	if((Diam/(rscale*2d0*pi/real(n))).lt.20d0.and.n.lt.NMAX.and.Diam.gt.0d0) goto 2
-	if((Diam2/(rscale*2d0*pi/real(n))).lt.2d0.and.n.lt.NMAX.and.Diam2.gt.0d0) goto 2
+	if(n.lt.IMDIM*nsplitpix*4.and.n.lt.NMAX_CONVOLUTION) goto 2
+	if((Diam/(rscale*2d0*pi/real(n))).lt.20d0.and.n.lt.NMAX_CONVOLUTION.and.Diam.gt.0d0) goto 2
+	if((Diam2/(rscale*2d0*pi/real(n))).lt.2d0.and.n.lt.NMAX_CONVOLUTION.and.Diam2.gt.0d0) goto 2
 
 	fov=fov0*real(n)/real(IMDIM)/real(nsplitpix)
 	rscale=real(n)*lam0/(pi*1d6)*(3600d0*180d0/pi)/fov

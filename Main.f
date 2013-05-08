@@ -29,6 +29,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	character*500 comm,gasdenstempfile
 	character*500 photfile,output,pshfile,logfile,kappafile,errfile
 	character*500 denstempfileND,radgridfile,qhpfile,donefile
+	character*500 surfdensfile,mdotrfile
 	character*500,allocatable :: denstempfileP(:)
 	character*10 date,time
 	real*8 determineT,tottime,errT,errRho,radialtau,tau,radtau,Rmax,Mass,tau0
@@ -41,7 +42,9 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Photon) phot
 	type(Cell),allocatable :: Cprev(:,:)
 	type(Telescope) tel(MAXOBS)
-	real*8 T,kappa,KappaGas,w(100)
+	real*8 T,kappa,KappaGas,w(MAXPART)
+	real*8 Masstot,Vtot,tot
+
 
 c ---------------------------------------------------------------------
 c Read in keywords, print header of the log file
@@ -260,6 +263,8 @@ c ---------------------------------------------------------------------
 		write(tau1file,'(a,"height",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(tau1fileR,'(a,"heightR",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+		write(mdotrfile,'(a,"MdotR",i2.2,".dat")') outdir(1:len_trim(outdir)),niter
+		write(surfdensfile,'(a,"surfacedens",i2.2,".dat")') outdir(1:len_trim(outdir)),niter
 		else
 		if(outputfits) then
 			write(denstempfile,'(a,"denstemp",i1,i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
@@ -292,6 +297,8 @@ c ---------------------------------------------------------------------
      &																,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
+		write(mdotrfile,'(a,"MdotR",i3.3,".dat")') outdir(1:len_trim(outdir)),niter
+		write(surfdensfile,'(a,"surfacedens",i3.3,".dat")') outdir(1:len_trim(outdir)),niter
 		endif
 		write(*,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
 		write(9,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
@@ -326,6 +333,8 @@ c ---------------------------------------------------------------------
 		write(tau1file,'(a,"height.dat")')outdir(1:len_trim(outdir))
 		write(tau1fileR,'(a,"heightR.dat")')outdir(1:len_trim(outdir))
 		write(pshfile,'(a,"scaleheight.dat")')outdir(1:len_trim(outdir))
+		write(mdotrfile,'(a,"MdotR.dat")') outdir(1:len_trim(outdir))
+		write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
 		write(*,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
 		write(9,'("Writing tau=1 height to:      ",a)') tau1file(1:len_trim(tau1file))
 		write(*,'("Writing tau=1 height (radial):",a)') tau1fileR(1:len_trim(tau1file))
@@ -378,6 +387,17 @@ c		call PAHMCMax(niter)
 		write(20,*) D%R_av(i)/AU,(C(i,D%nTheta-1)%w(ii),ii=1,ngrains),(w(ii)/sum(w(1:ngrains)),ii=1,ngrains)
 	enddo
 	close(unit=20)
+
+	!  Write Mass accretion rate at each radius
+	if(deadzone.or.gravstable.or.D%Rexp.lt.1d10) then	   
+	   write(*,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
+	   write(9,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
+	   open(unit=90,file=mdotrfile,RECL=100)
+	   write(90,'(a16,x,a16)') "# radius [AU]","Mdot [Msun/yr]" 
+	   do i=1,D%nR-1
+	      write(90,'(e16.8,x,e16.8)') D%R_av(i)/AU,D%MdotR(i) *(365.25d0*24d0*60d0*60d0)/Msun
+	   enddo
+	endif
 
 	call cpu_time(starttime)
 
@@ -684,6 +704,21 @@ c Regridding now only when error larger than 2 times epsiter
 10			continue
 		endif
 		if (use_topac) call Topac()
+
+	        ! Write surface density file at end of each iteration
+		open(unit=90,file=surfdensfile,RECL=100)
+		do i=1,D%nR-1
+		   Vtot=0d0
+		   MassTot=0d0
+		   tot=0d0
+		   do j=1,D%nTheta
+		      MassTot=MassTot+C(i,j)%mass
+		      tot=tot+C(i,j)%dens0*C(i,j)%V
+		   enddo
+		   write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),tot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+		enddo
+		close(unit=90)
+
 
 		!
 		write(*,'("--------------------------------------------------------")')

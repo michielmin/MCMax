@@ -5,10 +5,10 @@ c					 increase the accuracy of the determination of
 c					 the diffuse field.
 c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
-	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening)
+	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening,inc)
 	use Parameters
 	IMPLICIT NONE
-	real*8 lam0,tau,phi,flux,opening
+	real*8 lam0,tau,phi,flux,opening,inc
 	integer i,j,k,ii,jj,Nphot,NphotStar
 	type(RPhiImage) image
 	real*8 tau_e,tau_s,tau_a,w1,w2,nu0,exptau_e
@@ -23,6 +23,8 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	integer il10,il100,il1000,il10000,i10
 	real*8 i1,il1,Planck,frac_opening
 	logical alltrace
+	real*8 Tgas,G
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 
 	tau_max=1d8
 
@@ -73,13 +75,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	if(storescatt) then
 		if(.not.scattcomputed(ilam1)) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
 			call TraceMono(lam(ilam1),Nphot,image%angle,NphotStar)
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,ilam1,1)=C(i,j)%scattfield(1,0,1)
 				C(i,j)%scattfield(1,ilam1,2)=C(i,j)%scattfield(1,0,2)
 			enddo
@@ -88,13 +90,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			nscattcomputed(ilam1)=Nphot+NphotStar
 		else if(nscattcomputed(ilam1).lt.Nphot) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
 			call TraceMono(lam(ilam1),Nphot-nscattcomputed(ilam1),image%angle,NphotStar)
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,ilam1,1:2)=
      &	(C(i,j)%scattfield(1,ilam1,1:2)*real(nscattcomputed(ilam1))+
      &	 C(i,j)%scattfield(1,0,1:2)*real(Nphot-nscattcomputed(ilam1)))/real(Nphot)
@@ -105,7 +107,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		endif
 		if(.not.scattcomputed(ilam2)) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
@@ -119,7 +121,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			nscattcomputed(ilam2)=Nphot+NphotStar
 		else if(nscattcomputed(ilam2).lt.Nphot) then
 			do i=0,D%nR
-			do j=0,D%nTheta
+			do j=1,D%nTheta-1
 				C(i,j)%scattfield(1,0,1:2)=0d0
 			enddo
 			enddo
@@ -154,7 +156,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		enddo
 	else if(scattering.and.(Nphot.ne.0.or.NphotStar.ne.0)) then
 		do i=0,D%nR
-		do j=0,D%nTheta
+		do j=1,D%nTheta-1
 			C(i,j)%scattfield=0d0
 			if(scat_how.eq.2) then
 				C(i,j)%scattQ=0d0
@@ -285,16 +287,19 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
      &			/(D%Theta(j)-D%Theta(j+1))
 		enddo
 	enddo
+	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,tau,fact,ip,jp,kp,irg,jj1,jj2,djj,njj,jj,ww,tau_e,Ksca,frac_opening,
-!$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac)
+!$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac,Tgas,iT)
 !$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
-!$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,
-!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,multicore)
+!$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,Rinner_gas,
+!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,lam0,inner_gas,BB,inc)
 !$OMP DO
 	do i=1,image%nr
-	if(.not.multicore)call tellertje(i,image%nr)
+!$OMP CRITICAL
+	call tellertje(i+1,image%nr+2)
+!$OMP END CRITICAL
 	do j=1,image%nphi
 		image%image(i,j)=0d0
 		if(scat_how.eq.2) then
@@ -435,6 +440,13 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			fact=fact*exptau_e
 		endif
 		tau=tau+tau_e
+		else
+			if(inner_gas.and.jp.eq.D%nTheta-1.and.irg.eq.1) then
+				if(image%p(i,j)%rad(k).gt.(Rinner_gas*D%Rstar/AU)) then
+					Tgas=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(image%p(i,j)%rad(k)*AU)))/(8d0*pi*(image%p(i,j)%rad(k)*AU)**3*sigma))**0.25
+					image%image(i,j)=image%image(i,j)+Planck(Tgas,lam0)*fact/(8d0*cos(inc))
+				endif
+			endif
 		endif
 		if(tau.gt.tau_max) goto 10
 		enddo
@@ -449,6 +461,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	call tellertje(100,100)
 
 	flux=0d0
 	scatflux=0d0
@@ -554,6 +567,7 @@ c-----------------------------------------------------------------------
 	integer ilam,nabs,iopac
 	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
+	real*8 Einner
 	integer NEmisDis(0:D%nR+1,0:D%nTheta+1),Nstar,ip,np,jj,Nmin
 	type(Mueller) M
 	
@@ -707,7 +721,7 @@ c-----------------------------------------------------------------------
 		print*,Planets(i)%j
 	enddo
 
-	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
+	call EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 
 	call MakeStarScatter(Estar,NphotStar)
 
@@ -717,18 +731,21 @@ c-----------------------------------------------------------------------
 c Start tracing the photons
 
 	photinit=phot
+	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
-!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,idum,
-!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,multicore)
+!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,idum,
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit)
 !$OMP DO
 	do iphot=1,Nphot
-	if(.not.multicore) call tellertje(iphot,Nphot)
+!$OMP CRITICAL
+	call tellertje(iphot+1,Nphot+2)
+!$OMP END CRITICAL
 	phot=photinit
 
 	phot%nr=iphot
-	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
+	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
 	phot%E=phot%E/real(Nphot)
 	if(scat_how.eq.2) then
 		phot%pol=.false.
@@ -808,6 +825,7 @@ c	fstop=C(phot%i,phot%j)%Albedo
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	call tellertje(100,100)
 
 
 	if(.not.storescatt.and.scat_how.eq.1) then
@@ -825,12 +843,12 @@ c	fstop=C(phot%i,phot%j)%Albedo
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass)
+	subroutine EmissionDistribution(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 	use Parameters
 	IMPLICIT NONE
 	real*8 lam0
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,EnergyTot2
-	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf
+	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf,Einner
 	real*8 tau,taumin,ran2,Rad,Theta,phi
 	integer i,j,ii,k,iopac
 	type(Photon) phot,phot2
@@ -844,6 +862,11 @@ c		write(9,'("Finding shortest route to observer")')
 c	endif
 c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	Estar=D%Fstar(phot%ilam1)*phot%wl1+D%Fstar(phot%ilam2)*phot%wl2
+	if(inner_gas) then
+		call InitInnerGasDisk(phot%lam,Einner)
+	else
+		Einner=0d0
+	endif
 	if(use_IRF) then
 		Eirf=IRF(phot%ilam1)*phot%wl1+IRF(phot%ilam2)*phot%wl2
 	else
@@ -851,15 +874,18 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
+	if(nexits.ne.0) call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
 !$OMP& SHARED(nexits,D,C,Grain,EmisDis,EnergyTot,EnergyTot2,Tcontact,ngrains,
-!$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB,multicore)
+!$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB)
 
 !$OMP DO
 	do i=1,D%nR-1
-		if(nexits.ne.0.and..not.multicore) call tellertje(i+1,D%nR+1)
+!$OMP CRITICAL
+		if(nexits.ne.0) call tellertje(i+1,D%nR+1)
+!$OMP END CRITICAL
 		do j=1,D%nTheta-1
 			if(C(i,j)%T.ne.0d0) then
 			if(.not.tcontact) then
@@ -969,6 +995,7 @@ c eliminating 'dark-zone'
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	if(nexits.ne.0) call tellertje(100,100)
 
 	return
 	end
@@ -976,22 +1003,24 @@ c eliminating 'dark-zone'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 	
-	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,vismass,ignore)
+	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
 	use Parameters
 	IMPLICIT NONE
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet,Eirf,fact_IRF
 	real*8 inp,ct,r,Rad,Theta,ran2,phi,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
-	integer i,j
+	real*8 Einner,Etot,Er2,tot,RadInnerGasDisk,R1,R2
+	integer i,j,iter
 	type(photon) phot
 	logical ignore
 	
 	fact_IRF=10d0
 	ignore=.false.
 	phot%pol=.false.
-	
-	Er=(EnergyTot2+Estar+Eirf*fact_IRF)*ran2(idum)
+
+	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)
+	Er=Etot*ran2(idum)
 	if(Er.lt.Estar) then
-		phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)
+		phot%E=Etot
 		phot%scatt=.false.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(0)*phot%x
@@ -1024,7 +1053,7 @@ c-----------------------------------------------------------------------
 			endif
 		enddo
 	else if(Er.lt.(Estar+Eirf*fact_IRF)) then
-		phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)/fact_IRF
+		phot%E=Etot/fact_IRF
 		phot%scatt=.true.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(D%nR)*phot%x
@@ -1056,9 +1085,48 @@ c-----------------------------------------------------------------------
 				return
 			endif
 		enddo
+	else if(Er.lt.(Estar+Eirf*fact_IRF+Einner)) then
+		phot%E=Etot
+		phot%scatt=.true.
+
+		Er2=ran2(idum)*Einner
+		Rad=RadInnerGasDisk(Er2)
+
+		j=D%nTheta-1
+		Theta=0.5
+		Theta=D%Theta(j)*Theta+D%Theta(j+1)*(1d0-Theta)
+		phot%z=Rad*Theta
+		phi=ran2(idum)*pi*2d0
+		phot%x=Rad*sqrt(1d0-Theta**2)*sin(phi)
+		phot%y=Rad*sqrt(1d0-Theta**2)*cos(phi)
+		call randomdirection(phot%vx,phot%vy,phot%vz)
+		phot%i=0
+		phot%j=j
+		phot%onEdge=.false.
+
+		call randomdirection(phot%vx,phot%vy,phot%vz)
+
+		phot%z=abs(phot%z)
+		if(phot%vz.lt.0d0) phot%z=-phot%z
+
+		ct=abs(phot%z)/Rad
+		do j=1,D%nTheta-1
+			if(ct.lt.D%Theta(j).and.ct.ge.D%Theta(j+1)) then
+				phot%j=j
+				if(C(phot%i,phot%j)%nrg.gt.1) then
+					thet=acos(abs(phot%z)/sqrt(phot%x**2+phot%y**2+phot%z**2))
+					phot%irg=int(real(C(phot%i,phot%j)%nrg)*(thet-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
+					if(phot%irg.gt.C(phot%i,phot%j)%nrg) phot%irg=C(phot%i,phot%j)%nrg
+					if(phot%irg.lt.1) phot%irg=1
+				else
+					phot%irg=1
+				endif
+				return
+			endif
+		enddo
 	else
 		phot%scatt=.true.
-		Er=Er-Estar-Eirf*fact_IRF
+		Er=Er-Estar-Eirf*fact_IRF-Einner
 		Et=0d0
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
@@ -1085,7 +1153,7 @@ c-----------------------------------------------------------------------
 					phot%irg=1
 				endif
 				phot%onEdge=.false.
-				phot%E=(EnergyTot2+Estar+Eirf*fact_IRF)/vismass(i,j)
+				phot%E=Etot/vismass(i,j)
 				return
 			endif
 		enddo
@@ -1382,16 +1450,19 @@ c-----------------------------------------------------------------------
 
 	Emin=1d-10*Estar/real(Nphot)
 
+	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,tautot,tau,xsn,ysn,zsn,
 !$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
 !$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
 !$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,idum,
-!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot,multicore)
+!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
 !$OMP DO
 	do iphot=1,Nphot
-		if(.not.multicore) call tellertje(iphot+1,Nphot+2)
+!$OMP CRITICAL
+		call tellertje(iphot+1,Nphot+2)
+!$OMP END CRITICAL
 		phot%E=Estar/real(Nphot)
 		phot%scatt=.false.
 
@@ -1563,6 +1634,7 @@ c		if(phot%E.lt.Emin) goto 2
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	call tellertje(100,100)
 
 	if(nplanets.gt.0) then
 	write(*,'("Planet scattered starlight")')
@@ -1719,7 +1791,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 input,tmp,specfile
-	integer i,j,k,l,t1,t2,nstar
+	integer i,j,k,l,t1,t2,nstar,ninner
 	real*8 tau,angle,spec(nlam),distance,tottime,ct,lam0
 	real*8 ph,inp,determineT,lam1,lam2,v
 	integer starttime,stoptime,starttrace,cr,l1,l2,nj0,ip,jp
@@ -1729,7 +1801,10 @@ c-----------------------------------------------------------------------
 	logical hitstar
 	real*8 extstar(nlam),R01(D%nTheta)
 	type(RPhiImage) image
+
 	nstar=30
+	ninner=0
+	if(inner_gas) ninner=30
 
 	write(*,'("Creating photon paths for image")')
 	write(*,'("Inclination angle:",f8.1)') 180d0*angle/pi
@@ -1779,9 +1854,9 @@ c	enddo
 c	image%nr=image%nr+1
 
 	if(nj0.gt.0) then
-		image%nr=nj0*(D%nR-1)+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar
+		image%nr=nj0*(D%nR-1)+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar+ninner
 	else
-		image%nr=(D%nR-2)/(-nj0)+1+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar
+		image%nr=(D%nR-2)/(-nj0)+1+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar+ninner
 	endif
 	
 	allocate(image%image(image%nr,image%nphi))
@@ -1871,6 +1946,13 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 	nj=nj+1
 	image%R(nj)=D%R(0)*1.001
 
+	if(inner_gas) then
+		do i=1,ninner
+			nj=nj+1
+			image%R(nj)=D%R(0)+(D%R(1)-D%R(0))*real(i)/real(ninner+1)
+		enddo
+	endif
+
 	image%R(image%nr)=D%R(D%nR)*0.9999
 	call sort(image%R,image%nr)
 
@@ -1888,13 +1970,16 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		endif
 	enddo
 	
+	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(Rad,phot,ct,j,k,theta,photcount)
-!$OMP& SHARED(C,D,image,angle,multicore)
+!$OMP& SHARED(C,D,image,angle)
 !$OMP DO
 	do i=1,image%nr
-	if(.not.multicore)call tellertje(i+1,image%nr+2)
+!$OMP CRITICAL
+	call tellertje(i+1,image%nr+2)
+!$OMP END CRITICAL
 	do k=1,image%nPhi
 		image%phi(k)=1d-5+pi*(real(k)-0.5)/real(image%nPhi)
 		Rad=image%R(i)
@@ -1936,6 +2021,7 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		allocate(image%p(i,k)%phi2(image%p(i,k)%n))
 		allocate(image%p(i,k)%jphi1(image%p(i,k)%n))
 		allocate(image%p(i,k)%jphi2(image%p(i,k)%n))
+		allocate(image%p(i,k)%rad(image%p(i,k)%n))
 
 		call trace2dpath(phot,image%p(i,k))
 	enddo
@@ -1943,6 +2029,7 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	call tellertje(100,100)
 
 	return
 	end
@@ -2050,6 +2137,7 @@ c-----------------------------------------------------------------------
 	x=phot%x+phot%vx*v
 	y=phot%y+phot%vy*v
 	z=phot%z+phot%vz*v
+	p%rad(p%n)=sqrt(x*x+y*y+z*z)
 	if(z.gt.0d0) then
 		p%k(p%n)=1
 	else
@@ -2460,16 +2548,19 @@ c	sinwi=sin(wi)
 		imV=0d0
 	endif
 
+	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,multicore)
+!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM)
 
 !$OMP DO
 	do i=1,image%nr-1
-	if(.not.multicore) call tellertje(i+1,image%nr+1)
+!$OMP CRITICAL
+	call tellertje(i+1,image%nr+1)
+!$OMP END CRITICAL
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
 		do k=1,nintegrate
@@ -2633,6 +2724,7 @@ c			wy=gasdev(idum)*widthx
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
+	call tellertje(100,100)
 
 	call AddPlanet(image,im,imQ,imU,imV,Rmax,IMDIM)
 
@@ -3900,6 +3992,7 @@ c			wy=gasdev(idum)*widthx
 	enddo
 	close(unit=90)
 	
+	deallocate(im)
 	deallocate(im1)
 	deallocate(im2)
 	deallocate(xx)

@@ -1441,6 +1441,29 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 	use Parameters
 	IMPLICIT NONE
 	type(photon) phot
+	real*8 Rad,G,T
+	integer iT
+	parameter(G=6.67300d-8) ! in cm^3/g/s
+
+	Rad=sqrt(phot%x**2+phot%y**2+phot%z**2)
+
+	T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad*AU)))/(8d0*pi*(Rad*AU)**3*sigma))**0.25
+	iT=(T/dT+0.5)
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX) iT=TMAX
+
+	call emit(phot,BB(1:nlam,iT),BBint(iT))
+
+	return
+	end
+
+
+
+
+	subroutine EmitViscousOld(phot)
+	use Parameters
+	IMPLICIT NONE
+	type(photon) phot
 	real*8 spec(nlam),ran2,T0,T1,increaseT,increaseTP
 	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,A(ngrains)
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),Egas,Efrac
@@ -1772,7 +1795,50 @@ c=======================================================================
 	end
 	
 
+	module InnerGasDiskEmission
+		integer NRAD
+		parameter(NRAD=250)
+		real*8 R(NRAD),Ftot(NRAD)
+	end module InnerGasDiskEmission
+
+
+	subroutine InitInnerGasDisk(lam0,Etot)
+	use InnerGasDiskEmission
+	use Parameters
+	IMPLICIT NONE
+	integer i
+	real*8 lam0,T,G,Planck,F(NRAD),Etot,Rad
+	parameter(G=6.67300d-8) ! in cm^3/g/s
+
+	do i=1,NRAD
+		R(i)=D%R(0)*Rinner_gas+(D%R(1)-D%R(0)*Rinner_gas)*real(i-1)/real(NRAD-1)
+	enddo
+	Ftot(1)=0d0
+	do i=1,NRAD-1
+		Rad=sqrt(R(i)*R(i+1))*AU
+		T=(3d0*G*D%Mstar*D%Mdot*(1d0-sqrt(D%Rstar/(Rad)))/(8d0*pi*(Rad)**3*sigma))**0.25
+		F(i)=Planck(T,lam0)/4d0
+		Ftot(i+1)=Ftot(i)+AU**2*pi*(R(i+1)**2-R(i)**2)*F(i)
+	enddo
+	Etot=Ftot(NRAD)
+
+	return
+	end
+
+	real*8 function RadInnerGasDisk(E)
+	use InnerGasDiskEmission
+	use Parameters
+	IMPLICIT NONE
+	integer i
+	real*8 E,eps
 	
-	
-	
+	call hunt(Ftot,NRAD,E,i)
+
+	eps=(E-Ftot(i))/(Ftot(i+1)-Ftot(i))
+	RadInnerGasDisk=R(i)+eps*(R(i+1)-R(i))
+
+	return
+	end
+
+
 

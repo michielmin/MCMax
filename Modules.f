@@ -1,8 +1,8 @@
 	module Parameters
 	IMPLICIT NONE
-	integer nlam,idum,TMAX,MAXOBS,NPHISCATT,NTQHP
+	integer nlam,idum,TMAX,MAXOBS,NPHISCATT,NTQHP,MAXPART,NMAX_CONVOLUTION
 	real*8 pi,AU,Rsun,Msun,Lsun,sigma,parsec,kb,dT,RWmax,gas2dust,totaldist
-	parameter(TMAX=10000,dT=1d0,NTQHP=100)
+	parameter(TMAX=10000,dT=1d0,NTQHP=100,MAXPART=500)
 	parameter(MAXOBS=100,NPHISCATT=180)
 	parameter(pi=3.14159265358979323846264338328d0)
 	parameter(AU=1.49598e13)
@@ -16,8 +16,8 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
 	real*8 sin2phi(0:360),cos2phi(0:360),RmaxRefine,KDext(0:TMAX),KDabs(0:TMAX),BBint(0:TMAX)
-	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV
-	real*8 lifetime,alphaturb,qturb,prandtl !Gijsexp
+	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV,Rinner_gas
+	real*8 lifetime,alphaturb,qturb,prandtl
 	real*8 deadalpha,deadcolumn,deadtemp !Gijsexp: deadzone in midplane
 	real*8 gsd_rmin,gsd_rmax,gsd_xi,gsd_vfrag !Gijsexp
 	real*8 mrn_rmin,mrn_rmax,mrn_index !Gijsexp
@@ -104,7 +104,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type Disk
 		real*8 Tstar,Rstar,Lstar,Mstar,Tstar2,Rstar2
-		real*8 Mtot,Vtot,distance,PA,IA,Mdot,mu0max,Av,gamma_exp
+		real*8 Mtot,Vtot,distance,PA,IA,Mdot,mu0max,Av,gamma_exp,Minfall
 		real*8 denspow,Rin,Rout,shpow,sh1AU,denspow2,Rpow2,Rpow3,Rexp
 		real*8,allocatable :: Fstar(:),theta_av(:),R_av(:),Rfix(:)
 		real*8,allocatable :: R(:),Theta(:),thet(:),SinTheta(:)
@@ -143,7 +143,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type path
 		real*8 x,y,z,vx,vy,vz
-		real*8,allocatable :: v(:),phi1(:),phi2(:)
+		real*8,allocatable :: v(:),phi1(:),phi2(:),rad(:)
 		real*8,allocatable :: velo1(:),velo2(:)
 		integer,allocatable :: i(:),j(:),jphi1(:),jphi2(:),k(:),irg(:)
 		integer n

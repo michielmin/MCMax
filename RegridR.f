@@ -409,14 +409,14 @@ c			Rnew(i)=(Rnew(i-1)+Rnew(i))/2d0
 		C(i,j)%xedge2(2)=Rnew(i+1)**2
 		i1=1
 		i2=D%nR-1
-		do k=0,D%nR-1
+		do k=1,D%nR-1
 			if(Rnew(i).ge.D%R(k).and.Rnew(i).lt.D%R(k+1)) then
 				i1=k
 				goto 4
 			endif
 		enddo
 4		continue
-		do k=0,D%nR-1
+		do k=1,D%nR-1
 			if(Rnew(i+1).gt.D%R(k).and.Rnew(i+1).le.D%R(k+1)) then
 				i2=k
 				goto 5

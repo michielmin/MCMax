@@ -171,7 +171,7 @@ c changed this to mass fractions (11-05-2010)
 	do l=1,nm
 		if(ns.eq.1) then
 			r(1)=10d0**((minlog+maxlog)/2d0)
-			nr(l,1)=1d0
+			nr(l,1)=frac(l)
 		else
 			tot=0d0
 			do k=1,ns
@@ -401,7 +401,7 @@ c-----------------------------------------------------------------------
 	call ftopen(unit,partfile,readwrite,blocksize,status)
 	if (status /= 0) then
 		checkparticlefile=.false.
-		return
+		goto 1
 	endif
 	group=1
 	firstpix=1
@@ -427,28 +427,28 @@ c-----------------------------------------------------------------------
 	write(key2,'(e14.8)') real(amin)
 	if(key1.ne.key2.or.status.ne.0) then
 		checkparticlefile=.false.
-		return
+		goto 1
 	endif
 	call ftgkye(unit,'r_max',x,comment,status)
 	write(key1,'(e14.8)') x
 	write(key2,'(e14.8)') real(amax)
 	if(key1.ne.key2.or.status.ne.0) then
 		checkparticlefile=.false.
-		return
+		goto 1
 	endif
 	call ftgkye(unit,'r_pow',x,comment,status)
 	write(key1,'(e14.8)') x
 	write(key2,'(e14.8)') real(apow)
 	if(ns.gt.1.and.(key1.ne.key2.or.status.ne.0)) then
 		checkparticlefile=.false.
-		return
+		goto 1
 	endif
 	call ftgkye(unit,'f_max',x,comment,status)
 	write(key1,'(e14.8)') x
 	write(key2,'(e14.8)') real(fmax)
 	if(key1.ne.key2.or.status.ne.0) then
 		checkparticlefile=.false.
-		return
+		goto 1
 	endif
 	if(blend) then
 		call ftgkye(unit,'porosity',x,comment,status)
@@ -456,7 +456,7 @@ c-----------------------------------------------------------------------
 		write(key2,'(e14.8)') real(porosity)
 		if(key1.ne.key2.or.status.ne.0) then
 			checkparticlefile=.false.
-			return
+			goto 1
 		endif
 	endif
 	do i=1,nm
@@ -466,7 +466,7 @@ c-----------------------------------------------------------------------
 		write(key2,'(e14.8)') real(frac(i))
 		if(key1.ne.key2.or.status.ne.0) then
 			checkparticlefile=.false.
-			return
+			goto 1
 		endif
 	enddo
 	do i=1,nm
@@ -476,7 +476,7 @@ c-----------------------------------------------------------------------
 		write(key2,'(e14.8)') real(rho(i))
 		if(key1.ne.key2.or.status.ne.0) then
 			checkparticlefile=.false.
-			return
+			goto 1
 		endif
 	enddo
 	do i=1,nm
@@ -484,9 +484,14 @@ c-----------------------------------------------------------------------
 		call ftgkys(unit,word,filetest,comment,status)
 		if(trim(filetest).ne.trim(filename(i)).or.status.ne.0) then
 			checkparticlefile=.false.
-			return
+			goto 1
 		endif
 	enddo
+
+1	continue
+	!  Close the file and free the unit number.
+	call ftclos(unit, status)
+	call ftfiou(unit, status)
 
 	return
 	end

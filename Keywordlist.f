@@ -79,6 +79,8 @@
 	i=i+1
 	keyword(i)='mdot'
 	i=i+1
+	keyword(i)='minfall'
+	i=i+1
 	keyword(i)='mu0max'
 	i=i+1
 	keyword(i)='vexp'
@@ -339,7 +341,11 @@
 	i=i+1
 	keyword(i)='innergas'
 	i=i+1
+	keyword(i)='rinnergas'
+	i=i+1
 	keyword(i)='multicore'
+	i=i+1
+	keyword(i)='nmax_conv'
 	
 	Nnormal=i
 c from here on keywords with numbers
