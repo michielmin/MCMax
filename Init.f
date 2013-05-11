@@ -96,6 +96,7 @@
 	struct_iter=.false.
 	raditer=.false.
 	gravstable=.false.
+	reducemdot=.false.
 	epsiter=3d0
 	maxiter=10
 	niter0=1000
@@ -199,6 +200,7 @@
 	part_shscale(1:MAXPART)=1d0
 	shtype(1:MAXPART)='DISK'
 	gridrefine=.true.
+	thgridrefine=.true.
 	nruns=1
 
 	psettR0=2d10
@@ -471,6 +473,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'iter') read(value,*) struct_iter
 	if(key.eq.'raditer') read(value,*) raditer
 	if(key.eq.'gravstable') read(value,*) gravstable
+	if(key.eq.'reducemdot') read(value,*) reducemdot
 	if(key.eq.'epsiter') read(value,*) epsiter
 	if(key.eq.'maxiter') read(value,*) maxiter
 	if(key.eq.'niter0') read(value,*) niter0
@@ -1385,6 +1388,10 @@ C	End
 	   if(gravstable) then
 	      write(*,'("Keeping disk gravitationally stable")')
 	      write(9,'("Keeping disk gravitationally stable")')
+	      if(reducemdot) then
+		 write(*,'("Reducing accretion rate if necessary")')
+		 write(9,'("Reducing accretion rate if necessary")')
+	      endif
 	   endif
 	endif
 	if(viscous) then
@@ -3315,11 +3322,11 @@ c-----------------------------------------------------------------------
 		call MakeDeadZone(.false.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-c		call RegridTheta(D%nTheta/4)
+		if (thgridrefine) call RegridTheta(D%nTheta/4)
 		call MakeDeadZone(.true.)
 		if(gsd) call GrainsizeDistribution() ! GijsExp
 		call DiskStructure()
-c		call RegridTheta(D%nTheta/4)
+		if (thgridrefine) call RegridTheta(D%nTheta/4)
 		call DiskStructure()
 		dosmooth=.true.
 	endif
@@ -3536,7 +3543,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 		if(struct_iter) then
 			dosmooth=.false.
 			call OpticallyThin(.false.)
-			call RegridTheta(D%nTheta/4)
+			if (thgridrefine) call RegridTheta(D%nTheta/4)
 			call TempAverage(1d0)
 			call DiskStructure()
 			dosmooth=.true.

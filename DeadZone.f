@@ -23,7 +23,7 @@ c     --------------------------------------------------------------
       real*8 talpha(1:D%nR-1,1:D%nTheta-1)
       real*8 dens(1:D%nTheta-1),Sig,fac,Eact,Edead,Er
       character*500 filename
-      real*8 loginterpol,lininterpol ! function
+      real*8 loginterpol,lininterpol,number_invalid ! function
       logical printlocation
 
       ! Power law viscosity
@@ -79,6 +79,7 @@ c               print*,cos(D%theta_av(j+1)),D%Theta(j+1),cos(D%theta_av(j))
                else
                   Tint=Temp(i,j) ! never used
                endif
+c               print*,i,j,Tint
 c               print*,Temp(i,j+1),Tint,Temp(i,j)
 
                ! deadzone or upper boundary
@@ -89,14 +90,15 @@ c               print*,Temp(i,j+1),Tint,Temp(i,j)
                      else  ! upper deadzone boundary (temperature)
                         C(i,j)%alphaturb=lininterpol(deadtemp,prev_Tint,Tint,
      &                                               deadalpha,alphaturb)
-c                        print*,'temp: ',C(i,j)%alphaturb
-c                        print*,prev_Tint,Temp(i,j),Tint
+c                        print*,i,j,'upper boundary by temp?? ',C(i,j)%alphaturb
+c                        print*,prev_Tint,Temp(i,j),Tint,deadtemp
 c                        print*
+                        
                      endif
                   else ! upper deadzone boundary (column)
                      C(i,j)%alphaturb=lininterpol(deadcolumn,prev_col,col,
      &                                            deadalpha,alphaturb)
-c                     print*,'col: ',C(i,j)%alphaturb
+c                     print*,i,j,'upper boundary by column ',C(i,j)%alphaturb
 c                     print*,prev_col,deadcolumn,col
                   endif
 
@@ -122,7 +124,7 @@ c                  print*
                   C(i,j)%alphaturb=alphaturb
                   if(j.eq.D%nTheta-1) D%MPdead(i)=.false.
                endif
-       
+
             enddo ! j=1,D%nTheta-1
 c            write(*,'("  at r= ",f8.2," column= ",f8.2," gr/cm^2")') 
 c     &           D%R_av(i)/AU, col

@@ -31,14 +31,14 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer mrn_ngrains,thinparticle !Gijsexp
 	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC,exportProDiMo
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav,outputfits
-	logical useobspol,readmcscat,makeangledependence,gridrefine,etrace,use_qhp,use_topac,computeLRF
+	logical useobspol,readmcscat,makeangledependence,gridrefine,thgridrefine,etrace,use_qhp,use_topac,computeLRF
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat,Tsmooth,emptylower
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
 	logical fixmpset,inner_gas,multicore
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
-	logical deadzone,gravstable
+	logical deadzone,gravstable,reducemdot
 	logical topac_interpol	!Gijsexp
 	logical,allocatable :: scattcomputed(:)
 	integer,allocatable :: nscattcomputed(:)

@@ -77,7 +77,8 @@ OBJS	      = Modules.o \
 		ReadParticleFits.o \
 		InputOutput.o \
 		ComputePart.o \
-		DeadZone.o
+		DeadZone.o \
+		RadialStruct.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

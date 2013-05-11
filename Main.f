@@ -44,6 +44,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Telescope) tel(MAXOBS)
 	real*8 T,kappa,KappaGas,w(MAXPART)
 	real*8 Masstot,Vtot,tot
+	real*8 ToomreQ ! function
 
 
 c ---------------------------------------------------------------------
@@ -393,9 +394,14 @@ c		call PAHMCMax(niter)
 	   write(*,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
 	   write(9,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
 	   open(unit=90,file=mdotrfile,RECL=100)
-	   write(90,'(a16,x,a16)') "# radius [AU]","Mdot [Msun/yr]" 
+c	   write(90,'(a16,x,a16)') "# radius [AU]","Mdot [Msun/yr]" 
+c	   do i=1,D%nR-1
+c	      write(90,'(e16.8,x,e16.8)') D%R_av(i)/AU,D%MdotR(i) *(365.25d0*24d0*60d0*60d0)/Msun
+c	   enddo
+
+	   write(90,'(a16,3(x,a16))') "# radius [AU]","Mdot [Msun/yr]","Toomre Q"
 	   do i=1,D%nR-1
-	      write(90,'(e16.8,x,e16.8)') D%R_av(i)/AU,D%MdotR(i) *(365.25d0*24d0*60d0*60d0)/Msun
+	      write(90,'(e16.8,3(x,e16.8))') D%R_av(i)/AU,D%MdotR(i) *(365.25d0*24d0*60d0*60d0)/Msun,ToomreQ(i)
 	   enddo
 	endif
 

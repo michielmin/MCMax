@@ -49,6 +49,8 @@
 	i=i+1
 	keyword(i)='gridrefine'
 	i=i+1
+	keyword(i)='thgridrefine'
+	i=i+1
 	keyword(i)='denstype'
 	i=i+1
 	keyword(i)='radfile'
@@ -100,6 +102,8 @@
 	keyword(i)='raditer'
 	i=i+1
 	keyword(i)='gravstable'
+	i=i+1
+	keyword(i)='reducemdot'
 	i=i+1
 	keyword(i)='epsiter'
 	i=i+1

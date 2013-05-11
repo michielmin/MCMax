@@ -2988,19 +2988,18 @@ c This routine sets an isothermal density structure for a given
 c temperature. Currently only works for power-law density structures.
 c-----------------------------------------------------------------------
 
-c	subroutine SetIsoTdensity(Temp(1:D%nR))
 	subroutine SetIsoTdensity()
 	use Parameters
 	implicit none
 	integer i,j,jj,njj
-	real*8 sh(1:D%nR),Temp(1:D%nR,1:D%nTheta)
+	real*8 sh(1:D%nR-1),Temp(1:D%nR-1,1:D%nTheta-1)
 	real*8 theta,r,z,scale,f1,f2,sh1AU
 	real*8 Mtot,Mtot0
 	real*8 shgas,shdust ! test
 	real*8 arrinterpol ! function
 
-	call GetTemp(Temp(1:D%nR,1:D%nTheta))
-	call IsoTsh(Temp(1:D%nR,D%nTheta-1),sh(1:D%nR))
+	call GetTemp(Temp(1:D%nR-1,1:D%nTheta-1))
+	call IsoTsh(Temp(1:D%nR-1,D%nTheta-1),sh(1:D%nR-1))
 
 	! sh at 1 AU	
 c	print*,'Rin: ',D%Rin 
@@ -3055,13 +3054,13 @@ c-----------------------------------------------------------------------
 	use Parameters
 	implicit none
 	integer i
-	real*8 Temp(1:D%nR)
-	real*8 sh(1:D%nR)
+	real*8 Temp(1:D%nR-1)
+	real*8 sh(1:D%nR-1)
 	doubleprecision, PARAMETER :: GG=6.6720000d-08
 	doubleprecision, PARAMETER :: mu=2.3d0,amu=1.66053886d-24
 	
 	! H=c_s / Omega_k = sqrt(K T / mu m) / sqrt(G M_* / r^3)
-	do i=0,D%nR-1
+	do i=1,D%nR-1
 	   sh(i)= sqrt(kb*Temp(i)*D%R_av(i)**3d0 / (mu*amu*GG*D%Mstar))
 	enddo
 
