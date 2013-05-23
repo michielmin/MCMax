@@ -390,7 +390,7 @@ c		call PAHMCMax(niter)
 	close(unit=20)
 
 	!  Write Mass accretion rate at each radius
-	if(deadzone.or.gravstable.or.D%Rexp.lt.1d10) then	   
+	if(deadzone.or.gravstable.or.D%Rexp.lt.1d10.and.Nphot.ne.0) then	   
 	   write(*,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
 	   write(9,'("Writing Mdot to:  ",a)') mdotrfile(1:len_trim(mdotrfile))
 	   open(unit=90,file=mdotrfile,RECL=100)
