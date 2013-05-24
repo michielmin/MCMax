@@ -350,6 +350,8 @@
 	keyword(i)='multicore'
 	i=i+1
 	keyword(i)='nmax_conv'
+	i=i+1
+	keyword(i)='wedgeopen'
 	
 	Nnormal=i
 c from here on keywords with numbers

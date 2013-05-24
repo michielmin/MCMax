@@ -21,7 +21,7 @@
 	enddo
 	close(unit=90)
 
-	temp0=10d0
+	temp0=1d0
 	temp1=100000d0
 
 	do itemp=1,NTQHP
