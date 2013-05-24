@@ -353,7 +353,11 @@ c ---------------------------------------------------------------------
 
 	if(.not.tcontact) then
 		do ii=1,ngrains
-			write(denstempfileP(ii),'(a,"P",i1,i1,".dat")') denstempfile(1:len_trim(denstempfile)-4),ii/10,ii-10*(ii/10)
+			if(outputfits) then
+				write(denstempfileP(ii),'(a,"P",i1,i1,".fits.gz")') denstempfile(1:len_trim(denstempfile)-8),ii/10,ii-10*(ii/10)
+			else
+				write(denstempfileP(ii),'(a,"P",i1,i1,".dat")') denstempfile(1:len_trim(denstempfile)-4),ii/10,ii-10*(ii/10)
+			endif
 		enddo
 	endif
 	
