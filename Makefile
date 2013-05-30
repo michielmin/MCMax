@@ -77,8 +77,11 @@ OBJS	      = Modules.o \
 		ReadParticleFits.o \
 		InputOutput.o \
 		ComputePart.o \
+		ComputePAH.o \
 		DeadZone.o \
-		RadialStruct.o
+		RadialStruct.o \
+		PAH_MCMax.o \
+		Ionization.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

@@ -7,8 +7,9 @@ c	end module PAHModule
 	use Parameters
 	use PAHModule
 	IMPLICIT NONE
-	integer i,j,ii,niter,itemp,ir
+	integer i,j,ii,niter,itemp,ir,l,iopac
 	real*8 tot,tau,temp0,temp1,bplanck
+	real*8,allocatable :: Kabs(:),Ksca(:)
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -20,6 +21,9 @@ c	do i=1,nlam
 c		write(90,*) lam(i),(C(j,1)%LRF(i),j=1,D%nR-1)
 c	enddo
 c	close(unit=90)
+
+	allocate(Kabs(nlam))
+	allocate(Ksca(nlam))
 
 	temp0=10d0
 	temp1=100000d0
@@ -38,6 +42,8 @@ c	close(unit=90)
 		enddo
 	endif
 
+	if(niter.ne.0) call CreateLRF(NphotUV,10000)
+
 	do i=1,D%nR-1
 		call tellertje(i,D%nR-1)
 		do j=1,D%nTheta-1
@@ -51,11 +57,22 @@ c	close(unit=90)
 				if(niter.eq.0) tau=0d0
 				C(i,j)%LRF(1:nlam)=D%Fstar(1:nlam)/(4d0*pi*D%R_av(i)**2)*exp(-tau)
 			endif
+			do ii=1,ngrains
+				if(Grain(ii)%qhp.and.Grain(ii)%nopac.gt.1) call PAHionization(ii,i,j)
+			enddo
 			if(niter.ne.0.or.((tau.lt.10d0.and.tau.gt.1d0).or.j.eq.1)) then
 				do ii=1,ngrains
 					if(Grain(ii)%qhp) then
+						do l=1,nlam
+							Kabs(l)=0d0
+							Ksca(l)=0d0
+							do iopac=1,Grain(ii)%nopac
+								Kabs(l)=Kabs(l)+C(i,j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
+								Ksca(l)=Ksca(l)+C(i,j)%wopac(ii,iopac)*Grain(ii)%Ksca(iopac,l)
+							enddo
+						enddo
 						call PAH_Kees(nu,nlam,Grain(ii)%Nc
-     &		,Grain(ii)%Kabs(1,1:nlam),Grain(ii)%Ksca(1,1:nlam)
+     &		,Kabs(1:nlam),Ksca(1:nlam)
      &		,C(i,j)%LRF(1:nlam),C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)
      &		,tgridqhp,C(i,j)%tdistr(Grain(ii)%qhpnr,1:NTQHP),NTQHP,temp0,temp1)
 						call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
@@ -102,6 +119,9 @@ c	close(unit=90)
 
 
 	deallocate(BBQHP)
+
+	deallocate(Kabs)
+	deallocate(Ksca)
 
 	return
 	end
