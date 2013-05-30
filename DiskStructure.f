@@ -2016,7 +2016,7 @@ c		D%Theta(j)=cos(D%Theta(j))
 				endif
 				sh=sh*2d0
 				j0=j
-				goto 3
+				if(ii.lt.D%nTheta) goto 3
 			endif
 		enddo				
 	enddo
