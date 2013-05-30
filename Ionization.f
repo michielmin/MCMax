@@ -3,7 +3,7 @@
 	IMPLICIT NONE
 	real*8 G,spec(nlam),lam1,lam2,mu,gamma0,ne
 	integer i,j,l,ii
-	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
+	parameter(mu=1.3*1.67262158d-24) !1.3 times the proton mass in gram
 
 	lam1=0.0953
 	lam2=0.206
@@ -16,7 +16,6 @@
 	call integrate(spec,G)
 
 	G=4d0*pi*G/5.33d-14/3d10
-c	if(j.eq.1) write(*,'(e,e)') D%R_av(i)/AU,G
 	if(G.lt.1d-6) G=1d-6
 	
 	ne = C(i,j)%gasdens*gas2dust / mu
@@ -25,8 +24,7 @@ c	if(j.eq.1) write(*,'(e,e)') D%R_av(i)/AU,G
 
 	C(i,j)%wopac(ii,1)=1d0/(1d0+gamma0)
 	C(i,j)%wopac(ii,2)=1d0-C(i,j)%wopac(ii,1)
-	
-	if(j.eq.1) call averageG(i)
-	
+		
 	return
 	end
+
