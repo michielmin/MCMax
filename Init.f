@@ -45,7 +45,7 @@
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(MAXPART),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
-	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF
+	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF,wedgeopen
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
@@ -187,6 +187,8 @@
 	RNDW=.false.
 	factRW=10d0
 	scalesh='NO'
+	
+	wedgeopen=5d0
 
 	minrad(1:MAXPART)=0d0
 	maxrad(1:MAXPART)=1d50
@@ -928,6 +930,8 @@ c gaps in the density structure
 	if(key.eq.'shpow') read(value,*) shpow
 	if(key.eq.'shscalefile') shscalefile=value
 
+	if(key.eq.'wedgeopen') read(value,*) wedgeopen
+
 c keys for parameterized settling of the grains
 	if(key.eq.'psettr0') read(value,*) psettr0
 	if(key.eq.'psettpow') read(value,*) psettpow
@@ -1512,6 +1516,11 @@ C	End
 	else if(denstype.eq.'SHELL') then
 	write(*,'("Powerlaw:             ",f14.3)') D%denspow
 	write(9,'("Powerlaw:             ",f14.3)') D%denspow
+	else if(denstype.eq.'WEDGE') then
+	write(*,'("Density powerlaw:     ",f14.3)') D%denspow
+	write(9,'("Density powerlaw:     ",f14.3)') D%denspow
+	write(*,'("Wedge opening angle:  ",f14.3)') wedgeopen
+	write(9,'("Wedge opening angle:  ",f14.3)') wedgeopen
 	else if(denstype.eq.'POW') then
 	write(*,'("Powerlaw:             ",f14.3)') D%denspow
 	write(9,'("Powerlaw:             ",f14.3)') D%denspow
@@ -2713,6 +2722,15 @@ c			f2=exp(-0.5*(z/hr)**2)
 			enddo
 		else if(denstype.eq.'SHELL') then ! gijsexp: shell
 			C(i,j)%dens=(AU/D%R_av(i))**(D%denspow) ! density
+		else if(denstype.eq.'WEDGE') then ! wedge opening
+			njj=10
+			C(i,j)%dens=1d-200
+			do jj=1,njj
+				theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+				if((180d0*(pi/2d0-theta)/pi).lt.wedgeopen) then
+					C(i,j)%dens=C(i,j)%dens+(AU/D%R_av(i))**(D%denspow+1d0)
+				endif
+			enddo
 		else if(denstype.eq.'POW') then
 			C(i,j)%dens=(AU/D%R_av(i))**(D%denspow+1d0)
 		else if(denstype.eq.'SIMILARITY') then

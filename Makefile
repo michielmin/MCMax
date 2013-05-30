@@ -24,7 +24,7 @@ endif
 # Platform specific compilation options
 FLAG_ALL      = -O3 -extend-source -traceback -zero -prec-div $(MULTICORE) $(DEBUGGING)
 FLAG_LINUX    = -msse3 -prefetch
-FLAG_MAC      = -mssse3 -opt-prefetch
+FLAG_MAC      = -mssse3 -opt-prefetch -static-intel
 
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec

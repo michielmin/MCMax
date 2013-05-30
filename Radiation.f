@@ -62,6 +62,7 @@
      &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
 	enddo
 	enddo
+	Kext=Kext+KabsQHP
 	KabsTot=Kext-Ksca
 	
 	Albedo=Ksca/Kext

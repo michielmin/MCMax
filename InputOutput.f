@@ -392,6 +392,7 @@ C	 create the new empty FITS file
 			case ('QHPRF')
 				naxis=3
 				naxes(3)=nlam
+				nelements=naxes(1)*naxes(2)*naxes(3)
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
