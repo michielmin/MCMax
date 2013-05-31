@@ -49,7 +49,7 @@
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
-	real*8 computepart_porosity(MAXPART)
+	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index
 	integer computepart_ngrains(MAXPART)
 	logical computepart_blend(MAXPART)
 
@@ -680,6 +680,28 @@ c			endif
 		endif
 	endif
 
+	if(key(1:10).eq.'computepah') then
+		read(key(11:index(key,":")-1),*) i
+		opacity_set=.true.
+		if(i.gt.ngrains) ngrains=i
+		parttype(i)=8
+		write(keyzone,'(a)') key(index(key,":")+1:len_trim(key))
+		if(keyzone.eq.'amin') then
+			read(value,*) computepart_amin(i)
+		else if(keyzone.eq.'amax') then
+			read(value,*) computepart_amax(i)
+		else if(keyzone.eq.'apow') then
+			read(value,*) computepart_apow(i)
+		else if(keyzone.eq.'ngrains') then
+			read(value,*) computepart_ngrains(i)
+		else
+			write(*,'("ComputePAH keyword not understood:",a)') trim(keyzone)
+			write(9,'("ComputePAH keyword not understood:",a)') trim(keyzone)
+			stop
+		endif
+		use_qhp=.true.
+	endif
+
 
 	if(key(1:6).eq.'powmix') then
 		read(key(7:len_trim(key)),*) i
@@ -1126,7 +1148,7 @@ C       End
 		if(computepart_amin(ii).le.0d0) computepart_amin(ii)=mrn_rmin*1d4
 		if(computepart_amax(ii).le.0d0) computepart_amax(ii)=mrn_rmax*1d4
 		if(computepart_apow(ii).gt.100d0) computepart_apow(ii)=mrn_index
-		if(parttype(ii).eq.7.and.computepart_ngrains(ii).gt.1) then
+		if((parttype(ii).eq.7.or.parttype(ii).eq.8).and.computepart_ngrains(ii).gt.1) then
 			do i=ngrains,ii+1,-1
 				computepart_amin(i+computepart_ngrains(ii)-1)=computepart_amin(i)
  				computepart_amax(i+computepart_ngrains(ii)-1)=computepart_amax(i)
@@ -1222,13 +1244,47 @@ C       End
 				rhograin(i+ii-1)=rhograin(ii)
 			enddo
 			ngrains=ngrains+computepart_ngrains(ii)-1
+			mrn_tmp_rmin=mrn_rmin
+			mrn_tmp_rmax=mrn_rmax
+			mrn_tmp_index=mrn_index
+			mrn_rmin=computepart_amin(ii)
+			mrn_rmax=computepart_amax(ii)
+			mrn_index=computepart_apow(ii)
+
 			computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
      &				+log10(computepart_amax(ii)/computepart_amin(ii))
      &				*real(1)/real(computepart_ngrains(ii)))
-     		computepart_ngrains(ii)=1
 			rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
+
+			tot=warg(ii)
+			allocate(w(ngrains))
+			allocate(rtemp(ngrains))
+			j=0
+			do i=ii,ii+computepart_ngrains(ii)-1
+				j=j+1
+				rtemp(j)=rgrain(i)*1d4
+			enddo
+			do i=j+1,ngrains
+				rtemp(i)=10d0*mrn_rmax
+			enddo
+			call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+			j=0
+			do i=ii,ii+computepart_ngrains(ii)-1
+				j=j+1
+				warg(i)=tot*w(j)
+			enddo
+			deallocate(w)
+			deallocate(rtemp)
+     		computepart_ngrains(ii)=1
+			mrn_rmin=mrn_tmp_rmin
+			mrn_rmax=mrn_tmp_rmax
+			mrn_index=mrn_tmp_index
 			goto 57
 		endif
+	enddo
+
+	do ii=1,ngrains
+		print*,warg(ii)
 	enddo
 
 	if(nzones.ne.0) then
@@ -2822,6 +2878,8 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 				call checkaggregates(partarg(ii),Grain(ii)%nopac)
 				if(parttype(ii).eq.5) allocate(Grain(ii)%Topac(Grain(ii)%nopac))
 				if(parttype(ii).eq.3) allocate(Grain(ii)%cryst(Grain(ii)%nopac))
+			else if(parttype(ii).eq.8) then
+				Grain(ii)%nopac=2
 			else
 				Grain(ii)%nopac=1
 			endif
@@ -2896,6 +2954,10 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
      &							,computepart_porosity(ii))
+		else if(parttype(ii).eq.8) then
+			nqhp=nqhp+1
+			Grain(ii)%qhpnr=nqhp
+			call ComputePAH(Grain(ii),computepart_amin(ii),computepart_amax(ii),computepart_apow(ii))
 		endif
 
 		! Set scale height scaling of dust
@@ -4537,7 +4599,7 @@ c-----------------------------------------------------------------------
 	print*,p%Nc,p%Mc,p%Td_qhp
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
-	p%rho=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
+	p%rho=p%Nc*(p%Mc*Mc/12d0)/(4d0*pi*p%rv**3/3d0)
 	print*,p%Nc,p%rv*1d4,p%rho
 
 	i=1

@@ -1,5 +1,5 @@
 #define INCLUDE_DUST
-#define FRSIZE_FREQ 600
+#define FRSIZE_FREQ 1000
 #define QUANTUM_NTEMP 400
 #define DUST_SPECIES_MAX 10
 #define DUST_SIZE_MAX    1

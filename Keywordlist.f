@@ -455,6 +455,8 @@ c from here on keywords with numbers
 	keyword(i)='zone'
 	i=i+1
 	keyword(i)='computepart'
+	i=i+1
+	keyword(i)='computepah'
 
 	Nkey=i
 	
