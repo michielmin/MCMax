@@ -380,7 +380,7 @@ c			Rnew(i)=(Rnew(i-1)+Rnew(i))/2d0
 		endif
 	enddo
 	
-	call UnMakeGaps()
+c	call UnMakeGaps()
 
 	MassTot=0d0
 	do j=1,D%nTheta-1
@@ -423,7 +423,6 @@ c			Rnew(i)=(Rnew(i-1)+Rnew(i))/2d0
 			endif
 		enddo
 5		continue
-
 
 		C(i,j)%V=(4d0*pi/3d0)*(Rnew(i+1)**3-Rnew(i)**3)*
      &			(D%Theta(j)-D%Theta(j+1))*AU**3
@@ -696,7 +695,7 @@ c			C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)/C(i,j)%mass
 		endif
 	enddo
 
-	call MakeGaps()
+c	call MakeGaps()
 
 	MassTot=0d0
 	do i=1,D%nR-1

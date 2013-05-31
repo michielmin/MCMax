@@ -4661,7 +4661,6 @@ c-----------------------------------------------------------------------
 		    else
 		       scale=D%gap(k)
 		    endif
-
 		    C(i,j)%dens=C(i,j)%dens*scale
 		    C(i,j)%dens0=C(i,j)%dens0*scale
 		    C(i,j)%mass=C(i,j)%dens*C(i,j)%V

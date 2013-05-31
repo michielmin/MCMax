@@ -568,7 +568,7 @@ c not found, starting from 1 K
 	integer i,ii,iopac,iTmin,iTmax,iT0,iT
 
 	E1=phot%E
-	iTmin=0
+	iTmin=1
 	iTmax=TMAX
 
 	iT=C(phot%i,phot%j)%T/dT

@@ -104,6 +104,7 @@ c-----------------------------------------------------------------------
 	allocate(rho(D%nTheta+1,0:ngrains))
 
 	call UnMakeGaps()
+
 	if (fixmpset) call FixedMPSettling()
 	if (mpset) call MPSettling() !Gijsexp
 
@@ -161,6 +162,7 @@ c	enddo
 			if(ii.ne.0) then
 				M0(ii)=M0(ii)+C(i,j)%dens0*C(i,j)%V*C(i,j)%w0(ii)
 				M(ii)=M(ii)+C(i,j)%dens*C(i,j)%V*C(i,j)%w(ii)
+			if(IsNaN(M(ii))) print*,'a',ii,i,j
 			else
 				M0(ii)=M0(ii)+C(i,j)%gasdens*C(i,j)%V
 			endif
@@ -350,6 +352,7 @@ c	fix scaleheight to the one defined in Zone(fix)
 		! Renormalize mass of grain ii in cells i
 		do j=1,D%nTheta-1
 			rho(j,ii)=exp(rho(j,ii))*M0(ii)/M1(ii)
+			if(IsNaN(rho(j,ii))) rho(j,ii)=1d-50
 		enddo
 
 		enddo ! ii
@@ -379,7 +382,7 @@ c	fix scaleheight to the one defined in Zone(fix)
 c			if(.not.tdes_iter) then
 			C(i,j)%dens=0d0
 			do ii=1,ngrains
-				C(i,j)%dens=C(i,j)%dens+rho(j,ii)*M(ii)/M0(ii)
+				if(M0(ii).ne.0d0) C(i,j)%dens=C(i,j)%dens+rho(j,ii)*M(ii)/M0(ii)
 			enddo
 c			endif
 			if(C(i,j)%dens0.gt.1d-50) then
@@ -407,6 +410,18 @@ c			endif
 				do ii=1,ngrains
 					C(i,j)%w(ii)=C(i,j)%w0(ii)
 				enddo
+			endif
+			if(IsNaN(C(i,j)%dens)) then
+				print*,'dens',i,j,M0(1:ngrains)
+				stop
+			endif
+			if(IsNaN(C(i,j)%dens0)) then
+				print*,'dens0',i,j
+				stop
+			endif
+			if(IsNaN(tot)) then
+				print*,'tot',i,j
+				stop
 			endif
 			C(i,j)%dens=C(i,j)%dens0*tot
 			call CheckMinimumDensity(i,j)
@@ -2053,7 +2068,6 @@ c in the theta grid we actually store cos(theta) for convenience
 		write(60,*) acos(D%Theta(i))
 	enddo
 	close(unit=60)
-
 	
 	do j=1,D%nTheta-1
 		do i=0,D%nR-1
@@ -2751,17 +2765,17 @@ c     &			/AU*(Msun/(365d0*24d0*3600d0))**(20d0/45d0)/(160d0**(10d0/9d0))
 	IMPLICIT NONE
 	integer i,j,ii
 	real*8 tot(ngrains)
-	
+
 c Set minimum density of condensable stuff
-	if(C(i,j)%dens0.le.1d-50) then
+	if(C(i,j)%dens0.le.1d-50.or.IsNaN(C(i,j)%dens0)) then
 		C(i,j)%dens0=1d-50
 	endif
 c Set minimum dust density
-	if(C(i,j)%dens.le.1d-50) then
+	if(C(i,j)%dens.le.1d-50.or.IsNaN(C(i,j)%dens)) then
 		C(i,j)%dens=1d-50
 	endif
 c Set minimum gas density
-	if(C(i,j)%gasdens.le.1d-50) then
+	if(C(i,j)%gasdens.le.1d-50.or.IsNaN(C(i,j)%gasdens)) then
 		C(i,j)%gasdens=1d-50
 	endif
 c Make sure density of condensable stuff is larger than dust density
