@@ -1290,10 +1290,6 @@ C       End
 		endif
 	enddo
 
-	do ii=1,ngrains
-		print*,warg(ii)
-	enddo
-
 	if(nzones.ne.0) then
 		D%Mtot=0d0
 		write(denstype,'("ZONES")')

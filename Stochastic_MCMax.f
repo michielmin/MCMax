@@ -12,8 +12,8 @@
 	real*8,allocatable :: Kabs(:)
 	
 c use the PAH module from Kees
-	call PAHMCMax(niter)
-	return
+c	call PAHMCMax(niter)
+c	return
 
 	allocate(Kabs(nlam))
 	
@@ -138,7 +138,7 @@ c use the PAH module from Kees
 	integer nlam,i,j,idum,iT,ip,Ne,Nt,tel,Ntel,iTnew,ilam,iT0
 	real*8 LRF(nlam),Kabs(nlam),nu(nlam),dnu(nlam),Td,Ma,Na,QHPemis(nlam)
 	real*8 U(Nt),pi,c,h,Planck,T,Mass,Nphot(nlam),k,tot,ran2,Ma0
-	real*8 Cool(Nt),Tdistr(Nt),r,dU,time,time0,wphot,T0
+	real*8 Cool(Nt),Tdistr(Nt),r,dU,time,time0,wphot,T0,NphotSum(nlam)
 	real*8 spec2(nlam),tot2,w1,w2,E,Tgrid(Nt),temp0,temp1,mp
 	parameter(pi=3.1415926536)
 	parameter(c=2.9979d10)		! cm/s
@@ -168,8 +168,9 @@ c use the PAH module from Kees
 		call integrate(spec2,Cool(i))
 	enddo
 
+	NphotSum=Nphot
 	do i=2,nlam
-		Nphot(i)=Nphot(i-1)+Nphot(i)
+		NphotSum(i)=NphotSum(i-1)+NphotSum(i)
 	enddo
 	spec2(1)=LRF(1)*Kabs(1)
 	do i=2,nlam
@@ -179,6 +180,8 @@ c use the PAH module from Kees
 	Ne=(Na)**0.125
 	if(Ne.lt.25) Ne=25
 	if(Ne.gt.100) Ne=100
+	Ne=Ne/2
+	Ne=Ne*2
 
 	Tdistr=0d0
 
@@ -209,9 +212,9 @@ c use the PAH module from Kees
 		if(i.gt.2) wphot=Nphot(ilam)/(LRF(ilam)*Kabs(ilam)*nu(ilam))
 		if(i.ne.Ne/2) then
 			r=ran2(idum)*tot
-			call hunt(Nphot,nlam,r,ip)
-			w1=Nphot(ip+1)-r
-			w2=r-Nphot(ip)
+			call hunt(NphotSum,nlam,r,ip)
+			w1=NphotSum(ip+1)-r
+			w2=r-NphotSum(ip)
 			E=h*(w1*nu(ip)+w2*nu(ip+1))/(w1+w2)
 		else
 			ip=ilam
@@ -290,7 +293,7 @@ c use the PAH module from Kees
 		endif
 		time=time0
 
-		Tdistr(iT)=Tdistr(iT)+dU/Cool(iT)*wphot/2d0
+		Tdistr(iT)=Tdistr(iT)+dU/Cool(iT)*wphot!/2d0
 	enddo
 1	continue
 	enddo
