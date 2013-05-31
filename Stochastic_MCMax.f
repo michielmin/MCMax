@@ -7,11 +7,15 @@
 	use Parameters
 	use PAHModule
 	IMPLICIT NONE
-	integer i,j,ii,niter,itemp,ir
+	integer i,j,ii,niter,itemp,ir,l,iopac
 	real*8 tot,tau,temp0,temp1,Planck
+	real*8,allocatable :: Kabs(:)
 	
+c use the PAH module from Kees
 	call PAHMCMax(niter)
 	return
+
+	allocate(Kabs(nlam))
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -54,10 +58,19 @@
 				if(niter.eq.0) tau=0d0
 				C(i,j)%LRF(1:nlam)=D%Fstar(1:nlam)/(4d0*pi*D%R_av(i)**2)*exp(-tau)
 			endif
+			do ii=1,ngrains
+				if(Grain(ii)%qhp.and.Grain(ii)%nopac.gt.1) call PAHionization(ii,i,j)
+			enddo
 			if(niter.ne.0.or.((tau.lt.10d0.and.tau.gt.1d0).or.j.eq.1)) then
 				do ii=1,ngrains
 					if(Grain(ii)%qhp) then
-						call Stochastic_MCMax(nu,nlam,Grain(ii)%Nc,Grain(ii)%Mc,Grain(ii)%Kabs(1,1:nlam)
+						do l=1,nlam
+							Kabs(l)=0d0
+							do iopac=1,Grain(ii)%nopac
+								Kabs(l)=Kabs(l)+C(i,j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
+							enddo
+						enddo
+						call Stochastic_MCMax(nu,nlam,Grain(ii)%Nc,Grain(ii)%Mc,Kabs(1:nlam)
      &		,Grain(ii)%Td_qhp,C(i,j)%LRF(1:nlam),C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)
      &		,tgridqhp,C(i,j)%tdistr(Grain(ii)%qhpnr,1:NTQHP),NTQHP,idum)
 						call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
@@ -113,6 +126,7 @@
 
 
 	deallocate(BBQHP)
+	deallocate(Kabs)
 
 	return
 	end

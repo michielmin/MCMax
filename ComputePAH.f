@@ -2,13 +2,19 @@
 	use Parameters
 	IMPLICIT NONE
 	type(particle) p
-	real*8 HC,x,lam1,lam2,rV,amin,amax,apow,theta,Mc
+	real*8 HC,x,lam1,lam2,rV,amin,amax,apow,theta,Mc,fn_i,fn_n,fn
 	integer i,j,ilam,ia
 	logical ionized
 	parameter(Mc=12d0*1.66d-24) !mass of a carbon atom in gram
+	real*8,allocatable :: Ka_n(:),Ka_i(:),Ks_n(:),Ks_i(:)
 
 	p%qhp=.true.
 	p%gascoupled=.true.
+	
+	allocate(Ka_n(nlam))
+	allocate(Ka_i(nlam))
+	allocate(Ks_n(nlam))
+	allocate(Ks_i(nlam))
 
 c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-amin**(1d0-apow))*(3d0-apow)) )
 	rV=sqrt(amax*amin)
@@ -21,7 +27,14 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
 	p%rho=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
 
-	print*,p%Nc,p%rv*1d4,p%rho
+	write(*,'("--------------------------------------------------------")')
+	write(*,'("Computing PAH opacities")')
+	write(*,'("PAH size:              ",f12.6)') p%rV*1d4
+	write(*,'("Number of carbon atoms:",f12.1)') p%Nc
+	write(9,'("--------------------------------------------------------")')
+	write(9,'("Computing PAH opacities")')
+	write(9,'("PAH size:              ",f12.6)') p%rV*1d4
+	write(9,'("Number of carbon atoms:",f12.1)') p%Nc
 
 	if(p%Nc.lt.25) then
 		HC=0.5d0
@@ -32,9 +45,27 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	endif
 	
 	ionized=.false.
-	call MakePAH(lam(1:nlam),p%Kabs(1,1:nlam),p%Ksca(1,1:nlam),p%Nc,HC,nlam,ionized)
+	call MakePAH(lam,Ka_n,Ks_n,p%Nc,HC,nlam,ionized)
+	fn_n=0.473692
 	ionized=.true.
-	call MakePAH(lam(1:nlam),p%Kabs(2,1:nlam),p%Ksca(2,1:nlam),p%Nc,HC,nlam,ionized)
+	call MakePAH(lam,Ka_i,Ks_i,p%Nc,HC,nlam,ionized)
+	fn_i=0.0983061
+
+	fn=1d0
+	fn=fn_n
+	p%Kabs(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
+	p%Ksca(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
+
+	fn=0d0
+	fn=fn_i
+	p%Kabs(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
+	p%Ksca(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
+
+c	open(unit=32,file='PAH.dat',RECL=6000)
+c	do i=1,nlam
+c		write(32,*) lam(i),p%Kabs(1,i),p%Kabs(2,i),p%Ksca(1,i),p%Ksca(2,i),Ka_n(i),Ka_i(i),Ks_n(i),Ks_i(i)
+c	enddo
+c	close(unit=32)
 
 	do i=1,nlam
 		do ia=1,180
@@ -55,6 +86,11 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 		p%Kext(1,i)=p%Kabs(1,i)+p%Ksca(1,i)
 		p%Kext(2,i)=p%Kabs(2,i)+p%Ksca(2,i)
 	enddo
+
+	deallocate(Ka_n)
+	deallocate(Ka_i)
+	deallocate(Ks_n)
+	deallocate(Ks_i)
 
 	return
 	end
@@ -88,11 +124,6 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	external Graphite_x,Graphite_y
 
 	r=1d-3*(Nc/468d0)**(1d0/3d0)
-	print*,r
-c	write(filename,'("Graphite_x.lnk")')
-c	call readrefind(filename,lam,e1x,e2x,nlam)
-c	write(filename,'("Graphite_y.lnk")')
-c	call readrefind(filename,lam,e1y,e2y,nlam)
 
 	call RegridDataLNK(Graphite_x,lam,e1x,e2x,nlam)
 	call RegridDataLNK(Graphite_y,lam,e1y,e2y,nlam)
@@ -112,7 +143,12 @@ c	call readrefind(filename,lam,e1y,e2y,nlam)
 		do j=1,nj
 			S(j)=2d0*gj(j)*lj(j)*1d-4/(pi*((lam(ilam)/lj(j)-lj(j)/lam(ilam))**2+gj(j)**2))
 			if(ionized) then
-				S(j)=S(j)*sji(j)*1d-20
+				if(j.eq.6) then
+c use the 3.3 micron feature from Visser 2007
+					S(j)=S(j)*sjn(j)*1d-20/(1d0+41d0/(Nc-14d0))
+				else
+					S(j)=S(j)*sji(j)*1d-20
+				endif
 			else
 				S(j)=S(j)*sjn(j)*1d-20
 			endif

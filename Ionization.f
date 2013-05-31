@@ -24,7 +24,7 @@
 
 	C(i,j)%wopac(ii,1)=1d0/(1d0+gamma0)
 	C(i,j)%wopac(ii,2)=1d0-C(i,j)%wopac(ii,1)
-		
+
 	return
 	end
 

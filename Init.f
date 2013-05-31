@@ -49,7 +49,7 @@
 	integer ntau1,NUV,N1UV,iz
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
-	real*8 computepart_porosity(MAXPART)
+	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index
 	integer computepart_ngrains(MAXPART)
 	logical computepart_blend(MAXPART)
 
@@ -1244,13 +1244,47 @@ C       End
 				rhograin(i+ii-1)=rhograin(ii)
 			enddo
 			ngrains=ngrains+computepart_ngrains(ii)-1
+			mrn_tmp_rmin=mrn_rmin
+			mrn_tmp_rmax=mrn_rmax
+			mrn_tmp_index=mrn_index
+			mrn_rmin=computepart_amin(ii)
+			mrn_rmax=computepart_amax(ii)
+			mrn_index=computepart_apow(ii)
+
 			computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
      &				+log10(computepart_amax(ii)/computepart_amin(ii))
      &				*real(1)/real(computepart_ngrains(ii)))
-     		computepart_ngrains(ii)=1
 			rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
+
+			tot=warg(ii)
+			allocate(w(ngrains))
+			allocate(rtemp(ngrains))
+			j=0
+			do i=ii,ii+computepart_ngrains(ii)-1
+				j=j+1
+				rtemp(j)=rgrain(i)*1d4
+			enddo
+			do i=j+1,ngrains
+				rtemp(i)=10d0*mrn_rmax
+			enddo
+			call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+			j=0
+			do i=ii,ii+computepart_ngrains(ii)-1
+				j=j+1
+				warg(i)=tot*w(j)
+			enddo
+			deallocate(w)
+			deallocate(rtemp)
+     		computepart_ngrains(ii)=1
+			mrn_rmin=mrn_tmp_rmin
+			mrn_rmax=mrn_tmp_rmax
+			mrn_index=mrn_tmp_index
 			goto 57
 		endif
+	enddo
+
+	do ii=1,ngrains
+		print*,warg(ii)
 	enddo
 
 	if(nzones.ne.0) then

@@ -42,7 +42,7 @@ c	close(unit=90)
 		enddo
 	endif
 
-	if(niter.ne.0) call CreateLRF(NphotUV,10000)
+c	if(niter.ne.0) call CreateLRF(NphotUV,10000)
 
 	do i=1,D%nR-1
 		call tellertje(i,D%nR-1)
