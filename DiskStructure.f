@@ -162,7 +162,6 @@ c	enddo
 			if(ii.ne.0) then
 				M0(ii)=M0(ii)+C(i,j)%dens0*C(i,j)%V*C(i,j)%w0(ii)
 				M(ii)=M(ii)+C(i,j)%dens*C(i,j)%V*C(i,j)%w(ii)
-			if(IsNaN(M(ii))) print*,'a',ii,i,j
 			else
 				M0(ii)=M0(ii)+C(i,j)%gasdens*C(i,j)%V
 			endif
@@ -241,7 +240,7 @@ c model from Leinert et al. 2002
 			enddo
 		else if(Grain(ii)%shtype.eq.'HALO') then
 		   do j=1,D%nTheta-1
-		      rho(j,ii)=1d0
+		      rho(j,ii)=0d0
 
 		      !  a wedge with constant density for z/r < -settle#
 		      if(Grain(ii)%shscale(i).lt.0d0.and.
@@ -352,7 +351,8 @@ c	fix scaleheight to the one defined in Zone(fix)
 		! Renormalize mass of grain ii in cells i
 		do j=1,D%nTheta-1
 			rho(j,ii)=exp(rho(j,ii))*M0(ii)/M1(ii)
-			if(IsNaN(rho(j,ii))) rho(j,ii)=1d-50
+c			if(IsNaN(rho(j,ii))) rho(j,ii)=1d-50
+			if(rho(j,ii).lt.1d-50) rho(j,ii)=1d-50
 		enddo
 
 		enddo ! ii
@@ -373,6 +373,7 @@ c	fix scaleheight to the one defined in Zone(fix)
 				endif
 				if(gasf(ii).lt.0d0) gasf(ii)=0d0
 				if(gasf(ii).gt.1d0) gasf(ii)=1d0
+				if(IsNaN(gasf(ii))) gasf(ii)=0d0
 			enddo
 			C(i,j)%gasdens=rho(j,0)
 			C(i,j)%dens0=0d0
@@ -410,18 +411,6 @@ c			endif
 				do ii=1,ngrains
 					C(i,j)%w(ii)=C(i,j)%w0(ii)
 				enddo
-			endif
-			if(IsNaN(C(i,j)%dens)) then
-				print*,'dens',i,j,M0(1:ngrains)
-				stop
-			endif
-			if(IsNaN(C(i,j)%dens0)) then
-				print*,'dens0',i,j
-				stop
-			endif
-			if(IsNaN(tot)) then
-				print*,'tot',i,j
-				stop
 			endif
 			C(i,j)%dens=C(i,j)%dens0*tot
 			call CheckMinimumDensity(i,j)
@@ -1925,7 +1914,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			do j=D%nTheta-2,1,-1
 				z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
 				dens=C(i,j)%dens*C(i,j)%w(ii)
-				if(dens.lt.d0) then
+				if(dens.lt.d0.or.dens.le.1d-50) then
 					sh=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
 					goto 2
 				endif
@@ -2047,6 +2036,18 @@ c		D%Theta(j)=cos(D%Theta(j))
 	call sort(D%Theta(1:D%nTheta),D%nTheta)
 	do j=1,D%nTheta-1
 		D%theta_av(j)=acos((D%Theta(D%nTheta-j+1)+D%Theta(D%nTheta-j))/2d0)
+	enddo
+
+5	continue
+	do j=1,D%nTheta-2
+		if(D%theta_av(j).eq.D%theta_av(j+1)) then
+			if(j.eq.1) then
+				D%theta_av(j)=D%theta_av(j)/2d0
+			else
+				D%theta_av(j)=(D%theta_av(j)+D%theta_av(j-1))/2d0
+			endif
+			goto 5
+		endif
 	enddo
 	
 c in the theta grid we actually store cos(theta) for convenience
@@ -2767,15 +2768,15 @@ c     &			/AU*(Msun/(365d0*24d0*3600d0))**(20d0/45d0)/(160d0**(10d0/9d0))
 	real*8 tot(ngrains)
 
 c Set minimum density of condensable stuff
-	if(C(i,j)%dens0.le.1d-50.or.IsNaN(C(i,j)%dens0)) then
+	if(C(i,j)%dens0.le.1d-50) then
 		C(i,j)%dens0=1d-50
 	endif
 c Set minimum dust density
-	if(C(i,j)%dens.le.1d-50.or.IsNaN(C(i,j)%dens)) then
+	if(C(i,j)%dens.le.1d-50) then
 		C(i,j)%dens=1d-50
 	endif
 c Set minimum gas density
-	if(C(i,j)%gasdens.le.1d-50.or.IsNaN(C(i,j)%gasdens)) then
+	if(C(i,j)%gasdens.le.1d-50) then
 		C(i,j)%gasdens=1d-50
 	endif
 c Make sure density of condensable stuff is larger than dust density
@@ -2804,4 +2805,25 @@ c Set minimum dust density
 	
 	return
 	end
+	
+
+	subroutine CheckNaN(string)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j,ii
+	character*10 string
+
+	do i=1,D%nR-1
+	do j=1,D%nTheta-1
+		if(IsNaN(C(i,j)%dens)) write(*,'(a,a,i,i)') trim(string),' dens ',i,j
+		if(IsNaN(C(i,j)%dens0)) write(*,'(a,a,i,i)') trim(string),' dens0',i,j
+		do ii=1,ngrains
+			if(IsNaN(C(i,j)%w(ii))) write(*,'(a,a,i4,i,i)') trim(string),' w',ii,i,j
+		enddo
+	enddo
+	enddo
+	
+	return
+	end
+	
 	
