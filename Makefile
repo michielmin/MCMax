@@ -64,6 +64,8 @@ OBJS	      = Modules.o \
 		Dtable.o \
 		Lapack.o \
 		Stochastic_MCMax.o \
+		PAH_MCMax.o \
+		Ionization.o \
 		Settling.o \
 		MPSettling.o \
 		fit_module.o \
@@ -77,6 +79,7 @@ OBJS	      = Modules.o \
 		ReadParticleFits.o \
 		InputOutput.o \
 		ComputePart.o \
+		ComputePAH.o \
 		DeadZone.o \
 		RadialStruct.o
 

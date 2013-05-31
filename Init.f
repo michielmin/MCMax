@@ -1244,41 +1244,48 @@ C       End
 				rhograin(i+ii-1)=rhograin(ii)
 			enddo
 			ngrains=ngrains+computepart_ngrains(ii)-1
-			mrn_tmp_rmin=mrn_rmin
-			mrn_tmp_rmax=mrn_rmax
-			mrn_tmp_index=mrn_index
-			mrn_rmin=computepart_amin(ii)
-			mrn_rmax=computepart_amax(ii)
-			mrn_index=computepart_apow(ii)
+			if(computepart_ngrains(ii).ne.1) then
+				mrn_tmp_rmin=mrn_rmin
+				mrn_tmp_rmax=mrn_rmax
+				mrn_tmp_index=mrn_index
+				mrn_rmin=computepart_amin(ii)
+				mrn_rmax=computepart_amax(ii)
+				mrn_index=computepart_apow(ii)
 
-			computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
+				computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
      &				+log10(computepart_amax(ii)/computepart_amin(ii))
      &				*real(1)/real(computepart_ngrains(ii)))
-			rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
+				rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
 
-			tot=warg(ii)
-			allocate(w(ngrains))
-			allocate(rtemp(ngrains))
-			j=0
-			do i=ii,ii+computepart_ngrains(ii)-1
-				j=j+1
-				rtemp(j)=rgrain(i)*1d4
-			enddo
-			do i=j+1,ngrains
-				rtemp(i)=10d0*mrn_rmax
-			enddo
-			call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
-			j=0
-			do i=ii,ii+computepart_ngrains(ii)-1
-				j=j+1
-				warg(i)=tot*w(j)
-			enddo
-			deallocate(w)
-			deallocate(rtemp)
-     		computepart_ngrains(ii)=1
-			mrn_rmin=mrn_tmp_rmin
-			mrn_rmax=mrn_tmp_rmax
-			mrn_index=mrn_tmp_index
+				tot=warg(ii)
+				allocate(w(ngrains))
+				allocate(rtemp(ngrains))
+				j=0
+				do i=ii,ii+computepart_ngrains(ii)-1
+					j=j+1
+					rtemp(j)=rgrain(i)*1d4
+				enddo
+				do i=j+1,ngrains
+					rtemp(i)=10d0*mrn_rmax
+				enddo
+				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+				j=0
+				do i=ii,ii+computepart_ngrains(ii)-1
+					j=j+1
+					warg(i)=tot*w(j)
+				enddo
+				deallocate(w)
+				deallocate(rtemp)
+   	  			computepart_ngrains(ii)=1
+				mrn_rmin=mrn_tmp_rmin
+				mrn_rmax=mrn_tmp_rmax
+				mrn_index=mrn_tmp_index
+			else
+				computepart_amax(ii)=10d0**(log10(computepart_amin(ii))
+     &				+log10(computepart_amax(ii)/computepart_amin(ii))
+     &				*real(1)/real(computepart_ngrains(ii)))
+				rgrain(ii)=sqrt(computepart_amin(ii)*computepart_amax(ii))*1d-4
+			endif
 			goto 57
 		endif
 	enddo
