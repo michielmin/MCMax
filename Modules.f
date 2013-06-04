@@ -10,7 +10,7 @@
 	parameter(Rsun=6.955e10,Msun=1.98892e33,Lsun=3.827e33)
 	parameter(kb=1.3806503d-16,sigma=5.6704d-5)
 c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
-	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:)
+	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:),lamHR(:),FstarHR(:)
 	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:),Kext_column(:)
 	real*8 xsf(NPHISCATT),ysf(NPHISCATT),zsf(NPHISCATT),tautot,epsiter,tau_max,nEJv
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
@@ -25,7 +25,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer*8 nemit,ninteract,maxinteract,nmaxinteract
 	integer ngrains,nobs,scat_how,NPhotDiffuse,maxiter,nRWinter,iRWinter,NphotFinal,NphotUV
 	integer nspan,nlev,ntspan,ntlev,nexits,nruns,iTD(0:TMAX),NsigDiskstructure,nBW,nqhp
-	integer nplanets,niter0,nspike,ngrains2,nzones,maxruntime
+	integer nplanets,niter0,nspike,ngrains2,nzones,maxruntime,nlamHR
 	integer gsd_diag !Gijsexp
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp

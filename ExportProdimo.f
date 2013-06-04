@@ -8,8 +8,8 @@
 	character*500 filename,version
 	real*8,allocatable :: grid(:,:,:)
 	real,allocatable :: temperature(:,:,:)
-	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:)
-	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:)
+	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:),region_index(:)
+	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
 	real*8 fUV,tot,pUV
 	real*8,allocatable :: spec(:)
@@ -21,6 +21,8 @@
 	allocate(dens(D%nR-1,D%nTheta-1))
 	allocate(opacite(D%nR-1,D%nTheta-1,2,nlam))
 	allocate(N_grains(D%nR-1,D%nTheta-1,0:3))
+	allocate(region_index(D%nR-1))
+	allocate(HRspec(nlamHR,2))
 	
 	write(filename,'(a,"forProDiMo.fits.gz")') outdir(1:len_trim(outdir))
 
@@ -463,7 +465,62 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	enddo
 
 	call ftppre(unit,group,fpixel,nelements,N_grains,status)
+
+
+	!------------------------------------------------------------------------------
+	! HDU 13 : Region index
+	!------------------------------------------------------------------------------
+	bitpix=-32
+	naxis=1
+	naxes(1)=D%nR-1
+	nelements=naxes(1)
+
+	! create new hdu
+	call ftcrhd(unit, status)
+
+	!  Write the required header keywords.
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 	
+	if(nzones.le.1) then
+		region_index=1
+	else
+		region_index=0
+		do ri=1, D%nR-1
+			do j=1,nzones
+				if((D%R_av(ri)/AU).gt.Zone(j)%Rin.and.(D%R_av(ri)/AU).lt.Zone(j)%Rout) then
+					region_index(ri)=j
+				endif
+			enddo
+		enddo
+	endif
+
+	call ftppre(unit,group,fpixel,nelements,region_index,status)
+
+	!------------------------------------------------------------------------------
+	! HDU 14 : High resolution stellar spectrum
+	!------------------------------------------------------------------------------
+	bitpix=-32
+	naxis=2
+	naxes(1)=nlamHR
+	naxes(2)=2
+	nelements=naxes(1)*naxes(2)
+
+	! create new hdu
+	call ftcrhd(unit, status)
+
+	!  Write the required header keywords.
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+	
+	do lambda=1,nlamHR
+		HRspec(lambda,1)=lamHR(lambda)
+		HRspec(lambda,2)=FstarHR(lambda) * 1d-3 * 2.998e14/lamHR(lambda) /(pi*D%Rstar**2)
+	enddo
+
+	call ftppre(unit,group,fpixel,nelements,HRspec,status)
+
+	!------------------------------------------------------------------------------
+
+
 	!  Close the file and free the unit number.
 	call ftclos(unit, status)
 	call ftfiou(unit, status)
@@ -482,6 +539,8 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	deallocate(dens)
 	deallocate(opacite)
 	deallocate(N_grains)
+	deallocate(region_index)
+	deallocate(HRspec)
 
 
 	return
