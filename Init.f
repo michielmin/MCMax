@@ -109,6 +109,8 @@
 	zlam2=40d0
 	nzlam=0
 
+	nlamHR=0
+
 	NphotFirst=100000
 	NFirst=-1
 
@@ -2365,10 +2367,17 @@ c	lmax  = 4000.0
 		call integrate(D%Fstar,D%Lstar)
 		write(*,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
 		write(9,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
+		nlamHR=nlam
+		allocate(lamHR(nlamHR))
+		allocate(FstarHR(nlamHR))
+		lamHR(1:nlam)=lam(1:nlam)
+		FstarHR(1:nlam)=D%Fstar(1:nlam)
 	else if (startype.eq.'FILE') then
 		call readstar(starfile,lam,D%Fstar,nlam)
+		call readspecHR(starfile)
 		call integrate(D%Fstar,tot)
 		D%Fstar=D%Lstar*D%Fstar/tot
+		FstarHR=D%Lstar*FstarHR/tot
 	endif
 
 	if(D%Rstar2.gt.0d0.and.D%Tstar2.gt.0d0) then
@@ -4011,6 +4020,8 @@ c-----------------------------------------------------------------------
 	deallocate(dnu)
 	deallocate(nu)
 	deallocate(D%Fstar)
+	deallocate(lamHR)
+	deallocate(FstarHR)
 
 	arraysallocated=.false.
 
@@ -5180,4 +5191,35 @@ c		endif
 	
 	return
 	end
+	
+
+
+c-----------------------------------------------------------------------
+c subroutine that only reads in the entire file, no regridding
+c-----------------------------------------------------------------------
+	subroutine readspecHR(starfile)
+	use Parameters
+	IMPLICIT NONE
+	character*500 starfile
+	integer i
+	
+	open(unit=20,file=starfile,RECL=6000)
+	nlamHR=0
+1	read(20,*,end=2)
+	nlamHR=nlamHR+1
+	goto 1
+2	close(unit=20)
+
+	allocate(lamHR(nlamHR))
+	allocate(FstarHR(nlamHR))
+
+	open(unit=20,file=starfile,RECL=6000)
+	do i=1,nlamHR
+		read(20,*) lamHR(i),FstarHR(i)
+	enddo
+	close(unit=20)
+	
+	return
+	end
+		
 	
