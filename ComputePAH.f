@@ -51,15 +51,20 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	call MakePAH(lam,Ka_i,Ks_i,p%Nc,HC,nlam,ionized)
 	fn_i=0.0983061
 
-	fn=1d0
-	fn=fn_n
-	p%Kabs(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
-	p%Ksca(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
+c	fn=1d0
+c	fn=fn_n
+c	p%Kabs(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
+c	p%Ksca(1,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
 
-	fn=0d0
-	fn=fn_i
-	p%Kabs(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
-	p%Ksca(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
+c	fn=0d0
+c	fn=fn_i
+c	p%Kabs(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ka_n)+(fn_n-fn)*log10(Ka_i))/(fn_n-fn_i))
+c	p%Ksca(2,1:nlam)=10d0**(((fn-fn_i)*log10(Ks_n)+(fn_n-fn)*log10(Ks_i))/(fn_n-fn_i))
+
+	p%Kabs(1,1:nlam)=Ka_n(1:nlam)
+	p%Kabs(2,1:nlam)=Ka_i(1:nlam)
+	p%Ksca(1,1:nlam)=Ks_n(1:nlam)
+	p%Ksca(2,1:nlam)=Ks_i(1:nlam)
 
 c	open(unit=32,file='PAH.dat',RECL=6000)
 c	do i=1,nlam

@@ -10,6 +10,8 @@
 	integer i,j,ii,niter,itemp,ir,l,iopac
 	real*8 tot,tau,temp0,temp1,Planck
 	real*8,allocatable :: Kabs(:)
+
+c	if(niter.ne.0) call CreateLRF(NphotUV,10000)
 	
 c use the PAH module from Kees
 c	call PAHMCMax(niter)
@@ -157,8 +159,6 @@ c	return
 	Mass=Na*Ma
 	Nphot=LRF*Kabs*Mass*dnu/(h*nu)
 
-	tot=sum(Nphot(1:nlam))
-
 	do i=1,Nt
 		T=Tgrid(i)
 		U(i)=3d0*Na*k*(T-Td*atan(T/Td))
@@ -168,14 +168,17 @@ c	return
 		call integrate(spec2,Cool(i))
 	enddo
 
-	NphotSum=Nphot
-	do i=2,nlam
-		NphotSum(i)=NphotSum(i-1)+NphotSum(i)
-	enddo
 	spec2(1)=LRF(1)*Kabs(1)
 	do i=2,nlam
 		spec2(i)=spec2(i-1)+LRF(i)*Kabs(i)*nu(i)
 	enddo
+
+	NphotSum=Nphot
+	do i=2,nlam
+		NphotSum(i)=NphotSum(i-1)+NphotSum(i)
+	enddo
+
+	tot=sum(Nphot(1:nlam))
 
 	Ne=(Na)**0.125
 	if(Ne.lt.25) Ne=25
