@@ -15,6 +15,8 @@
 	character*10 poptype
 	parameter(clight=2.9979d5) !km/s
 	real*8 Reddening,compute_dlam,ExtISM,temp,tot
+	real*8 radtau,radialtau,tau1,Av
+	integer ntau1
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -38,6 +40,14 @@
 	tracegas=tel%tracegas
 
 	makeangledependence=.false.
+
+	Av=D%Av
+	if(adjustAv) then
+		radtau=radialtau(0.55d0,tau1,ntau1,1)
+		Av=Av+2.5*log10(exp(-radtau))
+		if(Av.lt.0d0) Av=0d0
+		write(*,'("Av adjusted to: ",f5.2)') Av
+	endif
 
 	if(scattering.and.(tel%Nphot+tel%NphotAngle).ne.0.and..not.storescatt) then
 		do i=0,D%nR
@@ -92,7 +102,7 @@
      &			,tel%flag(1:len_trim(tel%flag))
 		open(unit=30,file=specfile,RECL=6000)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
 		fstar1=arrinterpol(tel%lam1,lam(nlam),D%Fstar,nlam,1)
 		fstar2=arrinterpol(tel%lam2,lam(nlam),D%Fstar,nlam,1)
 		if(scat_how.ne.2) then
@@ -106,7 +116,7 @@
 		do j=1,nlam
 		   if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
 		      call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		      ExtISM=Reddening(lam(j),compute_dlam(lam(j)),D%Av)
+		      ExtISM=Reddening(lam(j),compute_dlam(lam(j)),Av)
 		      if(scat_how.ne.2) then
 			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
      &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*D%Fstar(j)/D%distance**2
@@ -119,7 +129,7 @@
 		   endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
 		if(scat_how.ne.2) then
 		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
      &          	       1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2
@@ -134,7 +144,7 @@
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
 		if(tel%opening.ne.0d0) call opendisk(image,tel%opening)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
@@ -151,7 +161,7 @@
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
@@ -179,7 +189,7 @@
 			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
 		do i=1,tel%nfov
 			if(tel%scaletype.eq.1) then
 				image%rscale=1d0
@@ -205,7 +215,7 @@
 		enddo
 
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),D%Av)
+		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam1,V(k),phase(k))
 		enddo
@@ -221,7 +231,7 @@
 			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),D%Av)
+		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
 		do k=1,tel%nbaseline
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam2,V(k),phase(k))
 		enddo
@@ -392,7 +402,7 @@ c is still without interstellar extinction
 			write(30,'("# transition nr ",i)') j
 			write(30,'("# up, low       ",i,i)') i_up,i_low
 			write(30,'("# population    ",a)') trim(poptype)
-			ExtISM=Reddening(image%lam,compute_dlam(image%lam),D%Av)
+			ExtISM=Reddening(image%lam,compute_dlam(image%lam),Av)
 c			Resolution=3000
 c			do i=1,tel%nvelo
 c				velo_flux_R(i)=0d0

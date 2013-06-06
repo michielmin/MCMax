@@ -59,6 +59,7 @@
 	D%Mstar=2.5d0
 	D%distance=100d0
 	D%Av=0d0
+	adjustAv=.false.
 	
 	D%Tstar2=-1d0
 	D%Rstar2=-1d0
@@ -429,6 +430,7 @@ c	Interstellar Radiation Field (IRF)
 	endif
 	if(key.eq.'distance') read(value,*) D%distance
 	if(key.eq.'av') read(value,*) D%Av
+	if(key.eq.'adjustav') read(value,*) adjustAv
 	if(key.eq.'posangle') read(value,*) D%PA
 	if(key.eq.'incangle') read(value,*) D%IA
 
@@ -1268,7 +1270,7 @@ C       End
 					rtemp(j)=rgrain(i)*1d4
 				enddo
 				do i=j+1,ngrains
-					rtemp(i)=10d0*mrn_rmax
+					rtemp(i)=(10d0+real(i))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
 				j=0
@@ -3080,7 +3082,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					endif
 				enddo
 				do ii=j+1,ngrains
-					rtemp(ii)=10d0*mrn_rmax
+					rtemp(ii)=(10d0+real(ii))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
 				j=0

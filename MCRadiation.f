@@ -34,10 +34,20 @@
 	real*8 Reddening,compute_dlam
 	real*8 WeightedAlpha
 
+	real*8 radtau,radialtau,tau1,Av
+	integer ntau1
+
 6	continue
 
+	Av=D%Av
+	if(adjustAv) then
+		radtau=radialtau(0.55d0,tau1,ntau1,1)
+		Av=Av+2.5*log10(exp(-radtau))
+		if(Av.lt.0d0) Av=0d0
+		write(*,'("Av adjusted to: ",f5.2)') Av
+	endif
 	do i=1,nlam
-		ExtISM(i)=Reddening(lam(i),compute_dlam(lam(i)),D%Av)
+		ExtISM(i)=Reddening(lam(i),compute_dlam(lam(i)),Av)
 	enddo
 
 	do i=1,nlam
