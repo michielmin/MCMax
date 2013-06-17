@@ -357,6 +357,20 @@ C	 create the new empty FITS file
 						array(i,j,1,1)=C(i,j)%V
 					enddo
 				enddo
+			case ('ALPHAT')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%alphaturb
+					enddo
+				enddo
+			case ('ALPHAV')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%alphavis
+					enddo
+				enddo
 			case ('dTEMP')
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1
