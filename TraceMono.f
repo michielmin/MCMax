@@ -34,7 +34,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	endif
 
 	allocate(scatim(image%nr,image%nphi))
-
+	
 	if(outfluxcontr) then
 		allocate(fluxcontr(2,0:D%nR,0:D%nTheta))
 		fluxcontr=0d0
@@ -558,18 +558,24 @@ c-----------------------------------------------------------------------
 	IMPLICIT NONE
 	character*500 input,tmp,specfile
 	integer i,j,k,l,t1,t2,iangle,nangle,Nphot,iphot,ii,NphotStar
-	real*8 ran2,tau,R0,R1,angle,r,distance,tottime,ct,lam0
-	real*8 VisEmisDis(0:D%nR+1,0:D%nTheta+1),E
+	real*8 ran2,tau,R0,R1,angle,r,distance,tottime,ct,lam0,E
 	real*8 th,ph,inp,determineT,fstop,fact,s1,s2
 	integer starttime,stoptime,starttrace,cr,ia
 	logical escape,hitstar,hitmid,ignore
 	type(Photon) phot,phot2,photinit
 	integer ilam,nabs,iopac
-	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2,vismass(0:D%nR+1,0:D%nTheta+1)
-	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
+	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2
+	real*8 EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
+	real*8,allocatable :: VisEmisDis(:,:),EmisDis(:,:),vismass(:,:)
+	integer,allocatable :: NEmisDis(:,:)
 	real*8 Einner
-	integer NEmisDis(0:D%nR+1,0:D%nTheta+1),Nstar,ip,np,jj,Nmin
+	integer Nstar,ip,np,jj,Nmin
 	type(Mueller) M
+	
+	allocate(VisEmisDis(0:D%nR+1,0:D%nTheta+1))
+	allocate(EmisDis(0:D%nR+1,0:D%nTheta+1))
+	allocate(vismass(0:D%nR+1,0:D%nTheta+1))
+	allocate(NEmisDis(0:D%nR+1,0:D%nTheta+1))
 	
 	nemit=0
 
@@ -836,6 +842,11 @@ c	fstop=C(phot%i,phot%j)%Albedo
 		enddo
 	enddo
 	endif
+
+	deallocate(VisEmisDis)
+	deallocate(EmisDis)
+	deallocate(vismass)
+	deallocate(NEmisDis)
 
 	return
 	end

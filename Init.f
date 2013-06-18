@@ -3010,7 +3010,15 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	write(9,'("--------------------------------------------------------")')	
 
 	! Set composition in every grid cell (from keywords, mrn/gsd or file)
-	if(compositionfile.eq.' ') then
+	if(Nphot.gt.0) then
+	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) then
+		write(*,'("Reading composition from density file")')
+		write(9,'("Reading composition from density file")')
+		call readstruct(densfile,(/'SKIP   ','COMP   '/),2,0,.false.)
+		do j=1,D%nTheta-1
+			C(0,j)%w(1:ngrains)=C(1,j)%w(1:ngrains)
+		enddo
+	else if(compositionfile.eq.' ') then
 		do i=0,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%w(1:ngrains)=warg(1:ngrains)/sum(warg(1:ngrains))
@@ -3021,6 +3029,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		do j=1,D%nTheta-1
 			C(0,j)%w(1:ngrains)=C(1,j)%w(1:ngrains)
 		enddo
+	endif
 	endif
 
 	if(denstype.eq.'MEIXNER'.and.MeixG.ne.0d0) then
@@ -3857,7 +3866,6 @@ c		f_weight=f_weight_backup
 	do ii=1,ngrains
 		Grain(ii)%trace=trace(ii)
 	enddo
-
 
 	if((RNDW.or.nphotdiffuse.gt.0).and.Nphot.ne.0) call InitRandomWalk()
 

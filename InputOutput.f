@@ -451,7 +451,7 @@ C	 create the new empty FITS file
 	subroutine readstruct(filename,vars,nvars,ipart,doalloc)
 	use Parameters
 	IMPLICIT NONE
-	integer nvars,ivars,i,j,ii,ipart,l,nr,nt
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,ngrains2_tmp,ngrains_tmp
 	character*7 vars(nvars)
 	character*500 filename
 	logical doalloc,truefalse
@@ -480,9 +480,13 @@ C	 create the new empty FITS file
 			goto 1
 		endif
 	enddo
-	read(20,*,end=1) nr,nt,ngrains,ngrains2
+	ngrains_tmp=-1
+	ngrains2_tmp=-1
+	read(20,*,end=1) nr,nt,ngrains_tmp,ngrains2_tmp
 
 1	continue
+	if(ngrains_tmp.gt.0) ngrains=ngrains_tmp
+	if(ngrains2_tmp.gt.0) ngrains2=ngrains2_tmp
 	if(doalloc) then
 		D%nR=nr+1
 		D%nTheta=nt+1
