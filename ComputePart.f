@@ -509,11 +509,11 @@ c-----------------------------------------------------------------------
 	  logical simple,extend,truefalse
 	character*500 filename
 
-
 	allocate(p%Kabs(1,nlam))
 	allocate(p%Ksca(1,nlam))
 	allocate(p%Kext(1,nlam))
 	allocate(p%F(1,nlam))
+
 	p%Kabs=0d0
 	p%Kext=0d0
 	p%Ksca=0d0

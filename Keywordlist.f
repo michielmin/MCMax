@@ -23,6 +23,8 @@
 	i=i+1
 	keyword(i)='av'
 	i=i+1
+	keyword(i)='adjustav'
+	i=i+1
 	keyword(i)='posangle'
 	i=i+1
 	keyword(i)='incangle'

@@ -34,7 +34,7 @@
 	character*1000 line
 	character*500 key,value,file,keyzone
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
-	logical mdustscale,settle(MAXPART),trace(MAXPART)
+	logical mdustscale,settle(MAXPART),trace(MAXPART),denscomposition
 	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
 	real*8 frac(MAXPART),f,phi,shscalevalue,part_shscale(MAXPART),shpow,minrad(MAXPART),maxrad(MAXPART)
 	real*8 roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
@@ -59,6 +59,7 @@
 	D%Mstar=2.5d0
 	D%distance=100d0
 	D%Av=0d0
+	adjustAv=.false.
 	
 	D%Tstar2=-1d0
 	D%Rstar2=-1d0
@@ -325,6 +326,8 @@
 
 	NMAX_CONVOLUTION=8000
 	
+	denscomposition=.false.
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -429,6 +432,7 @@ c	Interstellar Radiation Field (IRF)
 	endif
 	if(key.eq.'distance') read(value,*) D%distance
 	if(key.eq.'av') read(value,*) D%Av
+	if(key.eq.'adjustav') read(value,*) adjustAv
 	if(key.eq.'posangle') read(value,*) D%PA
 	if(key.eq.'incangle') read(value,*) D%IA
 
@@ -1328,6 +1332,8 @@ C       End
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
 	if(exportProDiMo) computeLRF=.true.
+
+	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) denscomposition=.true.
 
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.
 	if(Nphot.eq.0) then
@@ -3012,7 +3018,14 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	write(9,'("--------------------------------------------------------")')	
 
 	! Set composition in every grid cell (from keywords, mrn/gsd or file)
-	if(compositionfile.eq.' ') then
+	if(denscomposition) then
+		write(*,'("Reading composition from density file")')
+		write(9,'("Reading composition from density file")')
+		call readstruct(compositionfile,(/'SKIP   ','COMP   '/),2,0,.false.)
+		do j=1,D%nTheta-1
+			C(0,j)%w(1:ngrains)=C(1,j)%w(1:ngrains)
+		enddo
+	else if(compositionfile.eq.' ') then
 		do i=0,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%w(1:ngrains)=warg(1:ngrains)/sum(warg(1:ngrains))
@@ -3859,7 +3872,6 @@ c		f_weight=f_weight_backup
 	do ii=1,ngrains
 		Grain(ii)%trace=trace(ii)
 	enddo
-
 
 	if((RNDW.or.nphotdiffuse.gt.0).and.Nphot.ne.0) call InitRandomWalk()
 

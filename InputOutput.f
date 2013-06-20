@@ -357,6 +357,20 @@ C	 create the new empty FITS file
 						array(i,j,1,1)=C(i,j)%V
 					enddo
 				enddo
+			case ('ALPHAT')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%alphaturb
+					enddo
+				enddo
+			case ('ALPHAV')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%alphavis
+					enddo
+				enddo
 			case ('dTEMP')
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1
@@ -437,7 +451,7 @@ C	 create the new empty FITS file
 	subroutine readstruct(filename,vars,nvars,ipart,doalloc)
 	use Parameters
 	IMPLICIT NONE
-	integer nvars,ivars,i,j,ii,ipart,l,nr,nt
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,ngrains2_tmp,ngrains_tmp
 	character*7 vars(nvars)
 	character*500 filename
 	logical doalloc,truefalse
@@ -466,9 +480,13 @@ C	 create the new empty FITS file
 			goto 1
 		endif
 	enddo
-	read(20,*,end=1) nr,nt,ngrains,ngrains2
+	ngrains_tmp=-1
+	ngrains2_tmp=-1
+	read(20,*,end=1) nr,nt,ngrains_tmp,ngrains2_tmp
 
 1	continue
+	if(ngrains_tmp.gt.0) ngrains=ngrains_tmp
+	if(ngrains2_tmp.gt.0) ngrains2=ngrains2_tmp
 	if(doalloc) then
 		D%nR=nr+1
 		D%nTheta=nt+1
