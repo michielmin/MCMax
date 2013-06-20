@@ -331,15 +331,19 @@ c			stop
 		! continue with zones
 		else
 c	fix scaleheight to the one defined in Zone(fix)
-			do j=1,D%nTheta-1
-				rr=D%R_av(i)*sin(D%theta_av(j))/AU
-				zz=D%R_av(i)*cos(D%theta_av(j))/AU
-				hr=scale*Zone(fix)%sh*(rr/Zone(fix)%Rsh)**Zone(fix)%shpow
-				f1=rr**(-Zone(fix)%denspow)
-				f2=exp(-(zz/hr)**2)
-				if(j.eq.D%nTheta-1) f2=1d0
-				rho(j,ii)=log(f1*f2/hr)
-			enddo
+			if(Zone(fix)%sh.lt.0d0) then
+				rho(1:D%nTheta-1,ii)=0d0
+			else
+				do j=1,D%nTheta-1
+					rr=D%R_av(i)*sin(D%theta_av(j))/AU
+					zz=D%R_av(i)*cos(D%theta_av(j))/AU
+					hr=scale*Zone(fix)%sh*(rr/Zone(fix)%Rsh)**Zone(fix)%shpow
+					f1=rr**(-Zone(fix)%denspow)
+					f2=exp(-(zz/hr)**2)
+					if(j.eq.D%nTheta-1) f2=1d0
+					rho(j,ii)=log(f1*f2/hr)
+				enddo
+			endif
 		endif
 		
 		! Recalculate mass of grain ii in cells i
@@ -2139,12 +2143,15 @@ c ------------ for the IN05 sublimation law --------------------
 	use Parameters
 	IMPLICIT NONE
 	integer i,j,ii,itemp,iopac
-	real*8 TqhpMax,MassTot,MassHigh,tot
+	real*8 TqhpMax,MassTot,MassHigh,tot,tot0
 	character*500 output
 	
+	if(TqhpMax.lt.0d0) return
+
 	do i=0,D%nR-1
 		do ii=1,ngrains
 		if(Grain(ii)%qhp) then
+		if(D%R(i+1).le.Grain(ii)%maxrad.and.D%R(i).ge.Grain(ii)%minrad) then
 			MassTot=0d0
 			MassHigh=0d0
 			do j=1,D%nTheta-1
@@ -2165,6 +2172,7 @@ c ------------ for the IN05 sublimation law --------------------
 				enddo
 			endif
 		endif
+		endif
 		enddo
 		do j=1,D%nTheta-1
 			tot=0d0
@@ -2174,7 +2182,8 @@ c ------------ for the IN05 sublimation law --------------------
 			if(tot.gt.1d-100) then
 				C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
 			endif
-			C(i,j)%dens=C(i,j)%dens*tot
+			if(tot0.lt.1d-100) tot0=1d0
+			C(i,j)%dens=C(i,j)%dens*tot/tot0
 			if(C(i,j)%dens.gt.C(i,j)%dens0) C(i,j)%dens=C(i,j)%dens0
 			if(C(i,j)%dens.lt.1d-50) then
 				C(i,j)%w(1:ngrains)=C(i,j)%w0(1:ngrains)

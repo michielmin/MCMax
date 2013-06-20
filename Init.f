@@ -236,7 +236,7 @@
 	nBW=-1
 	use_qhp=.false.
 	computeLRF=.false.
-	TdesQHP=1d6
+	TdesQHP=-1d0
 	
 	use_topac=.false.
 	
@@ -1268,7 +1268,7 @@ C       End
 					rtemp(j)=rgrain(i)*1d4
 				enddo
 				do i=j+1,ngrains
-					rtemp(i)=10d0*mrn_rmax
+					rtemp(i)=(10d0+real(i))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
 				j=0
@@ -2698,7 +2698,11 @@ c in the theta grid we actually store cos(theta) for convenience
 		do iz=1,nzones
 			tot=0d0
 			do ii=1,ngrains
-				if(Zone(iz)%inc_grain(ii)) tot=tot+Zone(iz)%abun(ii)
+				if(Zone(iz)%inc_grain(ii)) then
+					tot=tot+Zone(iz)%abun(ii)
+				else
+					Zone(iz)%abun(ii)=0d0
+				endif
 			enddo
 			Zone(iz)%abun(1:ngrains)=Zone(iz)%abun(1:ngrains)/tot
 			tot=0d0
@@ -3080,7 +3084,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					endif
 				enddo
 				do ii=j+1,ngrains
-					rtemp(ii)=10d0*mrn_rmax
+					rtemp(ii)=(10d0+real(ii))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
 				j=0
