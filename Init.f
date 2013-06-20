@@ -34,7 +34,7 @@
 	character*1000 line
 	character*500 key,value,file,keyzone
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
-	logical mdustscale,settle(MAXPART),trace(MAXPART)
+	logical mdustscale,settle(MAXPART),trace(MAXPART),denscomposition
 	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
 	real*8 frac(MAXPART),f,phi,shscalevalue,part_shscale(MAXPART),shpow,minrad(MAXPART),maxrad(MAXPART)
 	real*8 roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
@@ -325,6 +325,8 @@
 	multicore=.true.
 
 	NMAX_CONVOLUTION=8000
+	
+	denscomposition=.false.
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
@@ -1330,6 +1332,8 @@ C       End
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
 	if(exportProDiMo) computeLRF=.true.
+
+	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) denscomposition=.true.
 
 	if(nphotdiffuse.eq.0) use_obs_TMC=.false.
 	if(Nphot.eq.0) then
@@ -3010,11 +3014,10 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 	write(9,'("--------------------------------------------------------")')	
 
 	! Set composition in every grid cell (from keywords, mrn/gsd or file)
-	if(Nphot.gt.0) then
-	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) then
+	if(denscomposition) then
 		write(*,'("Reading composition from density file")')
 		write(9,'("Reading composition from density file")')
-		call readstruct(densfile,(/'SKIP   ','COMP   '/),2,0,.false.)
+		call readstruct(compositionfile,(/'SKIP   ','COMP   '/),2,0,.false.)
 		do j=1,D%nTheta-1
 			C(0,j)%w(1:ngrains)=C(1,j)%w(1:ngrains)
 		enddo
@@ -3029,7 +3032,6 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		do j=1,D%nTheta-1
 			C(0,j)%w(1:ngrains)=C(1,j)%w(1:ngrains)
 		enddo
-	endif
 	endif
 
 	if(denstype.eq.'MEIXNER'.and.MeixG.ne.0d0) then
