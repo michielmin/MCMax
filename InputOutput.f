@@ -454,6 +454,7 @@ C	 create the new empty FITS file
 	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,ngrains2_tmp,ngrains_tmp
 	character*7 vars(nvars)
 	character*500 filename
+	character*1000 line
 	logical doalloc,truefalse
 
 	if(outputfits) then
@@ -482,7 +483,8 @@ C	 create the new empty FITS file
 	enddo
 	ngrains_tmp=-1
 	ngrains2_tmp=-1
-	read(20,*,end=1) nr,nt,ngrains_tmp,ngrains2_tmp
+	read(20,'(a1000)') line(1:1000)
+	read(line,*,end=1) nr,nt,ngrains_tmp,ngrains2_tmp
 
 1	continue
 	if(ngrains_tmp.gt.0) ngrains=ngrains_tmp
