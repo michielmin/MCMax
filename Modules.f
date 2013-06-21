@@ -99,7 +99,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8 Tgas,Egas
 		logical useFE,opacity_set
 		real*8,allocatable :: line_emis(:),line_abs(:),velo_T(:)
-		real*8 alphavis,alphaturb
+		real*8 alphavis,alphaturb,xx
 	end type Cell
 
 	type Disk

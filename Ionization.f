@@ -17,6 +17,8 @@
 
 	G=4d0*pi*G/5.33d-14/3d10
 	if(G.lt.1d-6) G=1d-6
+
+	C(i,j)%xx=G
 	
 	ne = C(i,j)%gasdens*gas2dust / mu
 	

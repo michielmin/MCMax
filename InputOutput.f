@@ -163,6 +163,13 @@
 				enddo
 			case ('QHPRF')
 
+			case ('ARRAY')
+				write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%xx
+					enddo
+				enddo
 			case default
 				write(9,'("Error in output file specification")')
 				write(*,'("Error in output file specification")')
@@ -415,6 +422,13 @@ C	 create the new empty FITS file
 						enddo
 					enddo
 				enddo
+			case ('ARRAY')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%xx
+					enddo
+				enddo
 			case default
 				write(9,'("Error in output file specification")')
 				write(*,'("Error in output file specification")')
@@ -451,13 +465,14 @@ C	 create the new empty FITS file
 	subroutine readstruct(filename,vars,nvars,ipart,doalloc)
 	use Parameters
 	IMPLICIT NONE
-	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,ngrains2_tmp,ngrains_tmp
+	integer nvars,ivars,i,j,ii,ipart,l,nr,nt,ngrains2_tmp,ngrains_tmp,lf
 	character*7 vars(nvars)
 	character*500 filename
 	character*1000 line
 	logical doalloc,truefalse
 
-	if(outputfits) then
+	lf=len_trim(filename)
+	if(outputfits.and.(filename(lf-4:lf).eq.'.fits'.or.filename(lf-7:lf).eq.'.fits.gz')) then
 		call readstruct_fits(filename,vars,nvars,ipart,doalloc)
 		return
 	endif
@@ -488,7 +503,12 @@ C	 create the new empty FITS file
 
 1	continue
 	if(ngrains_tmp.gt.0) ngrains=ngrains_tmp
-	if(ngrains2_tmp.gt.0) ngrains2=ngrains2_tmp
+	if(ngrains2_tmp.gt.0) then
+		ngrains2=ngrains2_tmp
+	else
+		ngrains2_tmp=ngrains2
+		ngrains2=1
+	endif
 	if(doalloc) then
 		D%nR=nr+1
 		D%nTheta=nt+1
@@ -658,6 +678,8 @@ C	 create the new empty FITS file
 	close(unit=20)
 
 3	continue
+
+	ngrains2=ngrains2_tmp
 
 	return
 	end
