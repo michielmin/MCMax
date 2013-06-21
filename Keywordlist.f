@@ -354,6 +354,10 @@
 	keyword(i)='nmax_conv'
 	i=i+1
 	keyword(i)='wedgeopen'
+	i=i+1
+	keyword(i)='f_ne'
+	i=i+1
+	keyword(i)='solver_qhp'
 	
 	Nnormal=i
 c from here on keywords with numbers
@@ -461,6 +465,10 @@ c from here on keywords with numbers
 	keyword(i)='computepah'
 
 	Nkey=i
+	if(Nkey.gt.300) then
+		print*,'too many keywords!'
+		stop
+	endif
 	
 	do i=1,Nkey
 		if(trim(keyword(i)).eq.key(1:len_trim(keyword(i)))) return

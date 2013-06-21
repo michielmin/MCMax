@@ -18,10 +18,11 @@
 	G=4d0*pi*G/5.33d-14/3d10
 	if(G.lt.1d-6) G=1d-6
 
-	C(i,j)%xx=G
+	ne = 1.5e-4*f_ne*C(i,j)%gasdens*gas2dust / mu
 	
-	ne = C(i,j)%gasdens*gas2dust / mu
-	
+	C(i,j)%G=G
+	C(i,j)%ne=ne
+
 	gamma0 = 3.5e-6 * sqrt(Grain(ii)%Nc) * G * sqrt(C(i,j)%T) / ne
 
 	C(i,j)%wopac(ii,1)=1d0/(1d0+gamma0)

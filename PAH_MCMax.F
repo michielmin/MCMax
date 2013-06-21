@@ -15,12 +15,8 @@ c	end module PAHModule
 	write(9,'("--------------------------------------------------------")')
 	write(*,'("Computing multi photon PAH emissivity")')
 	write(9,'("Computing multi photon PAH emissivity")')
-
-c	open(unit=90,file='LRF.dat')
-c	do i=1,nlam
-c		write(90,*) lam(i),(C(j,1)%LRF(i),j=1,D%nR-1)
-c	enddo
-c	close(unit=90)
+	write(*,'("Using solver from Kees Dullemond")')
+	write(9,'("Using solver from Kees Dullemond")')
 
 	allocate(Kabs(nlam))
 	allocate(Ksca(nlam))
@@ -682,7 +678,7 @@ c
       do inu=1,freq_nr
           absorb = absorb + kappa(inu)*radfield(inu)*dnu(inu)
       enddo
-      if(abs(emistot/absorb-1.d0).gt.1d-5.and.absorb.ne.0d0) then
+      if(abs(emistot/absorb-1.d0).gt.1d-5.and.absorb.gt.1d-65) then
           write(*,*) 'WARNING: Error = ',abs(emistot/absorb-1.d0),
      %             emistot,absorb
       endif

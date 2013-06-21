@@ -328,6 +328,9 @@
 	
 	denscomposition=.false.
 	
+	f_ne=1d0
+	qhp_solver=0
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -1091,6 +1094,10 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'irf') read(value,*) use_IRF
 	if(key.eq.'t_irf') read(value,*) T_IRF
 	if(key.eq.'f_irf') read(value,*) F_IRF
+
+	!scale the electron density with respect to the ISM value
+	if(key.eq.'f_ne') read(value,*) f_ne
+	if(key.eq.'solver_qhp') read(value,*) qhp_solver ! 0=Kees, 1=MC
 
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
 	if(key.eq.'tsmooth') read(value,*) Tsmooth

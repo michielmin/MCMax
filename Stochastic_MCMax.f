@@ -5,20 +5,48 @@
 
 	subroutine Stochastic(niter)
 	use Parameters
+	IMPLICIT NONE
+	integer niter,ii
+	logical outputionization
+	character*500 filename
+	
+	if(niter.ne.0.and.NphotUV.gt.0) call CreateLRF(NphotUV,10000)
+	
+	if(qhp_solver.eq.0) then
+c use the PAH module from Michiel Min
+		call StochasticMC(niter)
+	else if(qhp_solver.eq.1) then
+c use the PAH module from Kees Dullemond
+		call PAHMCMax(niter)
+	else
+		write(*,'("QHP solver unknown")')
+		write(9,'("QHP solver unknown")')
+		stop
+	endif
+
+	outputionization=.false.
+	do ii=1,ngrains
+		if(Grain(ii)%qhp.and.Grain(ii)%nopac.gt.1) outputionization=.true.
+	enddo
+	if(outputionization) then
+		if(outputfits) then
+			write(filename,'(a,"/ionization.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(filename,'(a,"/ionization.dat")') outdir(1:len_trim(outdir))
+		endif
+		call outputstruct(filename,(/'G0     ','NE     '/),2,0)
+	endif
+
+	return
+	end
+
+	subroutine StochasticMC(niter)
+	use Parameters
 	use PAHModule
 	IMPLICIT NONE
 	integer i,j,ii,niter,itemp,ir,l,iopac
 	real*8 tot,tau,temp0,temp1,Planck
 	real*8,allocatable :: Kabs(:)
-	logical outputionization
-	character*500 filename
-
-	outputionization=.false.
-	if(niter.ne.0) call CreateLRF(NphotUV,10000)
-	
-c use the PAH module from Kees
-c	call PAHMCMax(niter)
-c	return
 
 	allocate(Kabs(nlam))
 	
@@ -26,12 +54,8 @@ c	return
 	write(9,'("--------------------------------------------------------")')
 	write(*,'("Computing multi photon PAH emissivity")')
 	write(9,'("Computing multi photon PAH emissivity")')
-
-	open(unit=90,file='LRF.dat',RECL=6000)
-	do i=1,nlam
-		write(90,*) lam(i),(C(j,1)%LRF(i),j=1,D%nR-1)
-	enddo
-	close(unit=90)
+	write(*,'("Using Monte Carlo solver")')
+	write(9,'("Using Monte Carlo solver")')
 
 	temp0=10d0
 	temp1=100000d0
@@ -64,10 +88,7 @@ c	return
 				C(i,j)%LRF(1:nlam)=D%Fstar(1:nlam)/(4d0*pi*D%R_av(i)**2)*exp(-tau)
 			endif
 			do ii=1,ngrains
-				if(Grain(ii)%qhp.and.Grain(ii)%nopac.gt.1) then
-					call PAHionization(ii,i,j)
-					outputionization=.true.
-				endif
+				if(Grain(ii)%qhp.and.Grain(ii)%nopac.gt.1) call PAHionization(ii,i,j)
 			enddo
 			if(niter.ne.0.or.((tau.lt.10d0.and.tau.gt.1d0).or.j.eq.1)) then
 				do ii=1,ngrains
@@ -104,15 +125,6 @@ c	return
 					endif
 				enddo
 			endif
-
-	if(i.eq.1.and.j.eq.1) then
-		open(unit=42,file='QHP.dat',RECL=6000)
-		do ii=1,nlam
-			write(42,*) lam(ii),C(i,j)%QHP(1,ii)
-		enddo
-		close(unit=42)
-	endif
-	
 		enddo
 		do j=1,D%nTheta-1
 			do ii=1,nqhp
@@ -131,15 +143,6 @@ c	return
 
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
-
-	if(outputionization) then
-		if(outputfits) then
-			write(filename,'(a,"/ionization.fits.gz")') outdir(1:len_trim(outdir))
-		else
-			write(filename,'(a,"/ionization.dat")') outdir(1:len_trim(outdir))
-		endif
-		call outputstruct(filename,(/'ARRAY  '/),1,0)
-	endif
 
 	deallocate(BBQHP)
 	deallocate(Kabs)
@@ -318,7 +321,7 @@ c	return
 	tot=sum(Tdistr(1:Nt))
 	Tdistr=Tdistr/tot
 	QHPemis=0d0
-	do i=1,Nt
+	do i=2,Nt
 		do j=1,nlam
 			QHPemis(j)=QHPemis(j)+BBQHP(i,j)*kabs(j)*Tdistr(i)
 		enddo

@@ -163,11 +163,18 @@
 				enddo
 			case ('QHPRF')
 
-			case ('ARRAY')
+			case ('G0')
 				write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
-						write(20,*) C(i,j)%xx
+						write(20,*) C(i,j)%G
+					enddo
+				enddo
+			case ('NE')
+				write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%ne
 					enddo
 				enddo
 			case default
@@ -422,11 +429,32 @@ C	 create the new empty FITS file
 						enddo
 					enddo
 				enddo
-			case ('ARRAY')
+			case ('QHPT')
+				naxis=4
+				naxes(3)=NTQHP
+				naxes(4)=2
+				nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
-						array(i,j,1,1)=C(i,j)%xx
+						do l=1,NTQHP
+							array(i,j,l,1)=tgridqhp(l)
+							array(i,j,l,2)=C(i,j)%tdistr(Grain(ipart)%qhpnr,l)
+						enddo
+					enddo
+				enddo
+			case ('G0')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%G
+					enddo
+				enddo
+			case ('NE')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%ne
 					enddo
 				enddo
 			case default

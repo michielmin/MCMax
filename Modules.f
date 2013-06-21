@@ -17,7 +17,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP
 	real*8 sin2phi(0:360),cos2phi(0:360),RmaxRefine,KDext(0:TMAX),KDabs(0:TMAX),BBint(0:TMAX)
 	real*8 alphavis,dimstar,alphavispow,E_IRF,maxlamUV,Rinner_gas
-	real*8 lifetime,alphaturb,qturb,prandtl
+	real*8 lifetime,alphaturb,qturb,prandtl,f_ne
 	real*8 deadalpha,deadcolumn,deadtemp !Gijsexp: deadzone in midplane
 	real*8 gsd_rmin,gsd_rmax,gsd_xi,gsd_vfrag !Gijsexp
 	real*8 mrn_rmin,mrn_rmax,mrn_index !Gijsexp
@@ -45,7 +45,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	character*500 outdir,particledir
 	real*8,allocatable :: coolingtime(:)
 	integer,allocatable :: ncoolingtime(:)
-	integer icoolingtime
+	integer icoolingtime,qhp_solver
 	real*8 HotGasMinRad,HotGasMaxRad,HotGasT
 	
 	type Mueller
@@ -99,7 +99,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8 Tgas,Egas
 		logical useFE,opacity_set
 		real*8,allocatable :: line_emis(:),line_abs(:),velo_T(:)
-		real*8 alphavis,alphaturb,xx
+		real*8 alphavis,alphaturb,G,ne
 	end type Cell
 
 	type Disk
@@ -118,7 +118,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type DiskZone
 		real*8 Rin,Rout,Mdust,denspow,shpow,sh,Rsh
-		real*8 a_min,a_max,a_pow,Rexp,gamma_exp
+		real*8 a_min,a_max,a_pow,Rexp,gamma_exp,gas2dust
 		logical fix_struct,sizedis
 		real*8,allocatable :: abun(:)
 		logical,allocatable :: inc_grain(:)
