@@ -911,7 +911,7 @@ c			endif
 	enddo
 	endif
 	KabsBBGrains=Kabs-KabsQHP
-	if(KabsBBGrains.eq.0d0) KabsBBGrains=Kabs
+	if(KabsBBGrains.le.0d0) KabsBBGrains=Kabs
 
 	call Trace2edge(phot,v,inext,jnext)
 
@@ -964,7 +964,7 @@ c give some of the UV photons directly to the gas
 c			if(phot%lam.lt.0.3) C(phot%i,phot%j)%Egas=C(phot%i,phot%j)%Egas+EJv*(KabsBBGrains*0.05+KabsQHP*0.5)
 c ------------------------------------------------
 c ------------------------------------------------
-			nEJv=nEJv+EJv*Kabs
+			nEJv=nEJv+EJv*KabsBBGrains
 			if(.not.tcontact.or.tdes_iter) then
 				do ii=1,ngrains
 				do iopac=1,Grain(ii)%nopac

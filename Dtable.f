@@ -153,7 +153,11 @@
 	call integrate(dBB,int2)
 	C(ci,cj)%KDext=int2/int1
 
-	spec(1:nlam)=dBB(1:nlam)*(Kabs(1:nlam)-Kqhp(1:nlam))
+	if(C(ci,cj)%opacity_set) then
+		spec(1:nlam)=dBB(1:nlam)*Kabs(1:nlam)
+	else
+		spec(1:nlam)=dBB(1:nlam)*(Kabs(1:nlam)-Kqhp(1:nlam))
+	endif
 	call integrate(spec,int1)
 	C(ci,cj)%KDabs=int1/int2
 	if(use_qhp) then

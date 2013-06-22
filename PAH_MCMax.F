@@ -7,7 +7,7 @@ c	end module PAHModule
 	use Parameters
 	use PAHModule
 	IMPLICIT NONE
-	integer i,j,ii,niter,itemp,ir,l,iopac
+	integer i,j,ii,niter,itemp,ir,l,iopac,iT
 	real*8 tot,tau,temp0,temp1,bplanck
 	real*8,allocatable :: Kabs(:),Ksca(:)
 	
@@ -73,7 +73,16 @@ c	end module PAHModule
 						if(tot.gt.1d-200) then
 							C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
 						else
+							iT=C(i,j)%T
+							if(iT.lt.3) iT=3
+							if(iT.gt.TMAX) iT=TMAX
 							C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=0d0
+							do iopac=1,Grain(ii)%nopac
+								C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)+
+     &	C(i,j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,1:nlam)*BB(1:nlam,iT)
+							enddo
+							call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
+							C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
 						endif
  	 				endif
 				enddo
