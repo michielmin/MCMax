@@ -94,10 +94,8 @@ c No thermal contact
 	iT1=int(T1/dT)
 	epsT0=T0-real(iT0)*dT
 	epsT1=T1-real(iT1)*dT
-	if(iT0.ge.TMAX-2) iT0=TMAX-2
+	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
-	if(iT0.lt.1) iT0=1
-	if(iT1.lt.2) iT1=2
 	if(iT0.eq.iT1) then
 		do iopac=1,Grain(i)%nopac
 			do l=1,nlam
@@ -162,10 +160,8 @@ c Thermal contact (single temperature)
 
 	epsT0=T0-real(iT0)*dT
 	epsT1=T1-real(iT1)*dT
-	if(iT0.ge.TMAX-2) iT0=TMAX-2
+	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
-	if(iT0.lt.1) iT0=1
-	if(iT1.lt.2) iT1=2
 
 	if(iT0.eq.iT1) then
 		do l=1,nlam
@@ -511,8 +507,6 @@ c not found, starting from 1 K
 
 	E1=C(phot%i,phot%j)%EabsP(ii)/(C(phot%i,phot%j)%mass*C(phot%i,phot%j)%w(ii))
 	j=int(C(phot%i,phot%j)%TP(ii)/dT)
-	if(j.gt.TMAX-1) j=TMAX-1
-	if(j.lt.1) j=1
 	kp0=0d0
 	do iopac=1,Grain(ii)%nopac
 		kp0=kp0+Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%wopac(ii,iopac)
@@ -555,8 +549,6 @@ c not found, starting from 1 K
 	IMPLICIT NONE
 	integer iT,ii,iopac,i,j
 
-	if(iT.lt.1) iT=1
-	if(iT.gt.TMAX-1) iT=TMAX-1
 	computeE=0d0
 	do ii=1,ngrains
 		if(.not.Grain(ii)%qhp) then
@@ -585,15 +577,10 @@ c not found, starting from 1 K
 
 	E=computeE(phot%i,phot%j,iT)
 	Emax=computeE(phot%i,phot%j,iTmax)
-	Emin=computeE(phot%i,phot%j,iTmin)
+	Emin=0d0
 
-	if(E.ge.Emax) then
-		iT=iTmax-1
-		determineT=real(iT)*dT
-		return
-	endif
-	if(E.le.Emin) then
-		iT=iTmin
+	if(E.gt.Emax) then
+		iT=TMAX-1
 		determineT=real(iT)*dT
 		return
 	endif
@@ -674,8 +661,6 @@ c not found, starting from 1 K
 	IMPLICIT NONE
 	integer iT,ii,iopac,i,j
 
-	if(iT.lt.1) iT=1
-	if(iT.gt.TMAX-1) iT=TMAX-1
 	computeEP=0d0
 	do iopac=1,Grain(ii)%nopac
 		computeEP=computeEP+(Grain(ii)%Kp(iopac,iT)*C(i,j)%wopac(ii,iopac))
