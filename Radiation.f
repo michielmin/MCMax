@@ -150,7 +150,7 @@ c No thermal contact
 	
 	else
 c Thermal contact (single temperature)
-	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+Edust
+	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+Edust*(KabsTot-KabsQHP)/KabsTot
 	T0=C(phot%i,phot%j)%T
 	T1=increaseT(phot)
 
