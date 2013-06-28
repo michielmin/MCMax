@@ -733,7 +733,7 @@ c-----------------------------------------------------------------------
 		phot%vy=0d0
 		phot%vz=phot%z/r(i)
 		tau=tt
-		phot%lam=0.550
+		phot%lam=tau1_lam(1)
 		phot%i=1
 		if(i.eq.D%nTheta) then
 			phot%j=D%nTheta-1
