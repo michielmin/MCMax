@@ -1871,7 +1871,7 @@ c	image%nr=image%nr+1
 	endif
 
 	if(scat_how.eq.2) then
-		image%nr=image%nr+180*2*(D%nRfix+2)
+		image%nr=image%nr+180*(D%nRfix+1)
 	endif
 	
 	allocate(image%image(image%nr,image%nphi))
@@ -1936,18 +1936,10 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		do j=1,180
 			theta=real(j)*(pi/2d0)/181d0
 			nj=nj+1
-			image%R(nj)=D%R(1)*abs(cos(pi/2d0-theta+angle))
-			nj=nj+1
-			image%R(nj)=abs(D%R(1)*cos(theta-pi/2d0+angle))
-			nj=nj+1
 			image%R(nj)=D%R(1)*abs(cos(pi/2d0-theta))
-			nj=nj+1
-			image%R(nj)=abs(D%R(1)*cos(theta-pi/2d0))
 			do i=1,D%nRfix
 				nj=nj+1
-				image%R(nj)=D%Rfix(i)*abs(cos(pi/2d0-theta+angle))
-				nj=nj+1
-				image%R(nj)=abs(D%Rfix(i)*cos(theta-pi/2d0+angle))
+				image%R(nj)=D%Rfix(i)*abs(cos(pi/2d0-theta))
 			enddo
 		enddo
 	endif
