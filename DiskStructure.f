@@ -233,10 +233,11 @@ c	go ahead, no zones with fixed structure
 			endif
 		else if(Grain(ii)%shtype.eq.'ZODI') then
 			do j=1,D%nTheta-1
-c cosine model
-c				rho(j,ii)=log(0.15d0+0.85*(cos(pi/2d0-D%theta_av(j)))**28d0)
+c models for zodiacal dust from Giese et al. (1986)
+c cosine model from Rittich (1986)
+				rho(j,ii)=log(0.15d0+0.85*(cos(pi/2d0-D%theta_av(j)))**28d0)
 c model from Leinert et al. 2002
-				rho(j,ii)=-4.8d0*abs(sin(pi/2d0-D%theta_av(j)))**1.3d0
+c				rho(j,ii)=-4.8d0*abs(sin(pi/2d0-D%theta_av(j)))**1.3d0
 			enddo
 		else if(Grain(ii)%shtype.eq.'HALO') then
 		   do j=1,D%nTheta-1

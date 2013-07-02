@@ -1869,6 +1869,10 @@ c	image%nr=image%nr+1
 	else
 		image%nr=(D%nR-2)/(-nj0)+1+(D%nTheta-1)*2*(D%nRfix+2)+1+nstar+ninner
 	endif
+
+	if(scat_how.eq.2) then
+		image%nr=image%nr+180*2*(D%nRfix+2)
+	endif
 	
 	allocate(image%image(image%nr,image%nphi))
 	if(scat_how.eq.2) then
@@ -1928,6 +1932,26 @@ c	image%R(image%nr)=D%R(D%nR)*0.9999
 		nj=nj+1
 		image%R(nj)=abs(R01(D%nTheta-1)*cos(D%theta_av(j)-pi/2d0))
 	enddo
+	if(scat_how.eq.2) then
+		do j=1,180
+			theta=real(j)*(pi/2d0)/181d0
+			nj=nj+1
+			image%R(nj)=D%R(1)*abs(cos(pi/2d0-theta+angle))
+			nj=nj+1
+			image%R(nj)=abs(D%R(1)*cos(theta-pi/2d0+angle))
+			nj=nj+1
+			image%R(nj)=D%R(1)*abs(cos(pi/2d0-theta))
+			nj=nj+1
+			image%R(nj)=abs(D%R(1)*cos(theta-pi/2d0))
+			do i=1,D%nRfix
+				nj=nj+1
+				image%R(nj)=D%Rfix(i)*abs(cos(pi/2d0-theta+angle))
+				nj=nj+1
+				image%R(nj)=abs(D%Rfix(i)*cos(theta-pi/2d0+angle))
+			enddo
+		enddo
+	endif
+
 	do i=1,D%nRfix
 	do j=1,D%nTheta-1
 		nj=nj+1
