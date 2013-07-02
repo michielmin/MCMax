@@ -704,12 +704,12 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 filename,file
-	real*8 tau1z(D%nTheta),tau1x(D%nTheta),r(D%nTheta),tau1r(D%nTheta)
+	real*8 tau1z(D%nTheta,0:ntau1_lam),tau1x(D%nTheta,0:ntau1_lam),r(D%nTheta),tau1r(D%nTheta)
 	real*8 ct,tau,lr0,lr1,dHrdr
 	real*8 Mtot,Mtot2,Fsc,p,p0,p1,Kext
 	logical escape,hitstar
 	type(photon) phot
-	integer i,j,l,n,ii
+	integer i,j,l,n,ii,iopac
 
 	integer it
 	real*8 tt
@@ -718,6 +718,7 @@ c-----------------------------------------------------------------------
 	phot%nr=1
 	tautot=0d0
 	do i=1,D%nTheta
+		do l=0,ntau1_lam
 		r(i)=D%R(1)
 		if(i.eq.D%nTheta) then
 			ct=D%Theta(i-1)*0.01
@@ -734,7 +735,11 @@ c-----------------------------------------------------------------------
 		phot%vy=0d0
 		phot%vz=phot%z/r(i)
 		tau=tt
-		phot%lam=tau1_lam(1)
+		if(l.ne.0) then
+			phot%lam=tau1_lam(l)
+		else
+			phot%lam=0.55d0
+		endif
 		phot%i=1
 		if(i.eq.D%nTheta) then
 			phot%j=D%nTheta-1
@@ -751,23 +756,36 @@ c-----------------------------------------------------------------------
 		enddo
 		phot%nu=nu(phot%ilam1)*phot%wl1+nu(phot%ilam2)*phot%wl2
 		phot%E=1d0
-		call TraceStellar(phot,tau,escape,hitstar,.false.)
+		do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				Grain(ii)%KabsL(iopac)=Grain(ii)%Kabs(iopac,phot%ilam1)*phot%wl1+
+     &     Grain(ii)%Kabs(iopac,phot%ilam2)*phot%wl2
+				Grain(ii)%KextL(iopac)=Grain(ii)%Kext(iopac,phot%ilam1)*phot%wl1+
+     &     Grain(ii)%Kext(iopac,phot%ilam2)*phot%wl2
+			enddo
+		enddo
+		if(filename.ne.' '.and.l.ne.0) then
+			call trace2d(phot,tau,escape,hitstar,.false.)
+		else
+			call TraceStellar(phot,tau,escape,hitstar,.false.)
+			tau1r(i)=sqrt(phot%x**2+phot%z**2)
+		endif
 		if(escape) phot%z=0d0!-1d0/0d0!sqrt(D%R(D%nR)**2-phot%x**2)
-		tau1x(i)=phot%x
-		tau1z(i)=phot%z
-		tau1r(i)=sqrt(phot%x**2+phot%z**2)
+		tau1x(i,l)=phot%x
+		tau1z(i,l)=phot%z
+		enddo
 	enddo
 
 	if(.not.allocated(muRad)) allocate(muRad(D%nTheta))
 	muRad(D%nTheta)=1d0
 	do i=D%nTheta-1,1,-1
-		if(tau1z(i+1).gt.0d0.and.tau1z(i).gt.0d0) then
-			dHrdr=(tau1z(i+1)/tau1x(i+1)-tau1z(i)/tau1x(i))/(tau1x(i+1)-tau1x(i))
+		if(tau1z(i+1,0).gt.0d0.and.tau1z(i,0).gt.0d0) then
+			dHrdr=(tau1z(i+1,0)/tau1x(i+1,0)-tau1z(i,0)/tau1x(i,0))/(tau1x(i+1,0)-tau1x(i,0))
 		else
 			dHrdr=0d0
 		endif
-		if(tau1z(i+1).gt.0d0.and.tau1z(i).gt.0d0) then
-			muRad(i)=abs(sin(atan(tau1x(i)/tau1z(i))+atan(dHrdr)-pi/2d0))
+		if(tau1z(i+1,0).gt.0d0.and.tau1z(i,0).gt.0d0) then
+			muRad(i)=abs(sin(atan(tau1x(i,0)/tau1z(i,0))+atan(dHrdr)-pi/2d0))
 		else
 			muRad(i)=0d0
 		endif
@@ -777,7 +795,7 @@ c	write(file,'(a,i4)') filename(1:len_trim(filename)),it+1000
 	if(filename.ne.' ') then
 		open(unit=80,file=filename,RECL=6000)
 		do i=1,D%nTheta
-			write(80,*) tau1x(i),tau1z(i),muRad(i)
+			write(80,*) tau1x(i,0),tau1z(i,0),muRad(i),(tau1x(i,l),tau1z(i,l),l=1,ntau1_lam)
 		enddo
 		close(unit=80)
 	endif
