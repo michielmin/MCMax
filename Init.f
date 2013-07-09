@@ -49,7 +49,7 @@
 	integer ntau1,NUV,N1UV,iz,mrn_ngrains0
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
-	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index
+	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
 	integer computepart_ngrains(MAXPART)
 	logical computepart_blend(MAXPART)
 
@@ -347,6 +347,7 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%a_max=-1d0
 		ZoneTemp(i)%a_pow=1d5
 		ZoneTemp(i)%gamma_exp=-1d0
+		ZoneTemp(i)%maxtauV=-1d0
 	enddo
 	nzones=0
 	
@@ -1127,6 +1128,8 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%Rsh
 		else if(keyzone.eq.'mdust') then
 			read(value,*) ZoneTemp(i)%Mdust
+		else if(keyzone.eq.'maxtau') then
+			read(value,*) ZoneTemp(i)%maxtauV
 		else if(keyzone.eq.'amin') then
 			read(value,*) ZoneTemp(i)%a_min
 		else if(keyzone.eq.'amax') then
@@ -3193,7 +3196,30 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				endif
 			enddo
 			enddo
-			zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%Mdust*Msun/tot
+			if(Zone(iz)%maxtauV.lt.0d0) then
+				zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%Mdust*Msun/tot
+			else
+				do i=1,nlam-1
+					if(lam(i).le.0.55.and.lam(i+1).gt.0.55) then
+						jj=i
+						wl1=(lam(i+1)-0.55)/(lam(i+1)-lam(i))
+						wl2=1d0-wl1
+						exit
+					endif
+				enddo
+				maxtauV=0d0
+				do j=1,D%nTheta-1
+					tau=0d0
+					do i=1,D%nR-1
+						do ii=1,ngrains
+							tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,i)+wl2*Grain(ii)%Kext(1,i+1))
+						enddo
+					enddo
+					if(tau.gt.maxtauV) maxtauV=tau
+				enddo
+				zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=
+     %	zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%maxtauV/maxtauV
+			endif
 		enddo
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
