@@ -3182,7 +3182,8 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
 								if(Grain(ii)%shtype.eq.'HALO'.or.Zone(iz)%sh.lt.0d0) then
-									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*
+     &			((D%R_av(i)/AU)**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp)))
 								else
 									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
 								endif
