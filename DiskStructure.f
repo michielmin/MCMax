@@ -2840,16 +2840,26 @@ c Set minimum dust density
 	IMPLICIT NONE
 	integer i,j,ii
 	character*10 string
+	logical cnan
+	cnan=.false.
 
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
-		if(IsNaN(C(i,j)%dens)) write(*,'(a,a,i,i)') trim(string),' dens ',i,j
-		if(IsNaN(C(i,j)%dens0)) write(*,'(a,a,i,i)') trim(string),' dens0',i,j
-		do ii=1,ngrains
-			if(IsNaN(C(i,j)%w(ii))) write(*,'(a,a,i4,i,i)') trim(string),' w',ii,i,j
-		enddo
+		if(IsNaN(C(i,j)%dens)) then
+			cnan=.true.
+			write(*,'(a,a,i,i)') trim(string),' dens ',i,j
+		endif
+		if(IsNaN(C(i,j)%dens0)) then
+			cnan=.true.
+			write(*,'(a,a,i,i)') trim(string),' dens0',i,j
+		endif
+c		do ii=1,ngrains
+c			if(IsNaN(C(i,j)%w(ii))) write(*,'(a,a,i4,i,i)') trim(string),' w',ii,i,j
+c		enddo
 	enddo
 	enddo
+	
+	if(cnan) stop
 	
 	return
 	end

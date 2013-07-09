@@ -46,7 +46,7 @@
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(MAXPART),mu,mu0,rho,minR2,maxR2
 	real*8 MeixA,MeixB,MeixC,MeixD,MeixE,MeixF,MeixG,MeixRsw,timeshift,MeixRin
 	real*8 radtau,tau,reprocess,tot2,mrn_index0,dens1,dens2,T_IRF,F_IRF,wedgeopen
-	integer ntau1,NUV,N1UV,iz
+	integer ntau1,NUV,N1UV,iz,mrn_ngrains0
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index
@@ -1278,10 +1278,14 @@ C       End
 					j=j+1
 					rtemp(j)=rgrain(i)*1d4
 				enddo
+				mrn_ngrains0=mrn_ngrains
+				mrn_ngrains=j
+				w(1:ngrains)=0d0
 				do i=j+1,ngrains
 					rtemp(i)=(10d0+real(i))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+				mrn_ngrains=mrn_ngrains0
 				j=0
 				do i=ii,ii+computepart_ngrains(ii)-1
 					j=j+1
@@ -3103,10 +3107,14 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 						rtemp(j)=Grain(ii)%rv
 					endif
 				enddo
+				mrn_ngrains0=mrn_ngrains
+				mrn_ngrains=j
+				w(1:ngrains)=0d0
 				do ii=j+1,ngrains
 					rtemp(ii)=(10d0+real(ii))*mrn_rmax
 				enddo
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
+				mrn_ngrains=mrn_ngrains0
 				j=0
 				do ii=1,ngrains
 					if(Zone(iz)%inc_grain(ii)) then
@@ -3209,7 +3217,6 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 		deallocate(zonedens)
 	endif
-
 
 	MassTot0=0d0
 	do i=1,D%nR-1
