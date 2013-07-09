@@ -577,10 +577,21 @@ c not found, starting from 1 K
 
 	E=computeE(phot%i,phot%j,iT)
 	Emax=computeE(phot%i,phot%j,iTmax)
-	Emin=0d0
+	Emin=computeE(phot%i,phot%j,1)
+
+	if(IsNaN(E)) then
+		determineT=3d0
+		return
+	endif
 
 	if(E.gt.Emax) then
 		iT=TMAX-1
+		determineT=real(iT)*dT
+		return
+	endif
+
+	if(E.lt.Emin) then
+		iT=1
 		determineT=real(iT)*dT
 		return
 	endif
