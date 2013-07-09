@@ -3157,6 +3157,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 
 		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1))
 		zonedens=0d0
+		D%Mtot=0d0
 		do iz=1,nzones
 			tot=0d0
 			do ii=1,ngrains
@@ -3180,7 +3181,11 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 						f2=exp(-(z/hr)**2)
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
-								zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+								if(Grain(ii)%shtype.eq.'HALO'.or.Zone(iz)%sh.lt.0d0) then
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)
+								else
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+								endif
 							else
 								zonedens(iz,ii,i,j)=0d0
 							endif
@@ -3212,14 +3217,17 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					tau=0d0
 					do i=1,D%nR-1
 						do ii=1,ngrains
-							tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,i)+wl2*Grain(ii)%Kext(1,i+1))
+							tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,jj)+wl2*Grain(ii)%Kext(1,jj+1))
+     &										*(D%R(i+1)-D%R(i))*AU
 						enddo
 					enddo
 					if(tau.gt.maxtauV) maxtauV=tau
 				enddo
 				zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)=
      %	zonedens(iz,1:ngrains,1:D%nR-1,1:D%nTheta-1)*Zone(iz)%maxtauV/maxtauV
+				Zone(iz)%Mdust=(tot*Zone(iz)%maxtauV/maxtauV)/Msun
 			endif
+			D%Mtot=D%Mtot+Zone(iz)%Mdust
 		enddo
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
@@ -3239,6 +3247,9 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			else
 				C(i,j)%w(1:ngrains)=C(i,j)%w(1:ngrains)/tot
 			endif
+			C(i,j)%dens0=C(i,j)%dens
+			C(i,j)%mass=C(i,j)%dens*C(i,j)%V
+			C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
 		enddo
 		enddo
 		deallocate(zonedens)
