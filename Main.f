@@ -29,7 +29,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	character*500 comm,gasdenstempfile
 	character*500 photfile,output,pshfile,logfile,kappafile,errfile
 	character*500 denstempfileND,radgridfile,qhpfile,donefile
-	character*500 surfdensfile,mdotrfile
+	character*500 surfdensfile,mdotrfile,FLiTsfile
 	character*500,allocatable :: denstempfileP(:)
 	character*10 date,time
 	real*8 determineT,tottime,errT,errRho,radialtau,tau,radtau,Rmax,Mass,tau0
@@ -641,6 +641,13 @@ c
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
+	if(exportFLiTs) then
+		truefalse=outputfits
+		outputfits=.true.
+		write(FLiTsfile,'(a,"forFLiTs.fits.gz")') trim(outdir)
+		call outputstruct(FLiTsfile,(/'LAM    ','GASDENS','TEMP   ','OPACITY'/),4,0)
+		outputfits=truefalse
+	endif
 
 	! Calculate Tmidplane for comparison (doesn't modify disk temperature)
 	call ShakuraSunyaev()

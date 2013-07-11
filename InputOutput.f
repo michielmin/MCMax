@@ -457,6 +457,26 @@ C	 create the new empty FITS file
 						array(i,j,1,1)=C(i,j)%ne
 					enddo
 				enddo
+			case ('OPACITY')
+				naxis=4
+				naxes(3)=nlam
+				naxes(4)=3
+				nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						do l=1,nlam
+							array(i,j,l,1:3)=0d0
+							do ii=1,ngrains
+								do iopac=1,Grain(ii)%nopac
+									array(i,j,l,1)=array(i,j,l,1)+Grain(ii)%Kext(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+									array(i,j,l,2)=array(i,j,l,2)+Grain(ii)%Kabs(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+									array(i,j,l,3)=array(i,j,l,3)+Grain(ii)%Ksca(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+								enddo
+							enddo
+						enddo
+					enddo
+				enddo
 			case default
 				write(9,'("Error in output file specification")')
 				write(*,'("Error in output file specification")')
