@@ -50,6 +50,7 @@
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
+	real*8 computepart_abun(MAXPART,MAXPART)
 	integer computepart_ngrains(MAXPART)
 	logical computepart_blend(MAXPART)
 
@@ -315,6 +316,7 @@
 	computepart_fmax=0d0
 	computepart_blend=.true.
 	computepart_porosity=0.25d0
+	computepart_abun=-1d0
 	computepart_ngrains=1
 	
 	maxruntime=-1
@@ -683,6 +685,9 @@ c			endif
 			read(value,*) computepart_blend(i)
 		else if(keyzone.eq.'porosity') then
 			read(value,*) computepart_porosity(i)
+		else if(keyzone(1:4).eq.'abun') then
+			read(keyzone(5:len_trim(keyzone)),*) j
+			read(value,*) computepart_abun(i,j)
 		else
 			write(*,'("ComputePart keyword not understood:",a)') trim(keyzone)
 			write(9,'("ComputePart keyword not understood:",a)') trim(keyzone)
@@ -1173,6 +1178,7 @@ C       End
 				computepart_blend(i+computepart_ngrains(ii)-1)=computepart_blend(i)
 				computepart_porosity(i+computepart_ngrains(ii)-1)=computepart_porosity(i)
 				computepart_ngrains(i+computepart_ngrains(ii)-1)=computepart_ngrains(i)
+				computepart_abun(i+computepart_ngrains(ii)-1,:)=computepart_abun(i,:)
 				warg(i+computepart_ngrains(ii)-1)=warg(i)
 				powslope(i+computepart_ngrains(ii)-1)=powslope(i)
 				powrad0(i+computepart_ngrains(ii)-1)=powrad0(i)
@@ -1221,6 +1227,7 @@ C       End
 				computepart_fmax(i+ii-1)=computepart_fmax(ii)
 				computepart_blend(i+ii-1)=computepart_blend(ii)
 				computepart_porosity(i+ii-1)=computepart_porosity(ii)
+				computepart_abun(i+ii-1,:)=computepart_abun(ii,:)
 				computepart_ngrains(i+ii-1)=1
 				rgrain(i+ii-1)=sqrt(computepart_amin(i+ii-1)*computepart_amax(i+ii-1))*1d-4
 				warg(i+ii-1)=warg(ii)
@@ -2989,7 +2996,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		else if(parttype(ii).eq.7) then
 			call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii))
+     &							,computepart_porosity(ii),computepart_abun(ii,:))
 		else if(parttype(ii).eq.8) then
 			nqhp=nqhp+1
 			Grain(ii)%qhpnr=nqhp

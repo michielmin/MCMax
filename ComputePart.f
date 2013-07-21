@@ -1,9 +1,9 @@
-	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity)
+	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun)
 	use Parameters
 	IMPLICIT NONE
 
 	type(particle) p
-	real*8 amin,amax,apow,fmax,porosity
+	real*8 amin,amax,apow,fmax,porosity,inp_abun(*)
 	logical blend
 	integer ii,MAXMAT
 	parameter(MAXMAT=20)
@@ -84,6 +84,8 @@
 	call ignorestar(30)
 	read(30,*) frac(nm),rho(nm)
 	call ignorestar(30)
+c change this to the input abundances if they are set
+	if(inp_abun(nm).ge.0d0) frac(nm)=inp_abun(nm)
 c changed this to mass fractions (11-05-2010)
 	frac(nm)=frac(nm)/rho(nm)
 	call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam)
