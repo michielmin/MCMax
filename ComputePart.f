@@ -1,11 +1,11 @@
-	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun)
+	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac)
 	use Parameters
 	IMPLICIT NONE
 
 	type(particle) p
 	real*8 amin,amax,apow,fmax,porosity,inp_abun(*)
 	logical blend
-	integer ii,MAXMAT
+	integer ii,MAXMAT,iopac
 	parameter(MAXMAT=20)
 
 	real cext,csca,maxf
@@ -85,7 +85,9 @@
 	read(30,*) frac(nm),rho(nm)
 	call ignorestar(30)
 c change this to the input abundances if they are set
-	if(inp_abun(nm).ge.0d0) frac(nm)=inp_abun(nm)
+	if(inp_abun(nm).ge.0d0) then
+		frac(nm)=inp_abun(nm)
+	endif
 c changed this to mass fractions (11-05-2010)
 	frac(nm)=frac(nm)/rho(nm)
 	call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam)
@@ -102,12 +104,16 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 	frac=frac/tot
 
-	write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+	if(iopac.eq.1) then
+		write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+	else
+		write(partfile,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+	endif
 	inquire(file=partfile,exist=truefalse)
 	if(truefalse) then
 		if(checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename)) then
 			dummy=0d0
-			call ReadParticleFits(partfile,p,.false.,dummy,dummy,dummy,dummy,1)
+			call ReadParticleFits(partfile,p,.false.,dummy,dummy,dummy,dummy,iopac)
 			return
 		endif
 	endif
@@ -297,15 +303,15 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 
 	p%rho=Mass/Vol
 	rho_av=Mass/Vol
-	p%Kabs(1,ilam)=1d4*cabs/Mass
-	p%Ksca(1,ilam)=1d4*csca/Mass
-	p%Kext(1,ilam)=1d4*cext/Mass
-	p%F(1,ilam)%F11(1:180)=f11(ilam,1:180)/csca
-	p%F(1,ilam)%F12(1:180)=f12(ilam,1:180)/csca
-	p%F(1,ilam)%F22(1:180)=f22(ilam,1:180)/csca
-	p%F(1,ilam)%F33(1:180)=f33(ilam,1:180)/csca
-	p%F(1,ilam)%F34(1:180)=f34(ilam,1:180)/csca
-	p%F(1,ilam)%F44(1:180)=f44(ilam,1:180)/csca
+	p%Kabs(iopac,ilam)=1d4*cabs/Mass
+	p%Ksca(iopac,ilam)=1d4*csca/Mass
+	p%Kext(iopac,ilam)=1d4*cext/Mass
+	p%F(iopac,ilam)%F11(1:180)=f11(ilam,1:180)/csca
+	p%F(iopac,ilam)%F12(1:180)=f12(ilam,1:180)/csca
+	p%F(iopac,ilam)%F22(1:180)=f22(ilam,1:180)/csca
+	p%F(iopac,ilam)%F33(1:180)=f33(ilam,1:180)/csca
+	p%F(iopac,ilam)%F34(1:180)=f34(ilam,1:180)/csca
+	p%F(iopac,ilam)%F44(1:180)=f44(ilam,1:180)/csca
 
 	enddo
 
@@ -319,6 +325,10 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 	read(30,*,end=4) filename(nm)
 	call ignorestar(30)
 	read(30,*) frac(nm),rho(nm)
+c change this to the input abundances if they are set
+	if(inp_abun(nm).ge.0d0) then
+		frac(nm)=inp_abun(nm)
+	endif
 	call ignorestar(30)
 c changed this to mass fractions (11-05-2010)
 	frac(nm)=frac(nm)/rho(nm)
@@ -333,7 +343,7 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 	frac=frac/tot
 
-	call ParticleFITS(p,r,nr(1:nm,1:ns),nm,ns,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,filename)
+	call ParticleFITS(p,r,nr(1:nm,1:ns),nm,ns,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,filename,iopac)
 	
 	deallocate(e1)
 	deallocate(e2)
@@ -693,7 +703,7 @@ C	 create the new empty FITS file
 	end
 	
 
-	subroutine ParticleFITS(p,r,nr,nm,na,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,lnkfiles)
+	subroutine ParticleFITS(p,r,nr,nm,na,rho_av,ii,amin,amax,apow,fmax,blend,porosity,frac,rho,lnkfiles,iopac)
 	use Parameters
 	IMPLICIT NONE
 
@@ -704,7 +714,7 @@ C	 create the new empty FITS file
 	character*6 word
 
 	type(particle) p
-	integer nm,na,i,j,ii
+	integer nm,na,i,j,ii,iopac
 	real r(na),nr(nm,na)
 	real a0,a1,a2,a3,rho_av,rmin,rmax
 	real*8,allocatable :: array(:,:,:)
@@ -714,7 +724,11 @@ C	 create the new empty FITS file
 	  logical simple,extend,truefalse
 	character*500 filename
 
-	write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+	if(iopac.eq.1) then
+		write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+	else
+		write(filename,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+	endif
 
 	inquire(file=filename,exist=truefalse)
 	if(truefalse) then
@@ -813,9 +827,9 @@ C	 create the new empty FITS file
 
 	do i=1,nlam
 		array(i,1,1)=lam(i)
-		array(i,2,1)=p%Kext(1,i)
-		array(i,3,1)=p%Kabs(1,i)
-		array(i,4,1)=p%Ksca(1,i)
+		array(i,2,1)=p%Kext(iopac,i)
+		array(i,3,1)=p%Kabs(iopac,i)
+		array(i,4,1)=p%Ksca(iopac,i)
 	enddo
 
 	call ftpprd(unit,group,fpixel,nelements,array(1:nlam,1:4,1),status)
@@ -842,12 +856,12 @@ C	 create the new empty FITS file
 
 	do i=1,nlam
 		do j=1,180
-			array(i,1,j)=p%F(1,i)%F11(j)
-			array(i,2,j)=p%F(1,i)%F12(j)
-			array(i,3,j)=p%F(1,i)%F22(j)
-			array(i,4,j)=p%F(1,i)%F33(j)
-			array(i,5,j)=p%F(1,i)%F34(j)
-			array(i,6,j)=p%F(1,i)%F44(j)
+			array(i,1,j)=p%F(iopac,i)%F11(j)
+			array(i,2,j)=p%F(iopac,i)%F12(j)
+			array(i,3,j)=p%F(iopac,i)%F22(j)
+			array(i,4,j)=p%F(iopac,i)%F33(j)
+			array(i,5,j)=p%F(iopac,i)%F34(j)
+			array(i,6,j)=p%F(iopac,i)%F44(j)
 		enddo
 	enddo
 

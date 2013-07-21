@@ -50,9 +50,10 @@
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
-	real*8 computepart_abun(MAXPART,MAXPART)
+	real*8 computepart_abun(MAXPART,MAXPART),computepart_Tflip(MAXPART)
 	integer computepart_ngrains(MAXPART)
 	logical computepart_blend(MAXPART)
+	character*500 computepart_hotfile(1:MAXPART),computepart_coldfile(1:MAXPART)
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -310,6 +311,9 @@
 	
 	outputfits=.false.
 
+	computepart_coldfile(:)=' '
+	computepart_hotfile(:)=' '
+	computepart_Tflip=-1d0
 	computepart_amin=-1d0
 	computepart_amax=-1d0
 	computepart_apow=1d5
@@ -671,6 +675,13 @@ c			endif
 		write(keyzone,'(a)') key(index(key,":")+1:len_trim(key))
 		if(keyzone.eq.'file') then
 			partarg(i)=value
+		else if(keyzone.eq.'coldfile') then
+			computepart_coldfile(i)=value
+		else if(keyzone.eq.'hotfile') then
+			computepart_hotfile(i)=value
+		else if(keyzone.eq.'tflip') then
+			read(value,*) computepart_Tflip(i)
+			use_topac=.true.
 		else if(keyzone.eq.'amin') then
 			read(value,*) computepart_amin(i)
 		else if(keyzone.eq.'amax') then
@@ -1171,6 +1182,9 @@ C       End
 		if(computepart_apow(ii).gt.100d0) computepart_apow(ii)=mrn_index
 		if((parttype(ii).eq.7.or.parttype(ii).eq.8).and.computepart_ngrains(ii).gt.1) then
 			do i=ngrains,ii+1,-1
+				computepart_hotfile(i+computepart_ngrains(ii)-1)=computepart_hotfile(i)
+				computepart_coldfile(i+computepart_ngrains(ii)-1)=computepart_coldfile(i)
+				computepart_Tflip(i+computepart_ngrains(ii)-1)=computepart_Tflip(i)
 				computepart_amin(i+computepart_ngrains(ii)-1)=computepart_amin(i)
  				computepart_amax(i+computepart_ngrains(ii)-1)=computepart_amax(i)
  				computepart_apow(i+computepart_ngrains(ii)-1)=computepart_apow(i)
@@ -1217,6 +1231,9 @@ C       End
 				rhograin(i+computepart_ngrains(ii)-1)=rhograin(i)
 			enddo
 			do i=2,computepart_ngrains(ii)
+				computepart_hotfile(i+ii-1)=computepart_hotfile(ii)
+				computepart_coldfile(i+ii-1)=computepart_coldfile(ii)
+				computepart_Tflip(i+ii-1)=computepart_Tflip(ii)
 				computepart_amin(i+ii-1)=10d0**(log10(computepart_amin(ii))
      &					+log10(computepart_amax(ii)/computepart_amin(ii))
      &					*real(i-1)/real(computepart_ngrains(ii)))
@@ -2921,8 +2938,9 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 				call checkaggregates(partarg(ii),Grain(ii)%nopac)
 				if(parttype(ii).eq.5) allocate(Grain(ii)%Topac(Grain(ii)%nopac))
 				if(parttype(ii).eq.3) allocate(Grain(ii)%cryst(Grain(ii)%nopac))
-			else if(parttype(ii).eq.8) then
+			else if(parttype(ii).eq.8.or.(parttype(ii).eq.7.and.computepart_Tflip(ii).gt.0d0)) then
 				Grain(ii)%nopac=2
+				if(parttype(ii).eq.7) allocate(Grain(ii)%Topac(Grain(ii)%nopac))
 			else
 				Grain(ii)%nopac=1
 			endif
@@ -2994,9 +3012,20 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		else if(parttype(ii).eq.5) then
 			call readTopac(partarg(ii),Grain(ii))
 		else if(parttype(ii).eq.7) then
-			call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
+			if(computepart_Tflip(ii).lt.0d0) then
+				call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:))
+     &							,computepart_porosity(ii),computepart_abun(ii,:),1)
+			else
+				call ComputePart(Grain(ii),ii,computepart_coldfile(ii),computepart_amin(ii),computepart_amax(ii)
+     &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
+     &							,computepart_porosity(ii),computepart_abun(ii,:),1)
+				call ComputePart(Grain(ii),ii,computepart_hotfile(ii),computepart_amin(ii),computepart_amax(ii)
+     &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
+     &							,computepart_porosity(ii),computepart_abun(ii,:),2)
+				Grain(ii)%Topac(1)=computepart_Tflip(ii)-0.1
+				Grain(ii)%Topac(2)=computepart_Tflip(ii)+0.1
+			endif
 		else if(parttype(ii).eq.8) then
 			nqhp=nqhp+1
 			Grain(ii)%qhpnr=nqhp
@@ -3034,7 +3063,10 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			Grain(ii)%dust_moment2=(Grain(ii)%rv*1d4)**2
 			Grain(ii)%dust_moment3=(Grain(ii)%rv*1d4)**3
 		endif
+		if(parttype(ii).eq.7.and.computepart_Tflip(ii).gt.0d0) Grain(ii)%parttype=5
 	enddo
+	
+
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')	
 
