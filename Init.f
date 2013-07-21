@@ -310,6 +310,9 @@
 	Tsmooth=.false.
 	
 	outputfits=.false.
+	
+	exportProDiMo=.false.
+	exportFLiTs=.false.
 
 	computepart_coldfile(:)=' '
 	computepart_hotfile(:)=' '
@@ -1117,6 +1120,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'solver_qhp') read(value,*) qhp_solver ! 0=Kees, 1=MC
 
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
+	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
 	if(key.eq.'outputfits') read(value,*) outputfits
