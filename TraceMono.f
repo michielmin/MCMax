@@ -36,7 +36,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	allocate(scatim(image%nr,image%nphi))
 	
 	if(outfluxcontr) then
-		allocate(fluxcontr(2,0:D%nR,0:D%nTheta))
+		allocate(fluxcontr(0:D%nR,0:D%nTheta,2))
 		fluxcontr=0d0
 	endif
 
@@ -397,21 +397,21 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			if(i.lt.image%nr) then
 				w1=(image%R(i+1)-image%R(i))*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 				if(tau_e.lt.1d-6) then
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*x_scat+emis(ip,jp))*tau_e*fact
+					fluxcontr(ip,jp,kp)=fluxcontr(ip,jp,kp)+w1*(2d0*x_scat+emis(ip,jp))*tau_e*fact
 				else
 					exptau_e=exp(-tau_e)
 					frac=(1d0-exptau_e)
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w1*(2d0*x_scat+emis(ip,jp))*frac*fact
+					fluxcontr(ip,jp,kp)=fluxcontr(ip,jp,kp)+w1*(2d0*x_scat+emis(ip,jp))*frac*fact
 				endif
 			endif
 			if(i.gt.1) then
 				w2=(image%R(i)-image%R(i-1))*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 				if(tau_e.lt.1d-6) then
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*x_scat+emis(ip,jp))*tau_e*fact
+					fluxcontr(ip,jp,kp)=fluxcontr(ip,jp,kp)+w2*(2d0*x_scat+emis(ip,jp))*tau_e*fact
 				else
 					exptau_e=exp(-tau_e)
 					frac=(1d0-exptau_e)
-					fluxcontr(kp,ip,jp)=fluxcontr(kp,ip,jp)+w2*(2d0*x_scat+emis(ip,jp))*frac*fact
+					fluxcontr(ip,jp,kp)=fluxcontr(ip,jp,kp)+w2*(2d0*x_scat+emis(ip,jp))*frac*fact
 				endif
 			endif
 		endif
@@ -509,39 +509,29 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		il10=(image%lam-100d0*il100-1000d0*il1000-10000d0*il10000)/10d0
 		il1=image%lam-10d0*il10-100d0*il100-1000d0*il1000-10000d0*il10000
 
-		write(fluxfile,'(a,"fluxfile","_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".dat")')
+		if(outputfits) then
+			write(fluxfile,'(a,"fluxfile","_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".fits")')
      & outdir(1:len_trim(outdir)),i10,i1,il10000,il1000,il100,il10,il1
+		else
+			write(fluxfile,'(a,"fluxfile","_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".dat")')
+     & outdir(1:len_trim(outdir)),i10,i1,il10000,il1000,il100,il10,il1
+		endif
 		write(*,'("--------------------------------------------------------")')
 		write(9,'("--------------------------------------------------------")')
 		write(*,'("Writing flux contributions to: ",a)') fluxfile(1:len_trim(fluxfile))
 		write(9,'("Writing flux contributions to: ",a)') fluxfile(1:len_trim(fluxfile))
-		open(unit=20,file=fluxfile,RECL=6000)
-		write(20,'("# Format number")')
-		write(20,'(i6)') 1
-		write(20,'("# NR, NT")')
-		write(20,'(4(i6))') D%nR-1,D%nTheta-1
-		write(20,'("# Spherical radius grid [cm] (middle of cell)")')
+
+c		call MakeFluxImage(fluxcontr,image%R(image%nr),512,2000,image%angle,image%lam)
+
 		do i=1,D%nR-1
-			write(20,*) D%R_av(i)
+		do j=1,D%nTheta-1
+			fluxcontr(i,j,1)=fluxcontr(i,j,1)/C(i,j)%V
+			fluxcontr(i,j,2)=fluxcontr(i,j,2)/C(i,j)%V
 		enddo
-		write(20,'("# Theta grid [rad, from pole] (middle of cell)")')
-		do i=1,D%nTheta-1
-			write(20,*) D%theta_av(i)
 		enddo
-		write(20,'("# contributions upper half (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				write(20,*) fluxcontr(1,i,j)/C(i,j)%V
-			enddo
-		enddo
-		write(20,'("# contributions lower half (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
-		do i=1,D%nR-1
-			do j=1,D%nTheta-1
-				write(20,*) fluxcontr(2,i,j)/C(i,j)%V
-			enddo
-		enddo
-		close(unit=20)
-		call MakeFluxImage(fluxcontr,image%R(image%nr),512,2000,image%angle,image%lam)
+
+		call outputstruct(fluxfile,(/'ARRAY  '/),1,0,fluxcontr(1:D%nR-1,1:D%nTheta-1,1:2),2)
+
 		deallocate(fluxcontr)
 	endif
 
@@ -3670,7 +3660,7 @@ C     close the file and free the unit number
 	type(RPhiImage) image
 	integer IMDIM
 	real*8 im(IMDIM,IMDIM),w1,w2,width,dx,dy,gasdev,angle
-	real*8 lam0,Rmax,i1,tot,ran2,fluxcontr(2,0:D%nR,0:D%nTheta)
+	real*8 lam0,Rmax,i1,tot,ran2,fluxcontr(0:D%nR,0:D%nTheta,2)
 	integer ix,iy,i,j,k,i10,nintegrate
 	integer il10000,il1000,il100,il10,jj,ii
 	integer ir10000,ir1000,ir100,ir10,ir1,jp1,jp2
@@ -3705,12 +3695,10 @@ C     close the file and free the unit number
 	image%Phi(D%nTheta)=pi/2d0
 	image%nphi=image%nphi-1
 
-	do ii=1,ngrains
-
 	do i=1,image%nr
 	do j=1,D%nTheta-1
-		image%image(i,j)=fluxcontr(1,i,j)
-		image%image(i,image%nphi+1-j)=fluxcontr(2,i,j)
+		image%image(i,j)=fluxcontr(i,j,1)
+		image%image(i,image%nphi+1-j)=fluxcontr(i,j,2)
 	enddo
 	enddo
 	
@@ -3755,8 +3743,6 @@ C     close the file and free the unit number
 
 	call FITSImageFlux(image,im,IMDIM,Rmax)
 
-	enddo
-
 	return
 	end
 
@@ -3788,7 +3774,7 @@ C     close the file and free the unit number
 	il10=(image%lam-100d0*il100-1000d0*il1000-10000d0*il10000)/10d0
 	il1=image%lam-10d0*il10-100d0*il100-1000d0*il1000-10000d0*il10000
 
-	write(filename,'(a,"fluxfile","_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".fits")')
+	write(filename,'(a,"fluximage","_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".fits")')
      & outdir(1:len_trim(outdir)),i10,i1,il10000,il1000,il100,il10,il1
 	inquire(file=filename,exist=truefalse)
 	if(truefalse) then

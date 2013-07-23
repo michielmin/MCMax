@@ -1,12 +1,18 @@
-	subroutine outputstruct(filename,vars,nvars,ipart)
+	subroutine outputstruct(filename,vars,nvars,ipart,xx,nxx)
 	use Parameters
 	IMPLICIT NONE
 	integer nvars,ivars,i,j,ii,ipart,l
+	integer,optional :: nxx
+	real*8,optional :: xx(D%nR-1,D%nTheta-1,*)
 	character*7 vars(nvars)
 	character*500 filename
 
 	if(outputfits) then
-		call outputstruct_fits(filename,vars,nvars,ipart)
+		if(present(xx)) then
+			call outputstruct_fits(filename,vars,nvars,ipart,xx,nxx)
+		else
+			call outputstruct_fits(filename,vars,nvars,ipart)
+		endif
 		return
 	endif
 
@@ -163,18 +169,29 @@
 				enddo
 			case ('QHPRF')
 
+			case ('OPACITY')
+
 			case ('G0')
-				write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				write(20,'("# G0 (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
 						write(20,*) C(i,j)%G
 					enddo
 				enddo
 			case ('NE')
-				write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				write(20,'("# Ne (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
 						write(20,*) C(i,j)%ne
+					enddo
+				enddo
+			case ('ARRAY')
+				do l=1,nxx
+					write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+					do i=1,D%nR-1
+						do j=1,D%nTheta-1
+							write(20,*) xx(i,j,l)
+						enddo
 					enddo
 				enddo
 			case default
@@ -191,13 +208,15 @@
 	end
 
 
-	subroutine outputstruct_fits(filename,vars,nvars,ipart)
+	subroutine outputstruct_fits(filename,vars,nvars,ipart,xx,nxx)
 	use Parameters
 	IMPLICIT NONE
 	integer nvars,ivars,i,j,ii,ipart,iopac,l
+	integer,optional :: nxx
 	character*7 vars(nvars),hdu
 	character*500 filename
 	real*8,allocatable :: array(:,:,:,:)
+	real*8,optional :: xx(D%nR-1,D%nTheta-1,*)
 	integer status,unit,blocksize,bitpix,naxis,naxes(4)
 	integer group,fpixel,nelements
 	logical simple,extend,truefalse
@@ -474,6 +493,19 @@ C	 create the new empty FITS file
 									array(i,j,l,3)=array(i,j,l,3)+Grain(ii)%Ksca(iopac,l)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
 								enddo
 							enddo
+						enddo
+					enddo
+				enddo
+			case ('ARRAY')
+				if(nxx.gt.1) then
+					naxis=3
+					naxes(3)=nxx
+				endif
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						do l=1,nxx
+							array(i,j,l,1)=xx(i,j,l)
 						enddo
 					enddo
 				enddo
