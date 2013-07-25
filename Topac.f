@@ -16,6 +16,7 @@ c-----------------------------------------------------------------------
       do ii=0,ngrains 
          if (Grain(ii)%parttype .eq. 5) then
             write(*,'("Calculating opacities for particle ",i2)') ii
+            write(9,'("Calculating opacities for particle ",i2)') ii
             nopac=Grain(ii)%nopac
 
             ! loop over all cells

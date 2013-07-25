@@ -3029,6 +3029,12 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
      &							,computepart_porosity(ii),computepart_abun(ii,:),2)
 				Grain(ii)%Topac(1)=computepart_Tflip(ii)-0.1
 				Grain(ii)%Topac(2)=computepart_Tflip(ii)+0.1
+				do i=0,D%nR
+				do j=0,D%nTheta
+					C(i,j)%wopac(ii,1)=0d0
+					C(i,j)%wopac(ii,2)=1d0
+				enddo
+				enddo
 			endif
 		else if(parttype(ii).eq.8) then
 			nqhp=nqhp+1
@@ -3261,8 +3267,10 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					tau=0d0
 					do i=1,D%nR-1
 						do ii=1,ngrains
-							tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,jj)+wl2*Grain(ii)%Kext(1,jj+1))
-     &										*(D%R(i+1)-D%R(i))*AU
+							do iopac=1,Grain(ii)%nopac
+								tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,jj)+wl2*Grain(ii)%Kext(1,jj+1))
+     &										*(D%R(i+1)-D%R(i))*AU*C(i,j)%wopac(ii,iopac)
+							enddo
 						enddo
 					enddo
 					if(tau.gt.maxtauV) maxtauV=tau
