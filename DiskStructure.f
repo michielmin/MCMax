@@ -173,7 +173,7 @@ c	enddo
 		do iz=1,nzones
 			if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
 				if(Zone(iz)%fix_struct) then
-					if(ii.eq.0) then
+					if(ii.eq.0.and.Zone(iz)%sh.gt.0d0) then
 						fix=iz
 					else if(Zone(iz)%inc_grain(ii)) then
 						fix=iz
@@ -333,8 +333,10 @@ c			stop
 		else
 c	fix scaleheight to the one defined in Zone(fix)
 			if(Zone(fix)%sh.lt.0d0) then
+c	this is a halo zone!
 				rho(1:D%nTheta-1,ii)=0d0
 			else
+c	this is not a halo zone!
 				do j=1,D%nTheta-1
 					rr=D%R_av(i)*sin(D%theta_av(j))/AU
 					zz=D%R_av(i)*cos(D%theta_av(j))/AU

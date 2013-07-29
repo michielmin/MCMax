@@ -3268,7 +3268,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 					do i=1,D%nR-1
 						do ii=1,ngrains
 							do iopac=1,Grain(ii)%nopac
-								tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(1,jj)+wl2*Grain(ii)%Kext(1,jj+1))
+								tau=tau+zonedens(iz,ii,i,j)*(wl1*Grain(ii)%Kext(iopac,jj)+wl2*Grain(ii)%Kext(iopac,jj+1))
      &										*(D%R(i+1)-D%R(i))*AU*C(i,j)%wopac(ii,iopac)
 							enddo
 						enddo
