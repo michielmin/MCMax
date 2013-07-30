@@ -325,6 +325,10 @@
 	i=i+1
 	keyword(i)='exportprodimo'
 	i=i+1
+	keyword(i)='runprodimo'
+	i=i+1
+	keyword(i)='dirprodimo'
+	i=i+1
 	keyword(i)='exportflits'
 	i=i+1
 	keyword(i)='tsmooth'

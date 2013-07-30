@@ -845,6 +845,8 @@ c ---------------------------------------------------------------------
 	if(.not.tcontact) deallocate(denstempfileP)
 	deallocate(DustMass)
 
+	if(runProDiMo) call DoRunProDiMo()
+
 	open(file=donefile,unit=90)
 	write(90,'("all done!")')
 	close(unit=90)

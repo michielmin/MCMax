@@ -3,7 +3,7 @@
 	IMPLICIT NONE
 
 	  integer status,unit,blocksize,bitpix,naxis,naxes(4)
-	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac
+	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac,i
 	  logical simple,extend,truefalse
 	character*500 filename,version
 	real*8,allocatable :: grid(:,:,:)
@@ -13,6 +13,7 @@
 	real N,N1,Mdust
 	real*8 fUV,tot,pUV
 	real*8,allocatable :: spec(:)
+	character*2 s
 
 	allocate(grid(D%nR-1,D%nTheta-1,2))
 	allocate(temperature(D%nR-1,D%nTheta-1,2))
@@ -101,7 +102,7 @@ c	call RenormalizeLRF()
 	call VersionDateTime(version)
 	call ftpkys(unit,'MCMax',trim(version),'',status)
 c	call ftpkys(unit,'mcfost_id',sha_id,'',status)
-	call ftpkyj(unit,'mcfost2prodimo',42,'',status)
+	call ftpkyj(unit,'mcfost2prodimo',43,'',status)
 c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'Teff',real(D%Tstar),-8,'[K]',status)
@@ -110,15 +111,41 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'fUV',real(fUV),-3,'',status)
 	call ftpkye(unit,'slope_UV',real(pUV),-3,'',status)
 	call ftpkye(unit,'distance',real(D%distance/parsec),-8,'[pc]',status)
-	
-	call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
-	call ftpkye(unit,'Rin',real(D%R(1)),-8,'[AU]',status)
-	call ftpkye(unit,'Rout',real(D%R(D%nR)),-8,'[AU]',status)
-	call ftpkye(unit,'Rref',real(1.0),-8,'[AU]',status)
-	call ftpkye(unit,'H0',real(D%sh1au/sqrt(2.0)),-8,'[AU]',status)
 	call ftpkye(unit,'edge',real(D%Rout),-8,'[AU]',status)
-	call ftpkye(unit,'beta',real(D%shpow),-8,'',status)
-	call ftpkye(unit,'alpha',real(-D%denspow),-8,'',status)
+
+	call ftpkye(unit,'disk_dust_mass_tot',real(Mdust),-8,'[Msun]',status)
+
+	call ftpkyj(unit,'n_zones',nzones,'',status)
+	call ftpkyj(unit,'n_regions',nzones,'',status)
+
+	if(nzones.le.0) then
+		call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
+		call ftpkye(unit,'Rin',real(D%R(1)),-8,'[AU]',status)
+		call ftpkye(unit,'Rout',real(D%R(D%nR)),-8,'[AU]',status)
+		call ftpkye(unit,'Rref',real(1.0),-8,'[AU]',status)
+		call ftpkye(unit,'H0',real(D%sh1au/sqrt(2.0)),-8,'[AU]',status)
+		call ftpkye(unit,'beta',real(D%shpow),-8,'',status)
+		call ftpkye(unit,'alpha',real(-D%denspow),-8,'',status)
+	else
+		do i=1,nzones
+			if(i.eq.1) then
+				s=' '
+			else
+				write(s,'("_",i1)') i
+			endif
+			call ftpkye(unit,'disk_dust_mass'//trim(s),real(Zone(i)%Mdust),-8,'[Msun]',status)
+			call ftpkye(unit,'Rin'//trim(s),real(Zone(i)%Rin),-8,'[AU]',status)
+			call ftpkye(unit,'Rout'//trim(s),real(Zone(i)%Rout),-8,'[AU]',status)
+			call ftpkye(unit,'Rref'//trim(s),real(Zone(i)%Rsh),-8,'[AU]',status)
+			call ftpkye(unit,'H0'//trim(s),real(Zone(i)%sh/sqrt(2.0)),-8,'[AU]',status)
+			call ftpkye(unit,'beta'//trim(s),real(Zone(i)%shpow),-8,'',status)
+			call ftpkye(unit,'alpha'//trim(s),real(-Zone(i)%denspow),-8,'',status)
+
+			write(s,'("_",i1)') i
+			call ftpkye(unit,'Rmin_region'//trim(s),real(Zone(i)%Rin),-8,'[AU]',status)
+			call ftpkye(unit,'Rmax_region'//trim(s),real(Zone(i)%Rout),-8,'[AU]',status)
+		enddo
+	endif
 
 	call ftpkye(unit,'amin',real(mrn_rmin*1d4),-8,'[micron]',status)
 	call ftpkye(unit,'amax',real(mrn_rmax*1d4),-8,'[micron]',status)
@@ -591,5 +618,21 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	end
 	
 
+	subroutine DoRunProDiMo()
+	use Parameters
+	IMPLICIT NONE
+	character*500 command
+	
+	command='cp ' // trim(ProDiModir) // '/* ' // trim(outdir)
+	
+	call system(command)
+	
+	command='cd ' // trim(outdir) // '; prodimo'
+	
+	call system(command)
+	
+	return
+	end
+	
 
 

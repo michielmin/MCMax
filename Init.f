@@ -312,6 +312,8 @@
 	outputfits=.false.
 	
 	exportProDiMo=.false.
+	runProDiMo=.false.
+	ProDiModir='filesProDiMo'
 	exportFLiTs=.false.
 
 	computepart_coldfile(:)=' '
@@ -1120,6 +1122,8 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'solver_qhp') read(value,*) qhp_solver ! 0=Kees, 1=MC
 
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
+	if(key.eq.'runprodimo') read(value,*) runProDiMo
+	if(key.eq.'dirprodimo') write(ProDiModir,'(a,"/")') trim(value)
 	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
@@ -1342,6 +1346,13 @@ C       End
 		D%Mtot=0d0
 		write(denstype,'("ZONES")')
 		allocate(Zone(nzones))
+		D%Rin=ZoneTemp(1)%Rin
+		D%Rout=ZoneTemp(nzones)%Rout
+		do i=1,nzones
+			if(ZoneTemp(i)%Rin.lt.D%Rin) D%Rin=ZoneTemp(i)%Rin
+			if(ZoneTemp(i)%Rout.gt.D%Rout) D%Rout=ZoneTemp(i)%Rout
+		enddo
+
 		do i=1,nzones
 			allocate(Zone(i)%abun(ngrains))
 			allocate(Zone(i)%inc_grain(ngrains))
@@ -1373,6 +1384,7 @@ C       End
 	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
+	if(runProDiMo) exportProDiMo=.true.
 	if(exportProDiMo) computeLRF=.true.
 
 	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) denscomposition=.true.
@@ -3816,9 +3828,9 @@ c		f_weight=f_weight_backup
 	else if(denstype.ne.'FILE'.and.denstype.ne.'PREVIOUS'.and.gridrefine.and.startiter.eq.' ') then
 c		f_weight_backup=f_weight
 c		f_weight=1d0
-		do iter=1,10
+		do iter=1,5
 			RmaxRefine=D%Rout
-			if(iter.lt.5) then
+			if(iter.lt.3) then
 				call RegridR(D%R(2),RmaxRefine)
 			else
 				call RegridR(D%R(2),RmaxRefine)
