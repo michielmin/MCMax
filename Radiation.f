@@ -979,7 +979,7 @@ c-----------------------------------------------------------------------
 				endif
 				write(*,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
 				write(9,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
-				call readstruct(file,(/'LAM    ','QHPEJv '/),2,ii,.false.)
+				call readstruct(file,(/'LAM    ','QHPEJv ','QHPRF  '/),3,ii,.false.)
 
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1

@@ -728,6 +728,8 @@ C	 create the new empty FITS file
 						enddo
 					enddo
 				enddo
+			case ('QHPRF')
+
 			case ('SKIP')
 				read(20,*) ! comments
 				do i=1,D%nR-1
