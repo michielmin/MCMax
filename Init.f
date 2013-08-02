@@ -342,6 +342,8 @@
 	f_ne=1d0
 	qhp_solver=0
 	
+	fastobs=.false.
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -589,6 +591,7 @@ c	endif
 	if(key.eq.'rinnergas') read(value,*) Rinner_gas		!inner radius of the gas disk in Stellar radii
 
 	if(key.eq.'obstmc') read(value,*) use_obs_TMC
+	if(key.eq.'fastobs') read(value,*) fastobs
 	if(key.eq.'tracestar') read(value,*) tracestar
 	if(key.eq.'dimstar') read(value,*) dimstar
 	if(key.eq.'traceemis') read(value,*) traceemis
@@ -1386,6 +1389,14 @@ C       End
 
 	if(runProDiMo) exportProDiMo=.true.
 	if(exportProDiMo) computeLRF=.true.
+	if(fastobs) then
+		if(Nphot.le.0) then
+			fastobs=.false.
+		else
+			computeLRF=.true.
+			storescatt=.false.
+		endif
+	endif
 
 	if(denstype.eq.'FILE'.and.densfile.eq.compositionfile) denscomposition=.true.
 

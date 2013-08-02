@@ -364,6 +364,8 @@
 	keyword(i)='f_ne'
 	i=i+1
 	keyword(i)='solver_qhp'
+	i=i+1
+	keyword(i)='fastobs'
 	
 	Nnormal=i
 c from here on keywords with numbers

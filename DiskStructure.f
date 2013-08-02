@@ -2124,6 +2124,11 @@ c in the theta grid we actually store cos(theta) for convenience
 	IMPLICIT NONE
 	real*8 A,B,T,dens
 	integer i,j,ii,k
+	real*8 mu,Rgas,mole,dsdt,Pv,G,Omega
+	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
+	parameter(Rgas=8.314e7) ! erg/mol/K
+	parameter(mole=6.022e23)
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 
 	if(Grain(ii)%material.eq.'UNKNOWN') then
 		dens=1d0
@@ -2155,6 +2160,14 @@ c in the theta grid we actually store cos(theta) for convenience
 c ------------ for the IN05 sublimation law --------------------
 c	determinegasfrac=(T/2000d0)**(1d0/1.95d-2)/(100d0*dens)
 c ------------ for the IN05 sublimation law --------------------
+
+c------------- determine the time for evaporation --------------
+	Pv=10d0**(A/B-1d4/(T*B)-log10(T))*Rgas*T/(mu*mole)
+	dsdt=(Pv/Grain(ii)%rho)*sqrt(mu/(2d0*pi*kb*T))
+
+	Omega=2d0*pi*sqrt(D%R_av(i)**3/(G*D%Mstar))
+
+	if((Grain(ii)%rv/dsdt).gt.Omega) determinegasfrac=0d0
 	
 	return
 	end

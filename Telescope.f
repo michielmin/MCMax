@@ -17,6 +17,8 @@
 	real*8 Reddening,compute_dlam,ExtISM,temp,tot
 	real*8 radtau,radialtau,tau1,Av
 	integer ntau1
+	integer nlam_obs
+	real*8,allocatable :: lam_obs(:)
 	
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
@@ -29,7 +31,22 @@
 		tel%NphotAngle=0
 	endif
 
+	if(tel%nlam_obs.lt.0) then
+		nlam_obs=nlam
+		allocate(lam_obs(nlam_obs))
+		lam_obs=lam
+	else
+		nlam_obs=tel%nlam_obs
+		if(nlam_obs.gt.nlam) nlam_obs=nlam
+		allocate(lam_obs(nlam_obs))
+		do i=1,nlam_obs
+			lam_obs(i)=10d0**(log10(tel%lam1)+log10(tel%lam2/tel%lam1)*real(i-1)/real(nlam_obs-1))
+		enddo
+	endif
+
 	outfluxcontr=tel%fluxcontr
+
+	fastobs=tel%fastobs
 
 	do i=1,ngrains
 		Grain(i)%trace=tel%trace(i)
@@ -220,13 +237,13 @@
 			call Visibility(image,tel%b(k),tel%theta(k),tel%lam1,V(k),phase(k))
 		enddo
 		write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
-		do j=1,nlam
-			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
+		do j=1,nlam_obs
+			if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
+				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
 				do k=1,tel%nbaseline
-					call Visibility(image,tel%b(k),tel%theta(k),lam(j),V(k),phase(k))
+					call Visibility(image,tel%b(k),tel%theta(k),lam_obs(j),V(k),phase(k))
 				enddo
-				write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+				write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
 				call flush(30)
 			endif
 		enddo
@@ -575,12 +592,14 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%traceemis=traceemis
 	def%tracescat=tracescat
 	def%tracegas=tracegas
+	def%fastobs=fastobs
 	def%nvelo=101
 	def%dvelo=1d0
 	def%abun=1d-4
 	def%trans_nr1=1
 	def%trans_nr2=1
 	def%popfile=' '
+	def%nlam_obs=-1
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -814,6 +833,8 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		tel(nobs)%traceemis=def%traceemis
 		tel(nobs)%tracescat=def%tracescat
 		tel(nobs)%tracegas=def%tracegas
+		tel(nobs)%nlam_obs=def%nlam_obs
+		tel(nobs)%fastobs=def%fastobs
 	endif
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
@@ -826,6 +847,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'lam') read(value,*) deflam
 		if(key.eq.'lam1') read(value,*) def%lam1
 		if(key.eq.'lam2') read(value,*) def%lam2
+		if(key.eq.'nlam') read(value,*) def%nlam_obs
 		if(key.eq.'inc') read(value,*) def%angle
 		if(key.eq.'inc1') read(value,*) def%angle1
 		if(key.eq.'inc2') read(value,*) def%angle2
@@ -895,6 +917,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'nvelo') read(value,*) def%nvelo
 		if(key.eq.'dvelo') read(value,*) def%dvelo
 		if(key.eq.'abun') read(value,*) def%abun
+		if(key.eq.'fastobs') read(value,*) def%fastobs
 	else
 		if(key.eq.'nphi') read(value,*) tel(nobs)%nphi
 		if(key.eq.'nrad') read(value,*) tel(nobs)%nr
@@ -906,6 +929,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'lam') read(value,*) tel(nobs)%lam1
 		if(key.eq.'lam1') read(value,*) tel(nobs)%lam1
 		if(key.eq.'lam2') read(value,*) tel(nobs)%lam2
+		if(key.eq.'nlam') read(value,*) tel(nobs)%nlam_obs
 		if(key.eq.'inc') read(value,*) tel(nobs)%angle
 		if(key.eq.'inc1') read(value,*) tel(nobs)%angle1
 		if(key.eq.'inc2') read(value,*) tel(nobs)%angle2
@@ -994,6 +1018,7 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 		if(key.eq.'nvelo') read(value,*) tel(nobs)%nvelo
 		if(key.eq.'dvelo') read(value,*) tel(nobs)%dvelo
 		if(key.eq.'abun') read(value,*) tel(nobs)%abun
+		if(key.eq.'fastobs') read(value,*) tel(nobs)%fastobs
 	endif
 	
 	goto 1
@@ -1004,7 +1029,9 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 	deallocate(def%theta)
 	
 	if(2*(tel(nobs)%nvelo/2).eq.tel(nobs)%nvelo) tel(nobs)%nvelo=tel(nobs)%nvelo+1
-	
+
+	if(tel(nobs)%fastobs.and..not.fastobs) tel(nobs)%fastobs=.false.
+
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 	

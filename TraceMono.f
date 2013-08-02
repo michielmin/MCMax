@@ -72,6 +72,31 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 		call ReadPlanet(Planets(i),lam0)
 	enddo
 
+	if(fastobs) then
+		do i=0,D%nR-1
+		do j=1,D%nTheta-1
+			C(i,j)%Kabs=0d0
+			C(i,j)%Kext=0d0
+			C(i,j)%Ksca=0d0
+			do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				C(i,j)%Kabs=C(i,j)%Kabs+(wl1*Grain(ii)%Kabs(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kabs(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%Ksca=C(i,j)%Ksca+(wl1*Grain(ii)%Ksca(iopac,ilam1)
+     &			+wl2*Grain(ii)%Ksca(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			enddo
+			enddo
+			C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
+			do irg=1,C(i,j)%nrg
+				C(i,j)%scattfield(irg,0:NPHISCATT/2,1:2)=(wl1*C(i,j)%LRF(ilam1)+wl2*C(i,j)%LRF(ilam2))
+     &					*C(i,j)%V/2d0
+			enddo
+		enddo
+		enddo
+	else
+
 	if(storescatt) then
 		if(.not.scattcomputed(ilam1)) then
 			do i=0,D%nR
@@ -185,6 +210,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
 		enddo
 		enddo
+	endif
 	endif
 
 !$OMP PARALLEL IF(multicore)
