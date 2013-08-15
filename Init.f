@@ -37,7 +37,7 @@
 	logical mdustscale,settle(MAXPART),trace(MAXPART),denscomposition
 	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
 	real*8 frac(MAXPART),f,phi,shscalevalue,part_shscale(MAXPART),shpow,minrad(MAXPART),maxrad(MAXPART)
-	real*8 roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
+	real*8 RoundOff,roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
 	real*8 powmix(MAXPART),radmix(MAXPART),DiffCoeff,Tmix(MAXPART),Rfix(100),rimscale,rimwidth
 	real*8 rgrain(MAXPART),rgrain_edges(101),rhograin(MAXPART) ! Gijsexp
 	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
@@ -361,6 +361,10 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%a_pow=1d5
 		ZoneTemp(i)%gamma_exp=-1d0
 		ZoneTemp(i)%maxtauV=-1d0
+		ZoneTemp(i)%roundtype='NONE'
+		ZoneTemp(i)%roundwidth=0d0
+		ZoneTemp(i)%roundindex=0.30
+		ZoneTemp(i)%roundscalemin=1d-60
 	enddo
 	nzones=0
 	
@@ -1173,6 +1177,14 @@ C       Gijsexp, read in parameters for s.c. settling
 		else if(keyzone(1:4).eq.'incl') then
 			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) ZoneTemp(i)%inc_grain(j)
+		else if(keyzone.eq.'roundtype') then
+			read(value,*) ZoneTemp(i)%roundtype
+		else if(keyzone.eq.'roundwidth') then
+			read(value,*) ZoneTemp(i)%roundwidth
+		else if(keyzone.eq.'roundindex') then
+			read(value,*) ZoneTemp(i)%roundindex
+		else if(keyzone.eq.'roundscalemin') then
+			read(value,*) ZoneTemp(i)%roundscalemin
 		else
 			write(*,'("Zone keyword not understood:",a)') trim(keyzone)
 			write(9,'("Zone keyword not understood:",a)') trim(keyzone)
@@ -2764,7 +2776,7 @@ c in the theta grid we actually store cos(theta) for convenience
 	endif
 
 	if(denstype.eq.'ZONES') then
-		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1))
+		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1)) ! first occurence (of 2)
 		zonedens=0d0
 		do iz=1,nzones
 			tot=0d0
@@ -2790,6 +2802,9 @@ c in the theta grid we actually store cos(theta) for convenience
 						z=D%R_av(i)*cos(theta)/AU
 						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
 						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+						if (Zone(iz)%roundtype.ne.'NONE') then
+						   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,Zone(iz)%roundindex,Zone(iz)%roundscalemin)
+						endif
 						f2=exp(-(z/hr)**2)
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
@@ -3227,7 +3242,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 		enddo
 		enddo
 
-		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1))
+		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1)) ! second occurence (of 2)
 		zonedens=0d0
 		D%Mtot=0d0
 		do iz=1,nzones
@@ -3250,6 +3265,9 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 						z=D%R_av(i)*cos(theta)/AU
 						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
 						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+						if (Zone(iz)%roundtype.ne.'NONE') then
+						   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,Zone(iz)%roundindex,Zone(iz)%roundscalemin)
+						endif
 						f2=exp(-(z/hr)**2)
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
@@ -4874,7 +4892,7 @@ c-----------------------------------------------------------------------
 		 r=D%R_av(i)*sin(D%theta_av(j))**D%gapshape(k)/AU
 		 if(r.gt.D%gap1(k).and.r.lt.D%gap2(k)) then
 		    if (D%gaproundtype(k).ne.' ') then 
-		       scale=RoundOff(r,D%gap1(k),D%gap2(k),D%gaproundtype(k),
+		       scale=RoundOff(r,D%gap2(k),D%gaproundtype(k),
      1                                D%gaproundpow(k),D%gap(k))
 		    else
 		       scale=D%gap(k)
@@ -4962,7 +4980,7 @@ c   + roundtype='softedge': a soft edge inside of rmax, based on angular momentu
 c                           conservation. Described in Woitke++ 2009.
 c                           (only a 10% effect, needs grid refinement and benchmark)
 c
-c   + roundtype='powerlaw': a powerlaw surface density between rmin and rmax,
+c   + roundtype='powerlaw': a powerlaw surface density between up to rmax,
 c                           proportional to r^-roundpow.
 c
 c   + roundtype='hydro':    a gaussian like shape that fits hydro simulations
@@ -4973,13 +4991,13 @@ c   OUPUT:  scaling factor at radius r
 c
 c-----------------------------------------------------------------------
 
-	function RoundOff(r,rmin,rmax,type,pow,scalemin)
+	function RoundOff(r,rmax,type,pow,scalemin)
 	use Parameters
 	IMPLICIT NONE
 	real*8 RoundOff
 
 	integer i,j,k
-	real*8 scale,r,rmin,rmax,type,pow,scalemin
+	real*8 scale,r,rmax,type,pow,scalemin
 	doubleprecision, PARAMETER :: GG=6.6720000d-08
 	doubleprecision, PARAMETER :: amu=1.66053886d-24
 	
@@ -4990,7 +5008,7 @@ c-----------------------------------------------------------------------
 	   scale=scale* (1d0 - 0.5d0*(rmax/r - r/rmax))
 	   scale=exp(scale) * ((r/rmax)**(D%denspow)) 
 	
-        !  use a shape from Hydrodynamic smulations
+        !  use a shape from Hydrodynamic simulations
 	else if (type.eq.'hydro') then
 	   scale=exp( -(((1-r/rmax)/pow)**3d0))
 

@@ -1614,7 +1614,7 @@ c	enddo
 	      else if (Grain(ii)%shaperad.eq.0d0.and.
      &                r1.lt.Grain(ii)%minrad+Grain(ii)%roundwidth) then
 
-		 scale=RoundOff(r1,Grain(ii)%minrad,Grain(ii)%minrad+Grain(ii)%roundwidth,
+		 scale=RoundOff(r1,Grain(ii)%minrad+Grain(ii)%roundwidth,
      &                          Grain(ii)%roundtype,Grain(ii)%roundpow,1d-300)
 
                  ! scale from dens0 if no significant dust destruction
