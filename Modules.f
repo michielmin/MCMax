@@ -39,7 +39,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical fixmpset,inner_gas,multicore,adjustAV
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
-	logical deadzone,gravstable,reducemdot
+	logical deadzone,gravstable,reducemdot,fastobs
 	logical topac_interpol	!Gijsexp
 	logical,allocatable :: scattcomputed(:)
 	integer,allocatable :: nscattcomputed(:)
@@ -120,6 +120,8 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	type DiskZone
 		real*8 Rin,Rout,Mdust,denspow,shpow,sh,Rsh
 		real*8 a_min,a_max,a_pow,Rexp,gamma_exp,gas2dust
+		real*8 roundwidth,roundindex,roundscalemin
+		character*20 roundtype
 		real*8 maxtauV
 		logical fix_struct,sizedis
 		real*8,allocatable :: abun(:)
@@ -162,7 +164,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type Telescope
 		character*100 kind,flag
-		integer nphi,Nphot,NphotAngle,nr,nexits,nt,nstar
+		integer nphi,Nphot,NphotAngle,nr,nexits,nt,nstar,nlam_obs
 		integer nbaseline,nangle,npixel,nint,nfov,scaletype,nlam ! Gijsexp
 		real*8 lam1,lam2,angle,D,dlam,texp,D2,spider
 		real*8 angle1,angle2,width,opening,mask,wmask,iwa,owa,strehl
@@ -170,7 +172,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: b(:),theta(:),fov(:),lam(:) ! Gijsexp
 		logical usepol,readmcscat,traceinverse,fluxcontr
 		logical,allocatable :: trace(:)
-		logical tracestar,traceemis,tracescat,tracegas
+		logical tracestar,traceemis,tracescat,tracegas,fastobs
 		character*500 psffile,linefile,popfile
 		real*8 dvelo,abun
 		integer nvelo,trans_nr1,trans_nr2
