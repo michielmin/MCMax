@@ -2,7 +2,7 @@
 	use Parameters
 	IMPLICIT NONE
 
-	  integer status,unit,blocksize,bitpix,naxis,naxes(4)
+	  integer status,unit,blocksize,bitpix,naxis,naxes(4),j0
 	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac,i
 	  logical simple,extend,truefalse
 	character*500 filename,version
@@ -15,16 +15,6 @@
 	real*8,allocatable :: spec(:)
 	character*2 s
 
-	allocate(grid(D%nR-1,D%nTheta-1,2))
-	allocate(temperature(D%nR-1,D%nTheta-1,2))
-	allocate(spectre(nlam))
-	allocate(J_io(D%nR-1,D%nTheta-1,nlam))
-	allocate(dens(D%nR-1,D%nTheta-1))
-	allocate(opacite(D%nR-1,D%nTheta-1,2,nlam))
-	allocate(N_grains(D%nR-1,D%nTheta-1,0:3))
-	allocate(region_index(D%nR-1))
-	allocate(HRspec(nlamHR,2))
-	
 	write(filename,'(a,"forProDiMo.fits.gz")') outdir(1:len_trim(outdir))
 
 	inquire(file=filename,exist=truefalse)
@@ -34,6 +24,30 @@
 		open(unit=90,file=filename)
 		close(unit=90,status='delete')
 	endif
+
+
+	do j0=1,D%nTheta-2
+		do i=1,D%nR-1
+			if(C(i,j)%dens.gt.1d-40) goto 1
+		enddo
+	enddo
+1	continue
+	if(j0.gt.1) then
+		write(*,'("Starting from theta: ",f4.2," (cell nr.",i3,")")') D%theta_av(j0),j0
+		write(9,'("Starting from theta: ",f4.2," (cell nr.",i3,")")') D%theta_av(j0),j0
+	endif
+
+	allocate(grid(D%nR-1,D%nTheta-j0,2))
+	allocate(temperature(D%nR-1,D%nTheta-j0,2))
+	allocate(spectre(nlam))
+	allocate(J_io(D%nR-1,D%nTheta-j0,nlam))
+	allocate(dens(D%nR-1,D%nTheta-j0))
+	allocate(opacite(D%nR-1,D%nTheta-j0,2,nlam))
+	allocate(N_grains(D%nR-1,D%nTheta-j0,0:3))
+	allocate(region_index(D%nR-1))
+	allocate(HRspec(nlamHR,2))
+	
+
 
 	  status=0
 C	 Get an unused Logical Unit Number to use to create the FITS file
@@ -53,14 +67,14 @@ C	 create the new empty FITS file
 	bitpix=-64
 	naxis=3
 	naxes(1)=D%nR-1			!n_rad
-	naxes(2)=D%nTheta-1		!nz
+	naxes(2)=D%nTheta-j0	!nz
 	naxes(3)=2
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
 	Mdust=0e0
 	do ri=1,D%nR-1
-	do zj=1,D%nTheta-1
-		Mdust=MDust+C(ri,zj)%mass
+	do zj=j0,D%nTheta-1
+		Mdust=Mdust+C(ri,zj)%mass
 	enddo
 	enddo
 	Mdust=Mdust/Msun
@@ -157,7 +171,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkyj(unit,'n_grains',ngrains,' ',status)
 	call ftpkyj(unit,'n_rad',D%nR-1,' ',status)
-	call ftpkyj(unit,'nz',D%nTheta-1,' ',status)
+	call ftpkyj(unit,'nz',D%nTheta-j0,' ',status)
 	call ftpkyj(unit,'n_rad_in',nspan*nlev,' ',status)
 
 	!  Write the array to the FITS file.
@@ -169,8 +183,8 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 		else
 		   grid(ri,:,1) = D%R_av(ri)/AU	!r_grid(ri,:)
 		endif
-	   do zj=1,D%nTheta-1 !nz
-		  grid(ri,D%nTheta-zj,2) = grid(ri,D%nTheta-zj,1)*cos(D%theta_av(zj)) !z_grid(ri,zj)
+	   do zj=j0,D%nTheta-1 !nz
+		  grid(ri,D%nTheta-j0+1-zj,2) = grid(ri,D%nTheta-j0+1-zj,1)*cos(D%theta_av(zj)) !z_grid(ri,zj)
 	   enddo
 	enddo
 	
@@ -182,7 +196,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	bitpix=-32
 	naxis=2
 	naxes(1)=D%nR-1			!n_rad
-	naxes(2)=D%nTheta-1		!nz
+	naxes(2)=D%nTheta-j0		!nz
 	nelements=naxes(1)*naxes(2)
 
 	! create new hdu
@@ -192,7 +206,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
 	   do ri=1, D%nR-1	!n_rad
-		  do zj=1, D%nTheta-1	!nz
+		  do zj=j0, D%nTheta-1	!nz
 			 Temperature(ri,D%nTheta-zj,1) = C(ri,zj)%T
 		  enddo !j
 	   enddo !i
@@ -277,7 +291,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=3
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
@@ -291,7 +305,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 
 	! Inversion de l'ordre des dimensions + passage en simple precision
 	do ri=1, D%nR-1
-	   do zj=1,D%nTheta-1
+	   do zj=j0,D%nTheta-1
 		  J_io(ri,D%nTheta-zj,:) = 1d-3 * C(ri,zj)%LRF(:) * 2.998e14/lam(:)
 	   enddo
 	enddo
@@ -304,7 +318,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=3
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
@@ -315,7 +329,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 	
 	! Inversion de l'ordre des dimensions 
-	do zj=1,D%nTheta-1
+	do zj=j0,D%nTheta-1
 	   do ri=1, D%nR-1
 		  J_io(ri,D%nTheta-zj,:) = C(ri,zj)%nLRF(:) 
 	   enddo
@@ -329,7 +343,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=3
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
@@ -342,7 +356,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 
 	! Inversion de l'ordre des dimensions + passage en simple precision
 	do ri=1, D%nR-1
-	   do zj=1,D%nTheta-1
+	   do zj=j0,D%nTheta-1
 		  J_io(ri,D%nTheta-zj,:) = 0d0!C(:,ri,zj)%LRF(:) 
 	   enddo
 	enddo
@@ -355,7 +369,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=3
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
@@ -366,7 +380,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
    
 	! Inversion de l'ordre des dimensions et somaation
-	do zj=1,D%nTheta-1
+	do zj=j0,D%nTheta-1
 	   do ri=1, D%nR-1
 		  J_io(ri,D%nTheta-zj,:) = 0
 	   enddo
@@ -381,7 +395,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=2
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	nelements=naxes(1)*naxes(2)
 
 	! create new hdu
@@ -392,7 +406,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 
 	!  Write the array to the FITS file.
 	do ri=1, D%nR-1
-	   do zj=1,D%nTheta-1
+	   do zj=j0,D%nTheta-1
 		  dens(ri,D%nTheta-zj) =  C(ri,zj)%gasdens*gas2dust
 	   enddo
 	enddo
@@ -405,7 +419,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=4
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=2
 	naxes(4)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
@@ -416,7 +430,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	!  Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
-	do zj=1,D%nTheta-1
+	do zj=1,D%nTheta-j0
 	   do ri=1,D%nR-1
 			 do lambda=1,nlam
 			  opacite(ri,zj,1,lambda) = 0d0
@@ -442,7 +456,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	bitpix=-32
 	naxis=3
 	naxes(1)=D%nR-1
-	naxes(2)=D%nTheta-1
+	naxes(2)=D%nTheta-j0
 	naxes(3)=4
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
@@ -452,7 +466,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	!  Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
-	do zj=1,D%nTheta-1
+	do zj=1,D%nTheta-j0
 	   do ri=1,D%nR-1
 		  ! Nbre total de grain : le da est deja dans densite_pouss
 			N=0d0
