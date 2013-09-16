@@ -184,7 +184,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 		   grid(ri,:,1) = D%R_av(ri)/AU	!r_grid(ri,:)
 		endif
 	   do zj=j0,D%nTheta-1 !nz
-		  grid(ri,D%nTheta-j0+1-zj,2) = grid(ri,D%nTheta-j0+1-zj,1)*cos(D%theta_av(zj)) !z_grid(ri,zj)
+		  grid(ri,D%nTheta-zj,2) = grid(ri,D%nTheta-zj,1)*cos(D%theta_av(zj)) !z_grid(ri,zj)
 	   enddo
 	enddo
 	
