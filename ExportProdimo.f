@@ -28,7 +28,7 @@
 
 	do j0=1,D%nTheta-2
 		do i=1,D%nR-1
-			if(C(i,j)%dens.gt.1d-40) goto 1
+			if(C(i,j0)%dens.gt.1d-40) goto 1
 		enddo
 	enddo
 1	continue
