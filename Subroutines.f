@@ -1723,68 +1723,68 @@ CU    USES ran1
       return
       END
 
-      FUNCTION ran0(idum)
-      INTEGER idum,IA,IM,IQ,IR,MASK
-      REAL*8 ran0,AM
-      PARAMETER (IA=16807,IM=2147483647,AM=1./IM,IQ=127773,IR=2836,
-     *MASK=123459876)
-      INTEGER k
-      idum=ieor(idum,MASK)
-      k=idum/IQ
-      idum=IA*(idum-k*IQ)-IR*k
-      if (idum.lt.0) idum=idum+IM
-      ran0=AM*idum
-      idum=ieor(idum,MASK)
-      return
-      END
-
-
-      FUNCTION ran3(idum)
-      INTEGER idum
-      INTEGER MBIG,MSEED,MZ
-C     REAL MBIG,MSEED,MZ
-      REAL*8 ran3,FAC
-      PARAMETER (MBIG=1000000000,MSEED=161803398,MZ=0,FAC=1./MBIG)
-C     PARAMETER (MBIG=4000000.,MSEED=1618033.,MZ=0.,FAC=1./MBIG)
-      INTEGER i,iff,ii,inext,inextp,k
-      INTEGER mj,mk,ma(55)
-C     REAL mj,mk,ma(55)
-      SAVE iff,inext,inextp,ma
-      DATA iff /0/
-      if(idum.lt.0.or.iff.eq.0)then
-        iff=1
-        mj=abs(MSEED-abs(idum))
-        mj=mod(mj,MBIG)
-        ma(55)=mj
-        mk=1
-        do 11 i=1,54
-          ii=mod(21*i,55)
-          ma(ii)=mk
-          mk=mj-mk
-          if(mk.lt.MZ)mk=mk+MBIG
-          mj=ma(ii)
-11      continue
-        do 13 k=1,4
-          do 12 i=1,55
-            ma(i)=ma(i)-ma(1+mod(i+30,55))
-            if(ma(i).lt.MZ)ma(i)=ma(i)+MBIG
-12        continue
-13      continue
-        inext=0
-        inextp=31
-        idum=1
-      endif
-      inext=inext+1
-      if(inext.eq.56)inext=1
-      inextp=inextp+1
-      if(inextp.eq.56)inextp=1
-      mj=ma(inext)-ma(inextp)
-      if(mj.lt.MZ)mj=mj+MBIG
-      ma(inext)=mj
-      ran3=mj*FAC
-      return
-      END
-
+C      FUNCTION ran0(idum)
+C      INTEGER idum,IA,IM,IQ,IR,MASK
+C      REAL*8 ran0,AM
+C      PARAMETER (IA=16807,IM=2147483647,AM=1./IM,IQ=127773,IR=2836,
+C     *MASK=123459876)
+C      INTEGER k
+C      idum=ieor(idum,MASK)
+C      k=idum/IQ
+C      idum=IA*(idum-k*IQ)-IR*k
+C      if (idum.lt.0) idum=idum+IM
+C      ran0=AM*idum
+C      idum=ieor(idum,MASK)
+C      return
+C      END
+C
+C
+C      FUNCTION ran3(idum)
+C      INTEGER idum
+C      INTEGER MBIG,MSEED,MZ
+CC     REAL MBIG,MSEED,MZ
+C      REAL*8 ran3,FAC
+C      PARAMETER (MBIG=1000000000,MSEED=161803398,MZ=0,FAC=1./MBIG)
+CC     PARAMETER (MBIG=4000000.,MSEED=1618033.,MZ=0.,FAC=1./MBIG)
+C      INTEGER i,iff,ii,inext,inextp,k
+C      INTEGER mj,mk,ma(55)
+CC     REAL mj,mk,ma(55)
+C      SAVE iff,inext,inextp,ma
+C      DATA iff /0/
+C      if(idum.lt.0.or.iff.eq.0)then
+C        iff=1
+C        mj=abs(MSEED-abs(idum))
+C        mj=mod(mj,MBIG)
+C        ma(55)=mj
+C        mk=1
+C        do 11 i=1,54
+C          ii=mod(21*i,55)
+C          ma(ii)=mk
+C          mk=mj-mk
+C          if(mk.lt.MZ)mk=mk+MBIG
+C          mj=ma(ii)
+C11      continue
+C        do 13 k=1,4
+C          do 12 i=1,55
+C            ma(i)=ma(i)-ma(1+mod(i+30,55))
+C            if(ma(i).lt.MZ)ma(i)=ma(i)+MBIG
+C12        continue
+C13      continue
+C        inext=0
+C        inextp=31
+C        idum=1
+C      endif
+C      inext=inext+1
+C      if(inext.eq.56)inext=1
+C      inextp=inextp+1
+C      if(inextp.eq.56)inextp=1
+C      mj=ma(inext)-ma(inextp)
+C      if(mj.lt.MZ)mj=mj+MBIG
+C      ma(inext)=mj
+C      ran3=mj*FAC
+C      return
+C      END
+C
 
       FUNCTION ran2(idum)
       INTEGER idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV
@@ -1795,6 +1795,11 @@ C     REAL mj,mk,ma(55)
       INTEGER idum2,j,k,iv(NTAB),iy
       SAVE iv,iy,idum2
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
+
+	real*8 ran1
+	ran2=ran1(idum)
+	return
+
       if (idum.le.0) then
         idum=max(-idum,1)
         idum2=idum
