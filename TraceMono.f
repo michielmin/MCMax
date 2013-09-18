@@ -767,7 +767,7 @@ c Start tracing the photons
 	phot=photinit
 
 	phot%nr=iphot
-	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
+	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 	phot%E=phot%E/real(Nphot)
 	if(scat_how.eq.2) then
 		phot%pol=.false.
@@ -794,7 +794,7 @@ c Start tracing the photons
 
 1	continue
 
-	if(.not.forcefirst) then
+	if(.not.forcefirst.or.phot%scatt) then
 		tau=-log(ran2(idum))
 	else
 		phot2=phot
@@ -1030,7 +1030,7 @@ c eliminating 'dark-zone'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 	
-	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,ignore)
+	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
 	use Parameters
 	IMPLICIT NONE
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet,Eirf,fact_IRF
@@ -1041,10 +1041,10 @@ c-----------------------------------------------------------------------
 	logical ignore
 	
 	fact_IRF=10d0
-	ignore=.false.
 	phot%pol=.false.
 
 	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)
+	
 	Er=Etot*ran2(idum)
 	if(Er.lt.Estar) then
 		phot%E=Etot

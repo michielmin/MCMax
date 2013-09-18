@@ -4408,7 +4408,7 @@ c the nspike parameter removes the n degree spike in the forward direction.
 		p%F(iopac,j)%F44(i)=tot2*p%F(iopac,j)%F44(i)/tot
 	enddo
 
-	if(nspike.gt.0.and.nspike.lt.180) then
+	if(nspike.gt.0.and.nspike.lt.180.and.scat_how.gt.1) then
 c the nspike parameter removes the n degree spike in the forward direction.
 		do i=1,nspike
 			p%F(iopac,j)%F12(i)=p%F(iopac,j)%F12(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
