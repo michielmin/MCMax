@@ -4056,7 +4056,7 @@ c Set the spectrum and energy for the interstellar radiation field
 	if(use_IRF) then
 		allocate(IRF(nlam))
 		do i=1,nlam
-			IRF(i)=pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
+			IRF(i)=4d0*pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
      &                                               +Planck(2.7d0,lam(i)))
 		enddo
 		call integrate(IRF,E_IRF)

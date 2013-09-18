@@ -1086,13 +1086,14 @@ c-----------------------------------------------------------------------
 		phot%x=D%R(D%nR)*phot%x
 		phot%y=D%R(D%nR)*phot%y
 		phot%z=D%R(D%nR)*phot%z
-		call randomdirection(phot%vx,phot%vy,phot%vz)
+7		call randomdirection(phot%vx,phot%vy,phot%vz)
 		inp=(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)
 		if(inp.gt.0d0) then
 			phot%vx=-phot%vx
 			phot%vy=-phot%vy
 			phot%vz=-phot%vz
 		endif
+		if(abs(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)/D%R(D%nR).lt.ran2(idum)) goto 7
 
 		phot%edgeNr=2
 		phot%onEdge=.true.

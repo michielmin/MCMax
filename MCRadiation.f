@@ -453,7 +453,7 @@ c emit from the interstellar radiation field
 				phot%vy=-phot%vy
 				phot%vz=-phot%vz
 			endif
-			if(sin(acos(abs(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)/D%R(D%nR))).gt.ran2(idum)) goto 7
+			if(abs(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)/D%R(D%nR).lt.ran2(idum)) goto 7
 
 			phot%edgeNr=2
 			phot%onEdge=.true.
