@@ -4056,7 +4056,7 @@ c Set the spectrum and energy for the interstellar radiation field
 	if(use_IRF) then
 		allocate(IRF(nlam))
 		do i=1,nlam
-			IRF(i)=4d0*pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
+			IRF(i)=pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
      &                                               +Planck(2.7d0,lam(i)))
 		enddo
 		call integrate(IRF,E_IRF)
@@ -4382,7 +4382,7 @@ c-----------------------------------------------------------------------
 	close(unit=20)
 
 
-	if(nspike.gt.0.and.nspike.lt.180) then
+	if(nspike.gt.0.and.nspike.lt.180.and.scat_how.gt.1) then
 c the nspike parameter removes the n degree spike in the forward direction.
 		write(*,'("Making first ",i2," degrees isotropic")') nspike
 		write(9,'("Making first ",i2," degrees isotropic")') nspike
