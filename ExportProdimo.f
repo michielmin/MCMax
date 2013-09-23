@@ -116,7 +116,7 @@ c	call RenormalizeLRF()
 	call VersionDateTime(version)
 	call ftpkys(unit,'MCMax',trim(version),'',status)
 c	call ftpkys(unit,'mcfost_id',sha_id,'',status)
-	call ftpkyj(unit,'mcfost2prodimo',104,'',status)
+	call ftpkyj(unit,'mcfost2prodimo',43,'',status)
 c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'Teff',real(D%Tstar),-8,'[K]',status)
