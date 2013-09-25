@@ -102,6 +102,8 @@ fit_module.o:	fit_module.f90
 # special rule to make Regrid.f files for fast compilation
 #RegridR.o:	RegridR.f
 #		${FC} $(FFLAGS) -O0 -c RegridR.f -o RegridR.o
+#Main.o:	Main.f
+#		${FC} $(FFLAGS) -O0 -c Main.f -o Main.o
 #Init.o:	Init.f
 #		${FC} $(FFLAGS) -O0 -c Init.f -o Init.o
 

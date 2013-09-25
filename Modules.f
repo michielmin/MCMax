@@ -7,7 +7,7 @@
 	parameter(pi=3.14159265358979323846264338328d0)
 	parameter(AU=1.49598e13)
 	parameter(parsec=3.08568025e18)
-	parameter(Rsun=6.955e10,Msun=1.98892e33,Lsun=3.827e33)
+	parameter(Rsun=6.9599e10,Msun=1.98892e33,Lsun=3.846e33)		!3.827e33)
 	parameter(kb=1.3806503d-16,sigma=5.6704d-5)
 c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:),lamHR(:),FstarHR(:)

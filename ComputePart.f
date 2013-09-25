@@ -954,6 +954,16 @@ c-----------------------------------------------------------------------
 	e1out=dreal(me)
 	e2out=dimag(me)
 
+
+c LLL mixing rule (not preferred)
+c	me=0d0
+c	do j=1,nm
+c		me=me+m(j)**(2d0/3d0)*abun(j)
+c	enddo
+c	me=me**(3d0/2d0)
+c	e1out=dreal(me)
+c	e2out=dimag(me)
+
 	return
 	end
 	
