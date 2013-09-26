@@ -310,47 +310,6 @@ c-----------------------------------------------------------------------
 	return
 	end
 
-c-----------------------------------------------------------------------
-c-----------------------------------------------------------------------
-
-	subroutine readrefind(input,grid,e1,e2,n)
-	IMPLICIT NONE
-	integer i,j,n
-	real*8 grid(n),e1(n),e2(n),x0,y01,y02,x1,y11,y12,wp,gamma
-	character*500 input
-	open(unit=20,file=input,RECL=1000)
-	i=1
-1	read(20,*,end=102,err=1) x0,y01,y02
-	wp=(1d0-y01)/x0**2
-	gamma=y02/x0**3
-103	if(x0.ge.grid(i)) then
-		e1(i)=1d0-wp*grid(i)**2
-		e2(i)=gamma*grid(i)**3
-c		e1(i)=y01
-c		e2(i)=y02
-		i=i+1
-		goto 103
-	endif
-100	read(20,*,end=102) x1,y11,y12
-101	if(grid(i).le.x1.and.grid(i).gt.x0) then
-		e1(i)=y11+(grid(i)-x1)*(y01-y11)/(x0-x1)
-		e2(i)=y12+(grid(i)-x1)*(y02-y12)/(x0-x1)
-		i=i+1
-		if(i.gt.n) goto 102
-		goto 101
-	endif
-	x0=x1
-	y01=y11
-	y02=y12
-	goto 100
-102	continue
-	do j=i,n
-		e1(j)=e1(i-1)
-		e2(j)=e2(i-1)*grid(i-1)/grid(j)
-	enddo
-	close(unit=20)
-	return
-	end
 
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------

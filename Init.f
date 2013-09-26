@@ -341,6 +341,8 @@
 	
 	f_ne=1d0
 	qhp_solver=0
+
+	lnkloglog=.false.
 	
 	fastobs=.false.
 	
@@ -1101,6 +1103,7 @@ C       Gijsexp, read in parameters for s.c. settling
 
 	if(key.eq.'prandtl') read(value,*) prandtl
 
+	if(key.eq.'lnkloglog') read(value,*) lnkloglog
 
 	!have a hot/shocked radius region (hot gas)
 	if(key.eq.'hotgasminrad') read(value,*) HotGasMinRad

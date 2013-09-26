@@ -22,7 +22,7 @@
 	real QEXT, QSCA, QBS, GQSC,rcore,wvno,scale
 	real,allocatable :: mu(:),M1(:,:),M2(:,:),S21(:,:),D21(:,:)
 	character*3 meth
-	character*500 input,filename(100),grid,tmp,tmp2,partfile
+	character*500 input,filename(100),grid,tmp,tmp2,partfile,lnkfile
 
 	real*8 rmie,lmie,e1mie,e2mie,csmie,cemie,KR,theta,dummy
 	real*8,allocatable :: Mief11(:),Mief12(:),Mief22(:)
@@ -90,7 +90,7 @@ c change this to the input abundances if they are set
 	endif
 c changed this to mass fractions (11-05-2010)
 	frac(nm)=frac(nm)/rho(nm)
-	call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam)
+	call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam,lnkloglog)
 	nm=nm+1
 	goto 1
 2	nm=nm-1
@@ -121,6 +121,15 @@ c changed this to mass fractions (11-05-2010)
 	write(*,'("Computing particle:",i7)') ii
 	write(9,'("Computing particle:",i7)') ii
 
+	do j=1,nm
+		write(lnkfile,'(a,a,i0.3,".lnk")') trim(particledir),trim(input),j
+		open(unit=30,file=lnkfile,RECL=200)
+		do i=1,nlam
+			write(30,*) lam(i),e1(j,i),e2(j,i)
+		enddo
+		close(unit=30)
+	enddo
+
 	if(blend) then
 		nm=nm+1
 		e1(nm,1:nlam)=1d0
@@ -139,6 +148,12 @@ c changed this to mass fractions (11-05-2010)
 		enddo
 		rho(1)=rho_av
 		nm=1
+		write(lnkfile,'(a,a,".lnk")') trim(particledir),trim(input)
+		open(unit=30,file=lnkfile,RECL=200)
+		do i=1,nlam
+			write(30,*) lam(i),e1(1,i),e2(1,i)
+		enddo
+		close(unit=30)
 	endif
 
 
@@ -887,12 +902,15 @@ C	 create the new empty FITS file
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	subroutine readrefindCP(input,grid,e1,e2,n)
+	subroutine readrefindCP(input,grid,e1,e2,n,loglog)
 	IMPLICIT NONE
 	real*8 grid(n)
 	real e1(n),e2(n),x0,y01,y02,x1,y11,y12,wp,gamma
+	complex*16 m0,m1,m
 	integer i,j,n
 	character*500 input
+	logical loglog
+
 	open(unit=20,file=input)
 	i=1
 1	read(20,*,end=102,err=1) x0,y01,y02
@@ -908,8 +926,8 @@ c-----------------------------------------------------------------------
 	endif
 100	read(20,*,end=102) x1,y11,y12
 101	if(grid(i).le.x1.and.grid(i).gt.x0) then
-		e1(i)=y11+(grid(i)-x1)*(y01-y11)/(x0-x1)
-		e2(i)=y12+(grid(i)-x1)*(y02-y12)/(x0-x1)
+		e1(i)=10d0**(log10(y11)+(log10(grid(i)/x1))*(log10(y01/y11))/(log10(x0/x1)))
+		e2(i)=10d0**(log10(y12)+(log10(grid(i)/x1))*(log10(y02/y12))/(log10(x0/x1)))
 		i=i+1
 		if(i.gt.n) goto 102
 		goto 101
@@ -919,10 +937,36 @@ c-----------------------------------------------------------------------
 	y02=y12
 	goto 100
 102	continue
-	do j=i,n
-		e1(j)=e1(i-1)
-		e2(j)=e2(i-1)*grid(i-1)/grid(j)
-	enddo
+
+	if(loglog) then
+		m0=dcmplx(e1(i-1),e2(i-1))
+		if(abs(m0).gt.2d0.and..false.) then
+c don't use the conducting extrapolation since it is not very accurate
+			do j=i,n
+				m=m0*sqrt(grid(j)/grid(i-1))
+				e1(j)=real(m)
+				e2(j)=dimag(m)
+			enddo
+		else
+c use loglog extrapolation
+			m0=dcmplx(e1(i-2),e2(i-2))
+			m1=dcmplx(e1(i-1),e2(i-1))
+			do j=i,n
+				m=10d0**(log10(m0)+log10(m1/m0)*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))
+				e1(j)=real(m)
+				e2(j)=dimag(m)
+				e1(j)=10d0**(log10(e1(i-2))+log10(e1(i-1)/e1(i-2))*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))
+				e2(j)=10d0**(log10(e2(i-2))+log10(e2(i-1)/e2(i-2))*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))
+			enddo
+		endif
+	else
+c use the semi-conducting extrapolation, this is the default
+		do j=i,n
+			e1(j)=e1(i-1)
+			e2(j)=e2(i-1)*grid(i-1)/grid(j)
+		enddo
+	endif
+
 	close(unit=20)
 	return
 	end

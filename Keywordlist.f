@@ -366,6 +366,8 @@
 	keyword(i)='solver_qhp'
 	i=i+1
 	keyword(i)='fastobs'
+	i=i+1
+	keyword(i)='lnkloglog'
 	
 	Nnormal=i
 c from here on keywords with numbers
