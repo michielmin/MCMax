@@ -960,7 +960,7 @@ c use loglog extrapolation
 			enddo
 		endif
 	else
-c use the semi-conducting extrapolation, this is the default
+c use the dielectric extrapolation, this is the default
 		do j=i,n
 			e1(j)=e1(i-1)
 			e2(j)=e2(i-1)*grid(i-1)/grid(j)
