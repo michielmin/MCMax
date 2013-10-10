@@ -29,7 +29,7 @@ FLAG_MAC      = -mssse3 -opt-prefetch -static-intel
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec
   LDFLAGS  = $(FLAG_ALL) $(FLAG_LINUX) -fpp Version.f
-  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio64/lib
+  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib
 else
   FFLAGS  = $(FLAG_ALL) $(FLAG_MAC)
   LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f

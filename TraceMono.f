@@ -584,7 +584,7 @@ c-----------------------------------------------------------------------
 	real*8 EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
 	real*8,allocatable :: VisEmisDis(:,:),EmisDis(:,:),vismass(:,:)
 	integer,allocatable :: NEmisDis(:,:)
-	real*8 Einner
+	real*8 Einner,fact_IRF
 	integer Nstar,ip,np,jj,Nmin
 	type(Mueller) M
 	
@@ -747,6 +747,8 @@ c-----------------------------------------------------------------------
 
 	call MakeStarScatter(Estar,NphotStar)
 
+	call determine_fact_IRF(fact_IRF,Estar,Eirf,angle)
+
 	write(*,'("Emitting   ",i10," photon packages")') Nphot
 	write(9,'("Emitting   ",i10," photon packages")') Nphot
 
@@ -758,7 +760,7 @@ c Start tracing the photons
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,idum,
-!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit)
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF)
 !$OMP DO
 	do iphot=1,Nphot
 !$OMP CRITICAL
@@ -767,7 +769,7 @@ c Start tracing the photons
 	phot=photinit
 
 	phot%nr=iphot
-	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
+	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,fact_IRF)
 	phot%E=phot%E/real(Nphot)
 	if(scat_how.eq.2) then
 		phot%pol=.false.
@@ -867,6 +869,32 @@ c	fstop=C(phot%i,phot%j)%Albedo
 	return
 	end
 	
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+
+	subroutine determine_fact_IRF(fact_IRF,Estar,Eirf,angle)
+	use Parameters
+	IMPLICIT NONE
+	real*8 fact_IRF,Estar,Eirf,angle,tau,f
+	integer i,j
+
+	do j=1,D%nTheta-1
+		if(cos(angle).lt.D%Theta(j).and.cos(angle).ge.D%Theta(j+1)) exit
+	enddo
+	tau=0d0
+	do i=1,D%nR-1
+		tau=tau+(D%R(i+1)-D%R(i))*AU*C(i,j)%dens*C(i,j)%Kext
+	enddo
+	f=exp(-tau)
+
+	fact_IRF=1d0+(1d0-f)*(Estar/Eirf-1d0)
+
+	if(fact_IRF.lt.10d0) fact_IRF=10d0
+
+	return
+	end
+	
+
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
@@ -1030,7 +1058,7 @@ c eliminating 'dark-zone'
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 	
-	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass)
+	subroutine emitposition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,fact_IRF)
 	use Parameters
 	IMPLICIT NONE
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,Er,Et,thet,Eirf,fact_IRF
@@ -1040,7 +1068,8 @@ c-----------------------------------------------------------------------
 	type(photon) phot
 	logical ignore
 	
-	fact_IRF=10d0
+c	fact_IRF=1000d0
+
 	phot%pol=.false.
 
 	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)
