@@ -878,6 +878,11 @@ c-----------------------------------------------------------------------
 	real*8 fact_IRF,Estar,Eirf,angle,tau,f
 	integer i,j
 
+	if(Eirf.eq.0d0.or.not.use_IRF) then
+		fact_IRF=1d0
+		return
+	endif
+
 	do j=1,D%nTheta-1
 		if(cos(angle).lt.D%Theta(j).and.cos(angle).ge.D%Theta(j+1)) exit
 	enddo
@@ -890,6 +895,7 @@ c-----------------------------------------------------------------------
 	fact_IRF=1d0+(1d0-f)*(Estar/Eirf-1d0)
 
 	if(fact_IRF.lt.10d0) fact_IRF=10d0
+	if(fact_IRF.gt.1d4) fact_IRF=1d4
 
 	return
 	end
