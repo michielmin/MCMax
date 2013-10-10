@@ -878,7 +878,7 @@ c-----------------------------------------------------------------------
 	real*8 fact_IRF,Estar,Eirf,angle,tau,f
 	integer i,j
 
-	if(Eirf.eq.0d0.or.not.use_IRF) then
+	if(Eirf.eq.0d0.or..not.use_IRF) then
 		fact_IRF=1d0
 		return
 	endif
