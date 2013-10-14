@@ -2627,6 +2627,7 @@ c-----------------------------------------------------------------------
 	real*8 v,KR,Kabs(nlam),spec(nlam),dBB(nlam),int1,int2,Kext(1:nlam),Kp
 	integer inext,jnext,iT,iter,ii
 
+	return
 	write(file,'(a,"ShakuraSunyaev.dat")') outdir(1:len_trim(outdir))
 	open(unit=42,file=file,RECL=6000)
 	
