@@ -119,7 +119,9 @@ c changed this to mass fractions (11-05-2010)
 	endif
 	
 	write(*,'("Computing particle:",i7)') ii
+	write(*,'("Size: ",f10.3," - ",f10.3," micron")') amin,amax
 	write(9,'("Computing particle:",i7)') ii
+	write(9,'("Size: ",f10.3," - ",f10.3," micron")') amin,amax
 
 	do j=1,nm
 		write(lnkfile,'(a,a,i0.3,".lnk")') trim(particledir),trim(input),j
