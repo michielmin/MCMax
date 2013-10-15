@@ -74,6 +74,7 @@
 	read(30,*) ns
 	call ignorestar(30)
 	read(30,*) nf
+	if(maxf.eq.0e0) nf=1
 	allocate(r(ns))
 	allocate(nr(MAXMAT,ns))
 	allocate(f(nf))
@@ -172,7 +173,7 @@ c changed this to mass fractions (11-05-2010)
 
 	if(nf.gt.1.and.maxf.gt.0.01e0) then
 		call gauleg2(0.01e0,maxf,f(1:nf),wf(1:nf),nf)
-	else if(maxf.eq.0d0) then
+	else if(maxf.eq.0e0) then
 		f(1:nf)=0d0
 		wf(1:nf)=1d0/real(nf)
 	else
