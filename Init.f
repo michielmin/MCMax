@@ -50,10 +50,14 @@
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
-	real*8 computepart_abun(MAXPART,MAXPART),computepart_Tflip(MAXPART)
-	integer computepart_ngrains(MAXPART)
+	real*8 computepart_abun(MAXPART,MAXPART)
+	real*8,allocatable :: computepart_T(:,:)
+	integer computepart_ngrains(MAXPART),computepart_nT(MAXPART)
 	logical computepart_blend(MAXPART)
-	character*500 computepart_hotfile(1:MAXPART),computepart_coldfile(1:MAXPART)
+	character*500,allocatable :: computepart_Tfile(:,:)
+
+	allocate(computepart_T(MAXPART,50))
+	allocate(computepart_Tfile(MAXPART,50))
 
 	startype='PLANCK'
 	D%Tstar=10000d0
@@ -316,9 +320,7 @@
 	ProDiModir='filesProDiMo'
 	exportFLiTs=.false.
 
-	computepart_coldfile(:)=' '
-	computepart_hotfile(:)=' '
-	computepart_Tflip=-1d0
+	computepart_nT=0
 	computepart_amin=-1d0
 	computepart_amax=-1d0
 	computepart_apow=1d5
@@ -689,12 +691,10 @@ c			endif
 		write(keyzone,'(a)') key(index(key,":")+1:len_trim(key))
 		if(keyzone.eq.'file') then
 			partarg(i)=value
-		else if(keyzone.eq.'coldfile') then
-			computepart_coldfile(i)=value
-		else if(keyzone.eq.'hotfile') then
-			computepart_hotfile(i)=value
-		else if(keyzone.eq.'tflip') then
-			read(value,*) computepart_Tflip(i)
+		else if(keyzone(1:5).eq.'tfile') then
+			computepart_nT(i)=computepart_nT(i)+1
+			computepart_Tfile(i,computepart_nT(i))=value
+			read(keyzone(6:len_trim(keyzone)),*) computepart_T(i,computepart_nT(i))
 			use_topac=.true.
 		else if(keyzone.eq.'amin') then
 			read(value,*) computepart_amin(i)
@@ -1208,9 +1208,9 @@ C       End
 		if(computepart_apow(ii).gt.100d0) computepart_apow(ii)=mrn_index
 		if((parttype(ii).eq.7.or.parttype(ii).eq.8).and.computepart_ngrains(ii).gt.1) then
 			do i=ngrains,ii+1,-1
-				computepart_hotfile(i+computepart_ngrains(ii)-1)=computepart_hotfile(i)
-				computepart_coldfile(i+computepart_ngrains(ii)-1)=computepart_coldfile(i)
-				computepart_Tflip(i+computepart_ngrains(ii)-1)=computepart_Tflip(i)
+				computepart_Tfile(i+computepart_ngrains(ii)-1,:)=computepart_Tfile(i,:)
+				computepart_T(i+computepart_ngrains(ii)-1,:)=computepart_T(i,:)
+				computepart_nT(i+computepart_ngrains(ii)-1)=computepart_nT(i)
 				computepart_amin(i+computepart_ngrains(ii)-1)=computepart_amin(i)
  				computepart_amax(i+computepart_ngrains(ii)-1)=computepart_amax(i)
  				computepart_apow(i+computepart_ngrains(ii)-1)=computepart_apow(i)
@@ -1257,9 +1257,9 @@ C       End
 				rhograin(i+computepart_ngrains(ii)-1)=rhograin(i)
 			enddo
 			do i=2,computepart_ngrains(ii)
-				computepart_hotfile(i+ii-1)=computepart_hotfile(ii)
-				computepart_coldfile(i+ii-1)=computepart_coldfile(ii)
-				computepart_Tflip(i+ii-1)=computepart_Tflip(ii)
+				computepart_Tfile(i+ii-1,:)=computepart_Tfile(ii,:)
+				computepart_T(i+ii-1,:)=computepart_T(ii,:)
+				computepart_nT(i+ii-1)=computepart_nT(ii)
 				computepart_amin(i+ii-1)=10d0**(log10(computepart_amin(ii))
      &					+log10(computepart_amax(ii)/computepart_amin(ii))
      &					*real(i-1)/real(computepart_ngrains(ii)))
@@ -2983,9 +2983,11 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 				call checkaggregates(partarg(ii),Grain(ii)%nopac)
 				if(parttype(ii).eq.5) allocate(Grain(ii)%Topac(Grain(ii)%nopac))
 				if(parttype(ii).eq.3) allocate(Grain(ii)%cryst(Grain(ii)%nopac))
-			else if(parttype(ii).eq.8.or.(parttype(ii).eq.7.and.computepart_Tflip(ii).gt.0d0)) then
+			else if(parttype(ii).eq.8) then
 				Grain(ii)%nopac=2
-				if(parttype(ii).eq.7) allocate(Grain(ii)%Topac(Grain(ii)%nopac))
+			else if(parttype(ii).eq.7.and.computepart_nT(ii).gt.0) then
+				Grain(ii)%nopac=computepart_nT(ii)
+				allocate(Grain(ii)%Topac(Grain(ii)%nopac))
 			else
 				Grain(ii)%nopac=1
 			endif
@@ -3057,23 +3059,31 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		else if(parttype(ii).eq.5) then
 			call readTopac(partarg(ii),Grain(ii))
 		else if(parttype(ii).eq.7) then
-			if(computepart_Tflip(ii).lt.0d0) then
+			if(computepart_nT(ii).eq.0) then
 				call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
      &							,computepart_porosity(ii),computepart_abun(ii,:),1)
 			else
-				call ComputePart(Grain(ii),ii,computepart_coldfile(ii),computepart_amin(ii),computepart_amax(ii)
+				T=1d10
+				do i=1,Grain(ii)%nopac
+					jj=i
+					do j=1,Grain(ii)%nopac
+						if(computepart_T(ii,j).lt.T) then
+							jj=j
+							T=computepart_T(ii,j)
+						endif
+					enddo
+					call ComputePart(Grain(ii),ii,computepart_Tfile(ii,jj),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),1)
-				call ComputePart(Grain(ii),ii,computepart_hotfile(ii),computepart_amin(ii),computepart_amax(ii)
-     &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),2)
-				Grain(ii)%Topac(1)=computepart_Tflip(ii)-0.1
-				Grain(ii)%Topac(2)=computepart_Tflip(ii)+0.1
+     &							,computepart_porosity(ii),computepart_abun(ii,:),i)
+					Grain(ii)%Topac(i)=computepart_T(ii,jj)
+				enddo
 				do i=0,D%nR
 				do j=0,D%nTheta
-					C(i,j)%wopac(ii,1)=0d0
-					C(i,j)%wopac(ii,2)=1d0
+					C(i,j)%wopac(ii,Grain(ii)%nopac)=1d0
+					do jj=1,Grain(ii)%nopac-1
+						C(i,j)%wopac(ii,jj)=0d0
+					enddo
 				enddo
 				enddo
 			endif
@@ -3114,7 +3124,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 			Grain(ii)%dust_moment2=(Grain(ii)%rv*1d4)**2
 			Grain(ii)%dust_moment3=(Grain(ii)%rv*1d4)**3
 		endif
-		if(parttype(ii).eq.7.and.computepart_Tflip(ii).gt.0d0) Grain(ii)%parttype=5
+		if(parttype(ii).eq.7.and.computepart_nT(ii).ne.0) Grain(ii)%parttype=5
 	enddo
 	
 
@@ -4110,6 +4120,9 @@ c Set the spectrum and energy for the interstellar radiation field
 	arraysallocated=.true.
 	
 	NsigDiskstructure=1
+
+	deallocate(computepart_T)
+	deallocate(computepart_Tfile)
 
 	return
 	end
