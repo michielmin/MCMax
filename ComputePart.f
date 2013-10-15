@@ -814,7 +814,7 @@ C	 create the new empty FITS file
 	call ftpkye(unit,'a1',real(a1),8,'[micron]',status)
 	call ftpkye(unit,'a2',real(a2),8,'[micron^2]',status)
 	call ftpkye(unit,'a3',real(a3),8,'[micron^3]',status)
-	call ftpkye(unit,'density',real(rho),8,'[g/cm^3]',status)
+	call ftpkye(unit,'density',real(rho_av),8,'[g/cm^3]',status)
 
 	if(blend) call ftpkye(unit,'porosity',real(porosity),8,'[g/cm^3]',status)
 

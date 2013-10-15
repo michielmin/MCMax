@@ -17,6 +17,7 @@
 	integer i,j,ia,iopac,iread,nl_read
 	logical truefalse,Rayleigh
 	real*8 l0,l1,tot,tot2,theta,asym,Pmax,HG,asym2,wasym2
+	real rho_av
 
 	p%qhp=.false.
 	p%gascoupled=.false.
@@ -67,6 +68,8 @@
 	call ftgkye(unit,'a2',p%dust_moment2,comment,status)
 	p%rv=sqrt(p%dust_moment2)*1d-4
 	call ftgkye(unit,'a3',p%dust_moment3,comment,status)
+	call ftgkye(unit,'density',rho_av,comment,status)
+	p%rho=rho_av
 
 c	call ftgkyj(unit,'mcfost2prodimo',mcfost(1)%mcfost2ProDiMo,comment,stat4)
  
