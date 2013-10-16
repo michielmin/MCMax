@@ -3064,13 +3064,18 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
      &							,computepart_porosity(ii),computepart_abun(ii,:),1)
 			else
-				T=1d10
 				do i=1,Grain(ii)%nopac
 					jj=i
+					T=1d10
 					do j=1,Grain(ii)%nopac
 						if(computepart_T(ii,j).lt.T) then
-							jj=j
-							T=computepart_T(ii,j)
+							if(i.eq.1) then
+								jj=j
+								T=computepart_T(ii,j)
+							else if(computepart_T(ii,j).gt.Grain(ii)%Topac(i-1)) then
+								jj=j
+								T=computepart_T(ii,j)
+							endif
 						endif
 					enddo
 					call ComputePart(Grain(ii),ii,computepart_Tfile(ii,jj),computepart_amin(ii),computepart_amax(ii)
