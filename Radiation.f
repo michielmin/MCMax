@@ -25,9 +25,10 @@
 	real*8 spec(nlam),Pspec(nlam),scale
 	integer i
 	
-	Pspec(1)=(spec(1)+(spec(2)-spec(1))/2d0)*dnu(1)
+	Pspec(1)=ABS(nu(1)-nu(2))*0.5*(spec(1)+spec(2))
 	do i=2,nlam-1
-		Pspec(i)=Pspec(i-1)+(spec(i)+(spec(i+1)-spec(i))/2d0)*dnu(i)
+c		Pspec(i)=Pspec(i-1)+(spec(i)+(spec(i+1)-spec(i))/2d0)*dnu(i)
+		Pspec(i)=Pspec(i-1)+ABS(nu(i)-nu(i+1))*0.5*(spec(i)+spec(i+1))
 	enddo
 	scale=Pspec(nlam-1)
 	do i=1,nlam-1
@@ -808,7 +809,8 @@ c not found, starting from 1 K
 	Ltold=0d0
 	Lt=0d0
 	do i=1,nlam-1
-		Lt=Lt+(spec(i)+(spec(i+1)-spec(i))/2d0)*dnu(i)
+c		Lt=Lt+(spec(i)+(spec(i+1)-spec(i))/2d0)*dnu(i)
+		Lt=Lt+ABS(nu(i)-nu(i+1))*0.5*(spec(i)+spec(i+1))
 		if(Lt.ge.Lr) then
 			phot%wl1=(Lr-Ltold)/(Lt-Ltold)
 			phot%wl2=1d0-phot%wl1
