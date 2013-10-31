@@ -485,10 +485,10 @@ c	dydx=-mu*G*D%Mstar*x/(scale**2*kb*T*D%R_av(i)**3)-dlnT
 		massgrains=0d0
 		Agrains=0d0
 		do ii=1,ngrains
-			massgrains=massgrains+(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho/3d0)*C(i,j)%w(ii)
+			massgrains=massgrains+(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho(1)/3d0)*C(i,j)%w(ii)
 c			Agrains=Agrains+Grain(ii)%rv**2*pi*C(i,j)%w(ii)
 			do iopac=1,Grain(ii)%nopac
-			   Agrains=Agrains+Grain(ii)%Kpstar(iopac)*(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho/3d0)*C(i,j)%w(ii)
+			   Agrains=Agrains+Grain(ii)%Kpstar(iopac)*(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho(1)/3d0)*C(i,j)%w(ii)
 			enddo
 		enddo
 		mass=0d0
@@ -2163,7 +2163,7 @@ c ------------ for the IN05 sublimation law --------------------
 
 c------------- determine the time for evaporation --------------
 	Pv=10d0**(A/B-1d4/(T*B)-log10(T))*Rgas*T/(mu*mole)
-	dsdt=(Pv/Grain(ii)%rho)*sqrt(mu/(2d0*pi*kb*T))
+	dsdt=(Pv/Grain(ii)%rho(1))*sqrt(mu/(2d0*pi*kb*T))
 
 	Omega=2d0*pi*sqrt(D%R_av(i)**3/(G*D%Mstar))
 

@@ -69,7 +69,7 @@
 	p%rv=sqrt(p%dust_moment2)*1d-4
 	call ftgkye(unit,'a3',p%dust_moment3,comment,status)
 	call ftgkye(unit,'density',rho_av,comment,status)
-	p%rho=rho_av
+	p%rho(iopac)=rho_av
 
 c	call ftgkyj(unit,'mcfost2prodimo',mcfost(1)%mcfost2ProDiMo,comment,stat4)
  

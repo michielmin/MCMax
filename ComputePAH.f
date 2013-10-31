@@ -25,7 +25,7 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	p%Td_qhp=450d0
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
-	p%rho=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
+	p%rho(1:p%nopac)=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
 
 	write(*,'("--------------------------------------------------------")')
 	write(*,'("Computing PAH opacities")')

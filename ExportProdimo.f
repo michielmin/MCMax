@@ -166,7 +166,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'aexp',real(mrn_index),-8,'slope of grain size distribution',status)
 	call ftpkye(unit,'strat',real(0.0),-8,'stratification exponent',status)
 	call ftpkye(unit,'a_settle',real(0.0),-8,'[micron]',status)
-	call ftpkye(unit,'rho_grain',real(Grain(1)%rho),-8,'[g.cm^-3]',status)
+	call ftpkye(unit,'rho_grain',real(Grain(1)%rho(1)),-8,'[g.cm^-3]',status)
 	call ftpkys(unit,'optical_indices','DHS','',status)
 
 	call ftpkyj(unit,'n_grains',ngrains,' ',status)
@@ -471,29 +471,41 @@ c	   wl = tab_lambda(lambda) * 1e-6
 		  ! Nbre total de grain : le da est deja dans densite_pouss
 			N=0d0
 		  do l=1,ngrains
-		  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
-     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
+			do iopac=1,Grain(l)%nopac
+			  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
+			enddo
 		  enddo
 		  N_grains(ri,zj,0) = N
 		  if (N.gt.1d-40) then
 			N1=0d0
 			do l=1,ngrains
-			  	N1 = N1 + 1d6*Grain(l)%dust_moment1*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
-     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
+				do iopac=1,Grain(l)%nopac
+				  	N1 = N1 + 1d6*Grain(l)%dust_moment1*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
+				enddo
 			enddo
 			N_grains(ri,zj,1) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
-			  	N1 = N1 + 1d6*Grain(l)%dust_moment2*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
-     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
+				do iopac=1,Grain(l)%nopac
+				  	N1 = N1 + 1d6*Grain(l)%dust_moment2*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)**2
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
+				enddo
 			enddo
 			N_grains(ri,zj,2) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
-			  	N1 = N1 + 1d6*Grain(l)%dust_moment3*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
-     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rho/3d0)
+				do iopac=1,Grain(l)%nopac
+				  	N1 = N1 + 1d6*Grain(l)%dust_moment3*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)**3
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
+				enddo
 			enddo
 			N_grains(ri,zj,3) = N1 / N
 		  else

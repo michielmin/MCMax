@@ -1739,7 +1739,7 @@ c=======================================================================
 		H=0d0
 		iT=int(Tgas/dT)
 		do ii=1,ngrains
-			nd=C(i,j)%dens*C(i,j)%w(ii)/(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho/3d0)
+			nd=C(i,j)%dens*C(i,j)%w(ii)/(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho(1)/3d0)
 			if(.not.Grain(ii)%qhp) then
 			if(tcontact) then
 				T=C(i,j)%T

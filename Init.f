@@ -50,7 +50,7 @@
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
-	real*8 computepart_abun(MAXPART,MAXPART)
+	real*8 computepart_abun(MAXPART,MAXPART),computepart_norm_abun(MAXPART)
 	real*8,allocatable :: computepart_T(:,:)
 	integer computepart_ngrains(MAXPART),computepart_nT(MAXPART)
 	logical computepart_blend(MAXPART)
@@ -329,6 +329,7 @@
 	computepart_porosity=0.25d0
 	computepart_abun=-1d0
 	computepart_ngrains=1
+	computepart_norm_abun=-1d0
 	
 	maxruntime=-1
 	emptylower=.false.
@@ -713,6 +714,8 @@ c			endif
 		else if(keyzone(1:4).eq.'abun') then
 			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) computepart_abun(i,j)
+		else if(keyzone.eq.'norm_abun') then
+			read(value,*) computepart_norm_abun(i)
 		else
 			write(*,'("ComputePart keyword not understood:",a)') trim(keyzone)
 			write(9,'("ComputePart keyword not understood:",a)') trim(keyzone)
@@ -1211,6 +1214,7 @@ C       End
 				computepart_Tfile(i+computepart_ngrains(ii)-1,:)=computepart_Tfile(i,:)
 				computepart_T(i+computepart_ngrains(ii)-1,:)=computepart_T(i,:)
 				computepart_nT(i+computepart_ngrains(ii)-1)=computepart_nT(i)
+				computepart_norm_abun(i+computepart_ngrains(ii)-1)=computepart_norm_abun(i)
 				computepart_amin(i+computepart_ngrains(ii)-1)=computepart_amin(i)
  				computepart_amax(i+computepart_ngrains(ii)-1)=computepart_amax(i)
  				computepart_apow(i+computepart_ngrains(ii)-1)=computepart_apow(i)
@@ -1260,6 +1264,7 @@ C       End
 				computepart_Tfile(i+ii-1,:)=computepart_Tfile(ii,:)
 				computepart_T(i+ii-1,:)=computepart_T(ii,:)
 				computepart_nT(i+ii-1)=computepart_nT(ii)
+				computepart_norm_abun(i+ii-1)=computepart_norm_abun(ii)
 				computepart_amin(i+ii-1)=10d0**(log10(computepart_amin(ii))
      &					+log10(computepart_amax(ii)/computepart_amin(ii))
      &					*real(i-1)/real(computepart_ngrains(ii)))
@@ -3001,6 +3006,9 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			allocate(Grain(ii)%shscale(D%nR))
 			allocate(Grain(ii)%KabsL(Grain(ii)%nopac))
 			allocate(Grain(ii)%KextL(Grain(ii)%nopac))
+			allocate(Grain(ii)%rho(Grain(ii)%nopac))
+			allocate(Grain(ii)%rscale(Grain(ii)%nopac))
+			allocate(Grain(ii)%mscale(Grain(ii)%nopac))
 			if(Grain(ii)%nopac.gt.ngrains2) ngrains2=Grain(ii)%nopac
 		enddo
 		do i=0,D%nR
@@ -3024,7 +3032,9 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		Grain(ii)%force_vert_gf=force_vert_gf(ii)
 		Grain(ii)%tdes_fast=tdes_fast(ii)
 		Grain(ii)%rv=rgrain(ii)
-		Grain(ii)%rho=rhograin(ii)
+		Grain(ii)%rho(1:Grain(ii)%nopac)=rhograin(ii)
+		Grain(ii)%rscale(1:Grain(ii)%nopac)=1d0
+		Grain(ii)%mscale(1:Grain(ii)%nopac)=1d0
 		Grain(ii)%Rcryst=radmix(ii)
 		Grain(ii)%Tcryst=tmix(ii)
 		Grain(ii)%powcryst=powmix(ii)
@@ -3062,7 +3072,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 			if(computepart_nT(ii).eq.0) then
 				call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),1)
+     &							,computepart_porosity(ii),computepart_abun(ii,:),1,computepart_norm_abun(ii))
 			else
 				do i=1,Grain(ii)%nopac
 					jj=i
@@ -3080,7 +3090,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 					enddo
 					call ComputePart(Grain(ii),ii,computepart_Tfile(ii,jj),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),i)
+     &							,computepart_porosity(ii),computepart_abun(ii,:),i,computepart_norm_abun(ii))
 					Grain(ii)%Topac(i)=computepart_T(ii,jj)
 				enddo
 				do i=0,D%nR
@@ -3781,7 +3791,7 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 		tot=tot/tot2
 		tot=tot*D%Lstar*Lsun/Luminosity(5777d0,Rsun)
 		tot=(tot*1d4/(4d0*pi*clight))/(6.67300d-8*D%Mstar)
-		write(90,*) Grain(ii)%rv,tot,C(D%nR/2,D%nTheta-1)%w0(ii)
+		write(90,*) Grain(ii)%rv*Grain(ii)%rscale(iopac),tot,C(D%nR/2,D%nTheta-1)%w0(ii)
 	enddo
 	enddo
 	deallocate(spec)
@@ -4794,8 +4804,8 @@ c-----------------------------------------------------------------------
 	print*,p%Nc,p%Mc,p%Td_qhp
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
-	p%rho=p%Nc*(p%Mc*Mc/12d0)/(4d0*pi*p%rv**3/3d0)
-	print*,p%Nc,p%rv*1d4,p%rho
+	p%rho(1:p%nopac)=p%Nc*(p%Mc*Mc/12d0)/(4d0*pi*p%rv**3/3d0)
+	print*,p%Nc,p%rv*1d4,p%rho(1:p%nopac)
 
 	i=1
 	read(20,*,end=102) l0,p0%Kext(1,1),p0%Kabs(1,1),p0%Ksca(1,1)

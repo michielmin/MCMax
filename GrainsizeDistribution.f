@@ -75,7 +75,7 @@ c     gsd_plot=.true.           ! make plots of detailed gsd?
       !  Fixed input parameters
       !
       xi      = gsd_xi
-      rho_s   = Grain(1)%rho
+      rho_s   = Grain(1)%rho(1)
       m_star  = D%mstar
       v_frag  = gsd_vfrag
 
@@ -295,7 +295,7 @@ c-------------------------------------------------------------------
       do ii=1,ngrains
          write(66, '(2(f12.3," "),e12.3," ",150(F12.10,x))') 
      1        Grain(ii)%rv / micron,(Grain(ii)%rvmax-Grain(ii)%rvmin)/micron,
-     2        Grain(ii)%rho * 4d0/3d0*pi*Grain(ii)%rv**3d0,abun2D(1:nr,ii)
+     2        Grain(ii)%rho(1) * 4d0/3d0*pi*Grain(ii)%rv**3d0,abun2D(1:nr,ii)
       enddo
       close(unit=66)
 

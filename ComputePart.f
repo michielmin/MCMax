@@ -1,9 +1,9 @@
-	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac)
+	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac,normalize_abun)
 	use Parameters
 	IMPLICIT NONE
 
 	type(particle) p
-	real*8 amin,amax,apow,fmax,porosity,inp_abun(*)
+	real*8 amin,amax,apow,fmax,porosity,inp_abun(*),normalize_abun
 	logical blend
 	integer ii,MAXMAT,iopac
 	parameter(MAXMAT=20)
@@ -103,7 +103,18 @@ c changed this to mass fractions (11-05-2010)
 	do i=1,nm
 		tot=tot+frac(i)
 	enddo
-	frac=frac/tot
+	if(normalize_abun.le.0d0) then
+		frac=frac/tot
+		p%mscale(iopac)=1d0
+		p%rscale(iopac)=1d0
+	else
+		p%mscale=0d0
+		do i=1,nm
+			p%mscale(iopac)=p%mscale(iopac)+frac(i)*rho(i)/normalize_abun
+		enddo
+		p%rscale(iopac)=p%mscale(iopac)**(1d0/3d0)
+		frac=frac/tot
+	endif
 
 	if(iopac.eq.1) then
 		write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
@@ -123,6 +134,10 @@ c changed this to mass fractions (11-05-2010)
 	write(*,'("Size: ",f10.3," - ",f10.3," micron")') amin,amax
 	write(9,'("Computing particle:",i7)') ii
 	write(9,'("Size: ",f10.3," - ",f10.3," micron")') amin,amax
+
+	if(normalize_abun.gt.0d0) then
+		write(*,'("Particle radius and mass scaled (rv x ",f5.3,")")') p%rscale(iopac)
+	endif
 
 	do j=1,nm
 		write(lnkfile,'(a,a,i0.3,".lnk")') trim(particledir),trim(input),j
@@ -319,11 +334,11 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 10	continue
 	enddo
 
-	p%rho=Mass/Vol
+	p%rho(iopac)=Mass/Vol
 	rho_av=Mass/Vol
-	p%Kabs(iopac,ilam)=1d4*cabs/Mass
-	p%Ksca(iopac,ilam)=1d4*csca/Mass
-	p%Kext(iopac,ilam)=1d4*cext/Mass
+	p%Kabs(iopac,ilam)=1d4*cabs/(Mass/p%mscale(iopac))
+	p%Ksca(iopac,ilam)=1d4*csca/(Mass/p%mscale(iopac))
+	p%Kext(iopac,ilam)=1d4*cext/(Mass/p%mscale(iopac))
 	p%F(iopac,ilam)%F11(1:180)=f11(ilam,1:180)/csca
 	p%F(iopac,ilam)%F12(1:180)=f12(ilam,1:180)/csca
 	p%F(iopac,ilam)%F22(1:180)=f22(ilam,1:180)/csca
@@ -543,6 +558,7 @@ c-----------------------------------------------------------------------
 	allocate(p%Ksca(1,nlam))
 	allocate(p%Kext(1,nlam))
 	allocate(p%F(1,nlam))
+	allocate(p%rho(1))
 
 	p%Kabs=0d0
 	p%Kext=0d0
@@ -591,7 +607,7 @@ c-----------------------------------------------------------------------
 				p%F(1,l)%F44(1:180)=p%F(1,l)%F44(1:180)
      &		+w*Grain(ii)%Ksca(iopac,l)*Grain(ii)%F(iopac,l)%F44(1:180)
 			enddo
-			Vtot=Vtot+w/Grain(ii)%rho
+			Vtot=Vtot+w/Grain(ii)%rho(iopac)
 		enddo
 	enddo
 	do l=1,nlam
@@ -608,7 +624,7 @@ c-----------------------------------------------------------------------
 	p%dust_moment1=p%dust_moment1/Mtot
 	p%dust_moment2=p%dust_moment2/Mtot
 	p%dust_moment3=p%dust_moment3/Mtot
-	p%rho=Mtot/Vtot
+	p%rho(1)=Mtot/Vtot
 	
 	write(filename,'(a,"particle_average.fits")') trim(outdir)
 
@@ -647,7 +663,7 @@ C	 create the new empty FITS file
 	call ftpkye(unit,'a1',real(p%dust_moment1),8,'[micron]',status)
 	call ftpkye(unit,'a2',real(p%dust_moment2),8,'[micron^2]',status)
 	call ftpkye(unit,'a3',real(p%dust_moment3),8,'[micron^3]',status)
-	call ftpkye(unit,'density',real(p%rho),8,'[g/cm^3]',status)
+	call ftpkye(unit,'density',real(p%rho(1)),8,'[g/cm^3]',status)
 
 
 	!  Write the array to the FITS file.

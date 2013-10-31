@@ -8,9 +8,9 @@ c-----------------------------------------------------------------------
       subroutine MPSettling()
       use Parameters
       implicit none
-      integer i,ii,ir,ith,j
+      integer i,ii,ir,ith,j,iopac
       real*8 gamma, omega, omega_r, tauf, tauf_csrho, cs_T, cs, mu
-      real*8 rho_g, prefac, omegatau, sh_dtg_w, sh_dtg_d
+      real*8 rho_g, prefac, omegatau, sh_dtg_w, sh_dtg_d, tot
       real*8, dimension(ngrains,1:D%nR-1) :: scale_w, scale_d
       !
       character*100 outputfile
@@ -35,7 +35,6 @@ c      cs_T= sqrt(gamma * kb / (mu * amu))  ! gamma here???
       !  Loop over all grains
       !
       do ii=1,ngrains
-         tauf_csrho= Grain(ii)%rho * Grain(ii)%rv
 c         write(*,'("species:   ",I0)') ii
 c         write(*,'("rgrain=    ",F6.1)') Grain(ii)%rv
 c         write(*,'("rhograin=  ",F6.2)') Grain(ii)%rho
@@ -43,6 +42,21 @@ c         write(*,'("rhograin=  ",F6.2)') Grain(ii)%rho
          !  Loop over all radii
          !
          do i=1,D%nR-1
+
+			tauf_csrho=0d0
+			tot=0d0
+			do j=1,D%nTheta-1
+				do iopac=1,Grain(ii)%nopac
+		        	tauf_csrho=tauf_csrho+C(i,j)%dens*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+     &							*Grain(ii)%rho(iopac)*Grain(ii)%rv*Grain(ii)%rscale(iopac)
+					tot=tot+C(i,j)%dens*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				enddo
+			enddo
+			if(tot.gt.1d-100) then
+				tauf_csrho=tauf_csrho/tot
+			else
+	        	tauf_csrho=Grain(ii)%rho(1)*Grain(ii)%rv
+			endif			
             !
             !  Gasdens, use dustdens*gas2dust if not set.
             !
@@ -116,8 +130,8 @@ c-----------------------------------------------------------------------
 	subroutine FixedMPSettling()
 	use Parameters
 	IMPLICIT NONE
-	real*8 surfdens,gamma,hH
-	integer ii,i,j
+	real*8 surfdens,gamma,hH,tauf_csrho,tot
+	integer ii,i,j,iopac
 	
 	gamma=2d0
 	do i=1,D%nR-1
@@ -128,8 +142,22 @@ c-----------------------------------------------------------------------
 		surfdens=surfdens/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 		do ii=1,ngrains
             if(Grain(ii)%shtype.eq.'DISK') then
+				tauf_csrho=0d0
+				tot=0d0
+				do j=1,D%nTheta-1
+					do iopac=1,Grain(ii)%nopac
+			        	tauf_csrho=tauf_csrho+C(i,j)%dens*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+     &								*Grain(ii)%rho(iopac)*Grain(ii)%rv*Grain(ii)%rscale(iopac)
+						tot=tot+C(i,j)%dens*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					enddo
+				enddo
+				if(tot.gt.1d-100) then
+					tauf_csrho=tauf_csrho/tot
+				else
+		        	tauf_csrho=Grain(ii)%rho(1)*Grain(ii)%rv
+				endif			
 				Grain(ii)%settle=.true.
-				hH=((1d0/(1d0+gamma))**0.25d0)*sqrt(alphaturb*surfdens/(sqrt(2d0*pi)*Grain(ii)%rho*Grain(ii)%rv))
+				hH=((1d0/(1d0+gamma))**0.25d0)*sqrt(alphaturb*surfdens/(sqrt(2d0*pi)*tauf_csrho))
 				Grain(ii)%shscale(i)=hH/sqrt(1d0+hH**2)
 			endif
 		enddo

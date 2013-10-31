@@ -22,7 +22,7 @@ c     --------------------------------------------------------------
       doubleprecision radius,mstar
       doubleprecision zi(nz+1),zc(nz) ! i=interface, c=center of cell
       doubleprecision tgas(nz)
-      doubleprecision mgrain(ns),agrain(ns)
+      doubleprecision mgrain(ns,nz),agrain(ns,nz)
 
       !  Local variables
       integer iz,is,ith
@@ -34,7 +34,7 @@ c     --------------------------------------------------------------
       doubleprecision omk,vkep,diffcoef(1:ns,1:nz+1),vsett(1:ns,1:nz+1),alpha(nz)
       doubleprecision soundspeed(1:nz),soundspeed2(1:nz),stokes(1:ns,1:nz)
       doubleprecision diffnew(1:ns,1:nz+1)
-      doubleprecision y(1:nz),yold(1:nz),dzc(1:nz),dzi(1:nz+1),mugas,rhog,tempg,sigfr
+      doubleprecision y(1:nz),yold(1:nz),dzc(1:nz),dzi(1:nz+1),mugas,rhog,tempg,sigfr(1:nz)
       doubleprecision rhs(1:nz),eps,eps1,force
       doubleprecision sigmadust,sigmadust_old,mcol,mcol_old,cellv(nz)
       doubleprecision tr_a(1:nz),tr_b(1:nz),tr_c(1:nz) !c interferes with MCMax
@@ -62,7 +62,7 @@ c     --------------------------------------------------------------
          do is=0,ns
 	            if(number_invalid(rho(ith,is)).ne.0) then
    	    	        write(*,*) 'ERROR: NaN or Inf value detected (2)'
-					print*,ith,is,mgrain(is),agrain(is)
+					print*,ith,is,mgrain(is,iz),agrain(is,iz)
    	        	    stop 
    		         endif
 			if(rho(ith,is).lt.1d-50) rho(ith,is)=1d-50
@@ -91,11 +91,11 @@ c-------------------------------------------------------------------
 
       !  Set dust size and mass
       !
+	do iz=1,nz
       do is=1,ns
-         agrain(is)=Grain(is)%rv
-         mgrain(is)=Grain(is)%rho * 4d0/3d0*pi* agrain(is)**3d0
+         call ComputeRM_nopac(is,ir,(nz+1)-(iz-1),agrain(is,iz),mgrain(is,iz))
       enddo
-
+	enddo
       !  Print dust parameters ?
       if (print_dust) then
          write(*,'("  ")')
@@ -103,7 +103,7 @@ c-------------------------------------------------------------------
          write(*,'("  ")')
          do is=1,ns
             write(*,'("agrain[",I0,"]= ",F10.4)') is,Grain(is)%rv * 1d4
-            write(*,'("mgrain[",I0,"]= ",E16.5)') is,mgrain(is)
+            write(*,'("mgrain[",I0,"]= ",E16.5)') is,mgrain(is,1)
          enddo
       endif
 
@@ -287,17 +287,17 @@ c-------------------------------------------------------------------
             goto 222
          endif
          
-         !  Compute the frictional cross section
-         !
-         sigfr     = pi*agrain(is)**2d0
          
          !  Compute Soundspeed and Stokes number
          !
          do iz=1,nz
+         !  Compute the frictional cross section
+         !
+	         sigfr(iz)     = pi*agrain(is,iz)**2d0
             soundspeed2(iz) = kb*tgas(iz) / (mugas*amu)
             soundspeed(iz) = sqrt(soundspeed2(iz))
             !
-            stokes(is,iz) = 0.75d0* mgrain(is)/sigfr * 
+            stokes(is,iz) = 0.75d0* mgrain(is,iz)/sigfr(iz) * 
      1           omk/(rhogas(iz)*soundspeed(iz)) *
      2           alpha(iz)**(2d0*qturb - 1d0)
             !
@@ -332,12 +332,12 @@ c-------------------------------------------------------------------
             !  Compute the force on the grain at the interface
             !  NOTE: includes radiation pressure
             !
-            force        = mgrain(is)*omk*omk*zi(iz)*
+            force        = mgrain(is,iz)*omk*omk*zi(iz)*
      &                     (1d0+C(ir,(nz)-(iz-1))%FradZ*gas2dust)
 
             ! Compute the equilibrium settling velocity at the interface
             !
-            vsett(is,iz) = -vdrift(tempg,rhog,mugas,force,sigfr)
+            vsett(is,iz) = -vdrift(tempg,rhog,mugas,force,sigfr(iz))
 
             ! NOTE: Warning: for very large particles this could be larger
             !       than (z/r)*v_Kepler, which is unphysical. The physics 
@@ -671,3 +671,30 @@ c      END SUBROUTINE tridag
       endif
       return
       end 
+
+
+
+c-------------------------------------------------------------------------------
+c This function returns the average radius and mass of grain ii at location i,j
+c averaged over the iopac (i.e. the temperature dependend opacity)
+c-------------------------------------------------------------------------------
+	subroutine ComputeRM_nopac(ii,i,j,rv,mass)
+	use Parameters
+	IMPLICIT NONE
+	real*8 rv,mass,tot
+	integer ii,i,j,iopac
+	
+	rv=0d0
+	do iopac=1,Grain(ii)%nopac
+		rv=rv+C(i,j)%wopac(ii,iopac)*Grain(ii)%rv*Grain(ii)%rscale(iopac)
+	enddo
+	rv=rv/sum(C(i,j)%wopac(ii,1:Grain(ii)%nopac))
+	
+	do iopac=1,Grain(ii)%nopac
+		mass=mass+Grain(ii)%rho(iopac)*C(i,j)%wopac(ii,iopac)*(Grain(ii)%rv*Grain(ii)%rscale(iopac))**3
+	enddo
+	mass=mass*4d0*pi/3d0
+
+	return
+	end
+
