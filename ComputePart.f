@@ -748,7 +748,7 @@ C	 create the new empty FITS file
 	character*6 word
 
 	type(particle) p
-	integer nm,na,i,j,ii,iopac
+	integer nm,na,i,j,ii,iopac,nm2
 	real r(na),nr(nm,na)
 	real a0,a1,a2,a3,rho_av,rmin,rmax
 	real*8,allocatable :: array(:,:,:)
@@ -778,7 +778,9 @@ C	 create the new empty FITS file
 	a3=0d0
 	rmin=r(1)
 	rmax=r(1)
-	do i=1,nm
+	nm2=nm
+	if(blend) nm2=1
+	do i=1,nm2
 	do j=1,na
 		a0=a0+nr(i,j)
 		a1=a1+nr(i,j)*r(j)
@@ -910,7 +912,7 @@ C	 create the new empty FITS file
 
 	!  Check for any error, and if so print out error messages
 	if (status.gt.0) then
-	   print*,'error in export to fits file'
+	   print*,'error in export to fits file',status
 	end if
 
 
