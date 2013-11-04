@@ -132,11 +132,7 @@ c==============================================================================
 	tautot=tautot+v/dmin
 
 	if(computeLRF) then
-		if(multiwav) then
-			call addLRF_multiwav(phot,EJv/C(phot%i,phot%j)%dens)
-		else
-			call addRW_LRF(phot%i,phot%j,iT,EJv)
-		endif
+		call addRW_LRF(phot%i,phot%j,iT,EJv)
 	endif
 
 	return

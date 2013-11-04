@@ -11,7 +11,7 @@
 	parameter(kb=1.3806503d-16,sigma=5.6704d-5)
 c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8,allocatable :: lam(:),BB(:,:),dnu(:),nu(:),IRF(:),lamHR(:),FstarHR(:)
-	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:),Kext_column(:)
+	real*8,allocatable :: shscale(:),column(:,:),specemit(:),muRad(:)
 	real*8 xsf(NPHISCATT),ysf(NPHISCATT),zsf(NPHISCATT),tautot,epsiter,tau_max,nEJv
 	real*8 xsn(NPHISCATT),ysn(NPHISCATT),zsn(NPHISCATT),dTDiffuse,factRW,tgridqhp(NTQHP)
 	real*8 xin(NPHISCATT),yin(NPHISCATT),zin(NPHISCATT),f_weight,tauincrease,TdesQHP

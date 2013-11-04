@@ -2980,7 +2980,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 
 	! Allocate arrays for grains
 	if(.not.arraysallocated) then
-		allocate(Grain(ngrains))	   
+		allocate(Grain(ngrains))
 
 		ngrains2=0
 		do ii=1,ngrains
@@ -3813,7 +3813,6 @@ c					C(i,j)%gasdens=C(i,j)%gasdens*(1d0-C(i,j)%w0(ii))
 	if(multiwav) then
 		allocate(column(ngrains,ngrains2))
 		allocate(specemit(nlam))
-		if(exportprodimo) allocate(Kext_column(nlam))
 	endif
 
 	if(tdes_iter.and.Nphot.ne.0.and.(iter0.le.nBW.or.nBW.lt.0)) then
@@ -4225,7 +4224,6 @@ c-----------------------------------------------------------------------
 	if(multiwav) then
 		deallocate(column)
 		deallocate(specemit)
-		if(exportprodimo) deallocate(Kext_column)
 	endif
 	if(allocated(D%SinTheta)) deallocate(D%SinTheta)
 	if(allocated(shscale)) deallocate(shscale)

@@ -552,16 +552,12 @@ c emit from the interstellar radiation field
 			iangle=-phot%vz*real(nangle)+1
 		endif
 		if(multiwav) then
-			if(exportprodimo) then
-				spectemp(1:nlam)=Kext_column(1:nlam)
-			else
-				spectemp(1:nlam)=0d0
-				do ii=1,ngrains
-					do iopac=1,Grain(ii)%nopac
-						spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
-					enddo
+			spectemp(1:nlam)=0d0
+			do ii=1,ngrains
+				do iopac=1,Grain(ii)%nopac
+					spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
 				enddo
-			endif
+			enddo
 			do j=1,nlam
 				if(spectemp(j).lt.1000d0) then
 					spectemp(j)=specemit(j)*exp(-spectemp(j))
@@ -653,18 +649,18 @@ c emit from the interstellar radiation field
 			C(i,j)%ILRF=C(i,j)%ILRF/C(i,j)%V
 		endif
 		if(C(i,j)%useFE.and.computeTgas.and.g2d_heat) then
-			C(i,j)%EJv=C(i,j)%EJv*(1d0-C(phot%i,phot%j)%FE(0))
+			C(i,j)%EJv=C(i,j)%EJv*(1d0-C(i,j)%FE(0))
 			if(.not.tcontact.or.tdes_iter) then
 				do ii=1,ngrains
-					C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)*(1d0-C(phot%i,phot%j)%FE(ii))
+					C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)*(1d0-C(i,j)%FE(ii))
 				enddo
 			endif
 			if(use_qhp) then
 				do ii=1,ngrains
 					if(Grain(ii)%qhp) then
 					do iopac=1,Grain(ii)%nopac
-						C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
-     &	*(1d0-C(phot%i,phot%j)%FE(0))
+						C(i,j)%EJvQHP(Grain(ii)%qhpnr)=C(i,j)%EJvQHP(Grain(ii)%qhpnr)
+     &	*(1d0-C(i,j)%FE(0))
 					enddo
 					endif
 				enddo
@@ -939,14 +935,10 @@ c		endif
 		if(locfield.and..not.etrace) then
 			EJv=phot%E*v*AU  !*C(phot%i,phot%j)%dens
 			if(computeLRF) then
-				if(multiwav) then
-					call addLRF_multiwav(phot,EJv)
-				else
-					C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-					C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-					C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-					C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
-				endif
+				C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+				C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+				C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+				C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
 				if(use_qhp) then
 					do ii=1,ngrains
 						if(Grain(ii)%qhp) then
@@ -975,8 +967,6 @@ c ------------------------------------------------
 				C(phot%i,phot%j)%KextLRF=C(phot%i,phot%j)%KextLRF+EJv*Kext
 				C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      		endif
-			if(exportprodimo.and.multiwav) Kext_column=Kext_column
-     &			+v*C(phot%i,phot%j)%dens*AU*(C(phot%i,phot%j)%KabsTot+C(phot%i,phot%j)%KscaTot)
 		endif
 		if(multiwav) then
 			do ii=1,ngrains
@@ -1000,14 +990,10 @@ c ------------------------------------------------
 	if(locfield.and..not.etrace) then
 		EJv=phot%E*v*AU		!*C(phot%i,phot%j)%dens
 		if(computeLRF) then
-			if(multiwav) then
-				call addLRF_multiwav(phot,EJv)
-			else
-				C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-				C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-				C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-				C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
-			endif
+			C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
+			C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
+			C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
+			C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
 			if(use_qhp) then
 				do ii=1,ngrains
 					if(Grain(ii)%qhp) then
@@ -1038,8 +1024,6 @@ c ------------------------------------------------
 			C(phot%i,phot%j)%KextLRF=C(phot%i,phot%j)%KextLRF+EJv*Kext
 			C(phot%i,phot%j)%ILRF=C(phot%i,phot%j)%ILRF+EJv
      	endif
-		if(exportprodimo.and.multiwav) Kext_column=Kext_column
-     &		+v*C(phot%i,phot%j)%dens*AU*(C(phot%i,phot%j)%KabsTot+C(phot%i,phot%j)%KscaTot)
 	endif
 	if(multiwav) then
 		do ii=1,ngrains
@@ -1494,54 +1478,3 @@ c-----------------------------------------------------------------------
 	return
 	end
 
-
-
-
-	subroutine addLRF_multiwav(phot,EJv)
-	use Parameters
-	IMPLICIT NONE
-	real*8 spectemp(nlam),tot,EJv
-	integer ii,j,iopac
-	type(photon) phot
-
-c	if(.not.exportProDiMo) then
-c currently don't use the multiwav exportProDiMo because it is too slow.
-		C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-		C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-		C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-		C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
-		return
-c	endif
-	
-	if(exportprodimo) then
-		spectemp(1:nlam)=Kext_column(1:nlam)
-	else
-		spectemp(1:nlam)=0d0
-		do ii=1,ngrains
-			do iopac=1,Grain(ii)%nopac
-				spectemp(1:nlam)=spectemp(1:nlam)+Grain(ii)%Kext(iopac,1:nlam)*column(ii,iopac)
-			enddo
-		enddo
-	endif
-	do j=1,nlam
-		if(spectemp(j).lt.10d0) then
-			spectemp(j)=specemit(j)*exp(-spectemp(j))
-		else
-			spectemp(j)=0d0
-		endif
-	enddo
-	call integrate(spectemp,tot)
-	if(tot.gt.1d-100) then
-		spectemp=spectemp*EJv/tot
-		C(phot%i,phot%j)%LRF(1:nlam)=C(phot%i,phot%j)%LRF(1:nlam)+spectemp(1:nlam)
-		C(phot%i,phot%j)%nLRF(1:nlam)=C(phot%i,phot%j)%nLRF(1:nlam)+1
-	else
-		C(phot%i,phot%j)%LRF(phot%ilam1)=C(phot%i,phot%j)%LRF(phot%ilam1)+EJv*phot%wl1/dnu(phot%ilam1)
-		C(phot%i,phot%j)%LRF(phot%ilam2)=C(phot%i,phot%j)%LRF(phot%ilam2)+EJv*phot%wl2/dnu(phot%ilam2)
-		C(phot%i,phot%j)%nLRF(phot%ilam1)=C(phot%i,phot%j)%nLRF(phot%ilam1)+1
-		C(phot%i,phot%j)%nLRF(phot%ilam2)=C(phot%i,phot%j)%nLRF(phot%ilam2)+1
-	endif
-	
-	return
-	end
-	

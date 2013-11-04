@@ -287,7 +287,6 @@ c use the slow backup determination of average scattering matrix instead
 			specemit(phot%ilam1)=phot%wl1
 			specemit(phot%ilam2)=phot%wl2
 			column(1:ngrains,1:ngrains2)=0d0
-			if(exportprodimo) Kext_column=0d0
 		endif
 	endif
 	
@@ -788,7 +787,6 @@ c not found, starting from 1 K
 	if(multiwav) then
 		specemit=spec
 		column(1:ngrains,1:ngrains2)=0d0
-		if(exportprodimo) Kext_column=0d0
 	endif
 
 	call randomdirection(phot%vx,phot%vy,phot%vz)
