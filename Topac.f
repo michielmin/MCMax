@@ -64,8 +64,9 @@ c-----------------------------------------------------------------------
                   if (abs(checksum-1d0).ge.1d-6) then
                      write(*,'("Something wrong with wopac")')
                      do iopac=1,nopac
-                        write(*,'(" wopac(",i02,",",i02,")= ",f10.8)') 
-     &                     ii,iopac,C(i,j)%wopac(ii,iopac)
+                        write(*,'(" wopac(",i02,",",i02,")= ",f10.8,f10.8)') 
+     &                     ii,iopac,C(i,j)%wopac(ii,iopac),C(i,j)%T
+     					print*,i,j,C(i,j)%dens,C(i,j)%w(1:ngrains)
                      enddo
                      write(*,'("Sum=",f10.8," =!= 1 -> stop 63635")')
      &                     checksum

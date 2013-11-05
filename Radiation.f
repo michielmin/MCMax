@@ -628,8 +628,12 @@ c not found, starting from 1 K
 		iT0=iT
 	enddo
 
-	determineT=(real(iTmin)**4+(real(iTmax)**4-real(iTmin)**4)*(E1-Emin)/(Emax-Emin))**(0.25d0)*dT
-
+	if(iTmin.eq.iTmax) then
+		determineT=real(iTmin)*dT
+	else
+		determineT=(real(iTmin)**4+(real(iTmax)**4-real(iTmin)**4)*(E1-Emin)/(Emax-Emin))**(0.25d0)*dT
+	endif
+	
 	return
 	end
 
