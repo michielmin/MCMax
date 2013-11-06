@@ -43,7 +43,7 @@
 	IMPLICIT NONE
 	type(photon) phot
 	real*8 spec(nlam),Albedo,ran2,T0,T1,increaseT,increaseTP
-	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,Edust,Egas
+	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,Edust,Egas,tot
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),w1,w2,KscaR
 	integer i,iT,iT0,iT1,l,ii,iopac
 	type(Mueller) M
@@ -235,6 +235,8 @@ c scattering
 		call randomdirection(phot%vx,phot%vy,phot%vz)
 		if(multiwav) then
 			specemit(1:nlam)=specemit(1:nlam)*C(phot%i,phot%j)%KscaTot(1:nlam)
+			call integrate(specemit,tot)
+			specemit=specemit/tot
 		endif
 	else
 		KscaR=Ksca*ran2(idum)
@@ -789,7 +791,7 @@ c not found, starting from 1 K
 	nemit=nemit+1
 	
 	if(multiwav) then
-		specemit=spec
+		specemit=spec/Lttot
 		column(1:ngrains,1:ngrains2)=0d0
 	endif
 
