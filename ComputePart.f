@@ -585,6 +585,7 @@ c-----------------------------------------------------------------------
 			Mtot=Mtot+C(i,j)%mass
 		enddo
 	enddo
+	wtot=wtot/Mtot
 	do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
 			w=wtot(ii,iopac)
@@ -618,12 +619,7 @@ c-----------------------------------------------------------------------
 		p%F(1,l)%F34(1:180)=p%F(1,l)%F34(1:180)/p%Ksca(1,l)
 		p%F(1,l)%F44(1:180)=p%F(1,l)%F44(1:180)/p%Ksca(1,l)
 	enddo
-	p%Kabs=p%Kabs/Mtot
-	p%Ksca=p%Ksca/Mtot
 	p%Kext=p%Kabs+p%Ksca
-	p%dust_moment1=p%dust_moment1/Mtot
-	p%dust_moment2=p%dust_moment2/Mtot
-	p%dust_moment3=p%dust_moment3/Mtot
 	p%rho(1)=Mtot/Vtot
 	
 	write(filename,'(a,"particle_average.fits")') trim(outdir)

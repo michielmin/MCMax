@@ -374,9 +374,11 @@ c	Initialize the 10 temp zones with defaults
 	nzones=0
 	
 c	Interstellar Radiation Field (IRF)
+	T_BG=2.7d0
 	T_IRF=20000d0
 	F_IRF=1d0
 	use_IRF=.false.
+	bg_correct=.false.
 	
 	ntau1_lam=1		! allways one extra tau=1 surface
 	do i=1,100
@@ -1127,8 +1129,10 @@ C       Gijsexp, read in parameters for s.c. settling
 	
 	!Interstellar Radiation Field
 	if(key.eq.'irf') read(value,*) use_IRF
+	if(key.eq.'t_bg') read(value,*) T_BG
 	if(key.eq.'t_irf') read(value,*) T_IRF
 	if(key.eq.'f_irf') read(value,*) F_IRF
+	if(key.eq.'bg_correct') read(value,*) bg_correct
 
 	!scale the electron density with respect to the ISM value
 	if(key.eq.'f_ne') read(value,*) f_ne
@@ -4084,7 +4088,7 @@ c Set the spectrum and energy for the interstellar radiation field
 		allocate(IRF(nlam))
 		do i=1,nlam
 			IRF(i)=pi*(D%R(D%nR)*AU)**2*(9.85357d-17*1.71*Planck(T_IRF,lam(i))*F_IRF
-     &                                               +Planck(2.7d0,lam(i)))
+     &                                               +Planck(T_BG,lam(i)))
 		enddo
 		call integrate(IRF,E_IRF)
 	endif

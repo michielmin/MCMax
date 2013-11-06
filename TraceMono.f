@@ -320,7 +320,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 !$OMP&    w1,w2,exptau_e,x_scat,x_scatQ,x_scatU,x_scatV,frac,Tgas,iT)
 !$OMP& SHARED(image,Nphot,NphotStar,C,scat,scatQ,scatU,scatV,scat_how,scatim,storescatt,
 !$OMP&    scattering,fracirg,alltrace,ngrains,Grain,wl1,ilam1,wl2,ilam2,opening,Rinner_gas,
-!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,lam0,inner_gas,BB,inc)
+!$OMP&    outfluxcontr,fluxcontr,emis,tau_max,tracestar,D,dimstar,lam0,inner_gas,BB,inc,T_BG,bg_correct)
 !$OMP DO
 	do i=1,image%nr
 !$OMP CRITICAL
@@ -480,8 +480,8 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			image%image(i,j)=image%image(i,j)+(D%Fstar(ilam1)*wl1+D%Fstar(ilam2)*wl2)
      &								*fact*dimstar/(pi*(D%R(0)*AU)**2)
 		endif
-
-10	continue
+10		continue
+		if(bg_correct) image%image(i,j)=image%image(i,j)+Planck(T_BG,lam0)*(fact-1d0)
 	enddo
 	enddo
 !$OMP END DO

@@ -319,6 +319,10 @@
 	i=i+1
 	keyword(i)='irf'
 	i=i+1
+	keyword(i)='bg_correct'
+	i=i+1
+	keyword(i)='t_bg'
+	i=i+1
 	keyword(i)='t_irf'
 	i=i+1
 	keyword(i)='f_irf'
