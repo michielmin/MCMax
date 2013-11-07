@@ -47,6 +47,7 @@
 	outfluxcontr=tel%fluxcontr
 
 	fastobs=tel%fastobs
+	if(scat_how.eq.2) fastobs=.false.
 
 	do i=1,ngrains
 		Grain(i)%trace=tel%trace(i)
