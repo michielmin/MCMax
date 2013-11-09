@@ -688,8 +688,14 @@ c-------------------------------------------------------------------------------
 	do iopac=1,Grain(ii)%nopac
 		rv=rv+C(i,j)%wopac(ii,iopac)*Grain(ii)%rv*Grain(ii)%rscale(iopac)
 	enddo
-	rv=rv/sum(C(i,j)%wopac(ii,1:Grain(ii)%nopac))
+	tot=sum(C(i,j)%wopac(ii,1:Grain(ii)%nopac))
+	if(tot.gt.1d-100) then
+		rv=rv/tot
+	else
+		rv=Grain(ii)%rv*Grain(ii)%rscale(iopac)
+	endif
 	
+	mass=0d0
 	do iopac=1,Grain(ii)%nopac
 		mass=mass+Grain(ii)%rho(iopac)*C(i,j)%wopac(ii,iopac)*(Grain(ii)%rv*Grain(ii)%rscale(iopac))**3
 	enddo
