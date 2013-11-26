@@ -93,6 +93,8 @@
 	i=i+1
 	keyword(i)='vexp2'
 	i=i+1
+	keyword(i)='bexp'
+	i=i+1
 	keyword(i)='scaledisk'
 	i=i+1
 	keyword(i)='tmax'

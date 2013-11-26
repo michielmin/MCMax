@@ -19,7 +19,7 @@
 	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)
 	real*8 T,Planck,Vtot,clight,MassTot,thet,tot,Tmax_R,RTmax,stretch,Kext,Kabs
 	real*8 rd,zd,f1,f2,hr,r,z,lam1,lam2,warg(MAXPART),scale,Luminosity,MassTot0
-	real*8 powslope(MAXPART),powrad0(MAXPART),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,texp1,texp2
+	real*8 powslope(MAXPART),powrad0(MAXPART),tau550,Kext550,wl1,wl2,vexp,vexp1,vexp2,bexp
 	real*8 gap1(100),gap2(100),gap(100),Rdes,Rmin,zlam1,zlam2,dummy
 	real*8 TdesA(MAXPART),TdesB(MAXPART),int1,int2,f_weight_backup,theta
 	real*8 gapshape(100),gaproundpow(100)
@@ -98,6 +98,7 @@
 	D%Mdot=1d-8		!Msun/yr
 	vexp1=10d0		!km/s
 	vexp2=-10d0		!don't use vexp2
+	bexp=0.5d0		!beta velocity law
 	D%Minfall=-1d0		!defaults to the value of Mdot
 
 	struct_iter=.false.
@@ -502,6 +503,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'mu0max') read(value,*) D%mu0max
 	if(key.eq.'vexp'.or.key.eq.'vexp1') read(value,*) vexp1
 	if(key.eq.'vexp2') read(value,*) vexp2
+	if(key.eq.'bexp') read(value,*) bexp
 	if(key.eq.'scaledisk') read(value,*) scale_R
 	if(key.eq.'tmax') read(value,*) Tmax_R
 	if(key.eq.'forcefirst') read(value,*) forcefirst
@@ -1734,8 +1736,10 @@ C	End
 	write(9,'("Mass loss:            ",e14.3," Msun/yr")') D%Mdot
 	write(9,'("Escape velocity:      ",f14.3," km/s")') vexp1
 	if(vexp2.gt.0d0) then
-	write(*,'("    at the pole:      ",f14.3," km/s")') vexp2
-	write(9,'("    at the pole:      ",f14.3," km/s")') vexp2
+	write(*,'("    at infinity:      ",f14.3," km/s")') vexp2
+	write(9,'("    at infinity:      ",f14.3," km/s")') vexp2
+	write(*,'("    beta value:       ",f14.3)') bexp
+	write(9,'("    beta value:       ",f14.3)') bexp
 	endif
 	else if(denstype.eq.'INFALL') then
 	write(*,'("Mass infall rate:     ",e14.3," Msun/yr")') D%Minfall
@@ -2322,15 +2326,6 @@ c	endif
 	if(vexp2.le.0d0) vexp2=vexp1
 	vexp1=vexp1*100000d0
 	vexp2=vexp2*100000d0
-	texp1=D%Rin*AU/vexp1
-	if((D%Rin*AU/vexp2).gt.texp1) texp1=D%Rin*AU/vexp2
-	texp2=D%Rout*AU/vexp1
-	if((D%Rout*AU/vexp2).lt.texp2) texp2=D%Rout*AU/vexp2
-	
-	if(texp1.gt.texp2.and.denstype.eq.'MASSLOSS') then
-		print*,"Shell doesn't fit in the grid"
-		stop
-	endif
 
 c first setup the wavelength grid
 	if(lamtype(1:4).eq.'FILE') then
@@ -2918,12 +2913,8 @@ c			f2=exp(-0.5*(z/hr)**2)
 			 C(i,j)%dens=(D%Rpow2*AU/D%R_av(i))**(D%denspow2+1d0)*exp(-(D%R_av(i)/(AU*D%Rexp))**(D%gamma_exp))
 		   endif
 		else if(denstype.eq.'MASSLOSS') then
-			vexp=1d0/sqrt(sin(D%theta_av(j))**2/vexp1**2+cos(D%theta_av(j))**2/vexp2**2)
-			if((D%R_av(i)/vexp).gt.texp1.and.(D%R_av(i)/vexp).lt.texp2) then
-				C(i,j)%dens=D%Mdot/(gas2dust*4d0*pi*D%R_av(i)**2*vexp)
-			else
-				C(i,j)%dens=1d-60
-			endif
+			vexp=vexp2*(1.-(1.-(vexp1/vexp2)**(1./bexp))*D%Rstar/D%R_av(i))**bexp
+			C(i,j)%dens=D%Mdot/(gas2dust*4d0*pi*D%R_av(i)**2*vexp)
 		else if(denstype.eq.'PINTE') then
 			r=D%R_av(i)*sin(D%theta_av(j))/AU
 			z=D%R_av(i)*cos(D%theta_av(j))/AU
