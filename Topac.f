@@ -13,7 +13,7 @@ c-----------------------------------------------------------------------
       real*8 checksum,lininterpol
 
       ! loop over all grains
-      do ii=0,ngrains 
+      do ii=1,ngrains 
          if (Grain(ii)%parttype .eq. 5) then
             write(*,'("Calculating opacities for particle ",i2)') ii
             write(9,'("Calculating opacities for particle ",i2)') ii
