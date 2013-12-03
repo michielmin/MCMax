@@ -41,6 +41,7 @@ c         write(*,'("rhograin=  ",F6.2)') Grain(ii)%rho
          !
          !  Loop over all radii
          !
+		if(Grain(ii)%shtype.eq.'DISK') then
          do i=1,D%nR-1
 
 			tauf_csrho=0d0
@@ -94,6 +95,7 @@ c            scale_w(ii,i)=sh_dtg_w * (1+sh_dtg_w**2)**(-0.5)
 c            Grain(ii)%shscale(i)=scale_w(ii,i)
 			endif
          enddo
+		endif
       enddo
       !
       !  Write scaling factor(s) to a file
