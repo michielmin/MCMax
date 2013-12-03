@@ -8,12 +8,16 @@
 	character*500 filename,version
 	real*8,allocatable :: grid(:,:,:)
 	real,allocatable :: temperature(:,:,:)
-	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:),region_index(:)
+	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:)
+	integer,allocatable :: region_index(:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
 	real*8 fUV,tot,pUV
 	real*8,allocatable :: spec(:)
 	character*2 s
+
+	integer nzonesProDiMo
+	type(DiskZone),allocatable :: zonesProDiMo(:)
 
 	write(filename,'(a,"forProDiMo.fits.gz")') outdir(1:len_trim(outdir))
 
@@ -47,7 +51,9 @@
 	allocate(region_index(D%nR-1))
 	allocate(HRspec(nlamHR,2))
 	
-
+	call countZonesProDiMo(nzonesProDiMo)
+	allocate(ZonesProDiMo(nzonesProDiMo))
+	call determineZonesProDiMo(zonesProDiMo,nzonesProDiMo,region_index)
 
 	  status=0
 C	 Get an unused Logical Unit Number to use to create the FITS file
@@ -129,10 +135,10 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'disk_dust_mass_tot',real(Mdust),-8,'[Msun]',status)
 
-	call ftpkyj(unit,'n_zones',nzones,'',status)
-	call ftpkyj(unit,'n_regions',nzones,'',status)
+	call ftpkyj(unit,'n_zones',nzonesProDiMo,'',status)
+	call ftpkyj(unit,'n_regions',nzonesProDiMo,'',status)
 
-	if(nzones.le.0) then
+	if(nzonesProDiMo.le.0) then
 		call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
 		call ftpkye(unit,'Rin',real(D%R(1)),-8,'[AU]',status)
 		call ftpkye(unit,'Rout',real(D%R(D%nR)),-8,'[AU]',status)
@@ -141,23 +147,23 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 		call ftpkye(unit,'beta',real(D%shpow),-8,'',status)
 		call ftpkye(unit,'alpha',real(-D%denspow),-8,'',status)
 	else
-		do i=1,nzones
+		do i=1,nzonesProDiMo
 			if(i.eq.1) then
 				s=' '
 			else
 				write(s,'("_",i1)') i
 			endif
-			call ftpkye(unit,'disk_dust_mass'//trim(s),real(Zone(i)%Mdust),-8,'[Msun]',status)
-			call ftpkye(unit,'Rin'//trim(s),real(Zone(i)%Rin),-8,'[AU]',status)
-			call ftpkye(unit,'Rout'//trim(s),real(Zone(i)%Rout),-8,'[AU]',status)
-			call ftpkye(unit,'Rref'//trim(s),real(Zone(i)%Rsh),-8,'[AU]',status)
-			call ftpkye(unit,'H0'//trim(s),real(Zone(i)%sh/sqrt(2.0)),-8,'[AU]',status)
-			call ftpkye(unit,'beta'//trim(s),real(Zone(i)%shpow),-8,'',status)
-			call ftpkye(unit,'alpha'//trim(s),real(-Zone(i)%denspow),-8,'',status)
+			call ftpkye(unit,'disk_dust_mass'//trim(s),real(ZonesProDiMo(i)%Mdust),-8,'[Msun]',status)
+			call ftpkye(unit,'Rin'//trim(s),real(ZonesProDiMo(i)%Rin),-8,'[AU]',status)
+			call ftpkye(unit,'Rout'//trim(s),real(ZonesProDiMo(i)%Rout),-8,'[AU]',status)
+			call ftpkye(unit,'Rref'//trim(s),real(ZonesProDiMo(i)%Rsh),-8,'[AU]',status)
+			call ftpkye(unit,'H0'//trim(s),real(ZonesProDiMo(i)%sh/sqrt(2.0)),-8,'[AU]',status)
+			call ftpkye(unit,'beta'//trim(s),real(ZonesProDiMo(i)%shpow),-8,'',status)
+			call ftpkye(unit,'alpha'//trim(s),real(-ZonesProDiMo(i)%denspow),-8,'',status)
 
 			write(s,'("_",i1)') i
-			call ftpkye(unit,'Rmin_region'//trim(s),real(Zone(i)%Rin),-8,'[AU]',status)
-			call ftpkye(unit,'Rmax_region'//trim(s),real(Zone(i)%Rout),-8,'[AU]',status)
+			call ftpkye(unit,'Rmin_region'//trim(s),real(ZonesProDiMo(i)%Rin),-8,'[AU]',status)
+			call ftpkye(unit,'Rmax_region'//trim(s),real(ZonesProDiMo(i)%Rout),-8,'[AU]',status)
 		enddo
 	endif
 
@@ -478,7 +484,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			enddo
 		  enddo
 		  N_grains(ri,zj,0) = N
-		  if (N.gt.1d-40) then
+		  if (N.gt.1d-20) then
 			N1=0d0
 			do l=1,ngrains
 				do iopac=1,Grain(l)%nopac
@@ -509,10 +515,11 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			enddo
 			N_grains(ri,zj,3) = N1 / N
 		  else
-		  	N=0.0
-			N_grains(ri,zj,1) = 0.0
-			N_grains(ri,zj,2) = 0.0
-			N_grains(ri,zj,3) = 0.0
+			N=1d-20
+		  	N_grains(ri,zj,0) = N
+			N_grains(ri,zj,1) = Grain(1)%dust_moment1
+			N_grains(ri,zj,2) = Grain(1)%dust_moment2
+			N_grains(ri,zj,3) = Grain(1)%dust_moment3
 		  endif
 	   enddo
 	enddo
@@ -533,21 +540,8 @@ c	   wl = tab_lambda(lambda) * 1e-6
 
 	!  Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
-	
-	if(nzones.le.1) then
-		region_index=1
-	else
-		region_index=0
-		do ri=1, D%nR-1
-			do j=1,nzones
-				if((D%R_av(ri)/AU).gt.Zone(j)%Rin.and.(D%R_av(ri)/AU).lt.Zone(j)%Rout) then
-					region_index(ri)=j
-				endif
-			enddo
-		enddo
-	endif
 
-	call ftppre(unit,group,fpixel,nelements,region_index,status)
+	call ftpprj(unit,group,fpixel,nelements,region_index,status)
 
 	!------------------------------------------------------------------------------
 	! HDU 14 : High resolution stellar spectrum
@@ -661,4 +655,98 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	end
 	
 
+	subroutine countZonesProDiMo(nz)
+	use Parameters
+	IMPLICIT NONE
+	integer nz,i,j,ri
+	logical zo0(nzones),zo1(nzones)
+
+	if(nzones.le.1) then
+		nz=nzones
+		return
+	endif
+	
+	zo0=.false.
+	nz=0
+	do ri=1,D%nR-1
+		do i=1,nzones
+			if(D%R_av(ri)/AU.gt.Zone(i)%Rin.and.D%R_av(ri)/AU.le.Zone(i)%Rout) then
+				zo1(i)=.true.
+			else
+				zo1(i)=.false.
+			endif
+		enddo
+		do i=1,nzones
+			if(zo0(i).ne.zo1(i)) then
+				nz=nz+1
+				exit
+			endif
+		enddo
+		zo0=zo1
+	enddo
+
+	return
+	end
+
+
+
+
+	subroutine determineZonesProDiMo(zonesProDiMo,nz,region_index)
+	use Parameters
+	IMPLICIT NONE
+	integer nz,i,j,ri
+	type(DiskZone) zonesProDiMo(nz)
+	logical zo0(nzones),zo1(nzones)
+	integer region_index(D%nR-1)
+
+	if(nzones.le.1) then
+		nz=nzones
+		region_index=1
+		return
+	endif
+	
+	zo0=.false.
+	nz=0
+	do ri=1,D%nR-1
+		do i=1,nzones
+			if(D%R_av(ri)/AU.gt.Zone(i)%Rin.and.D%R_av(ri)/AU.le.Zone(i)%Rout) then
+				zo1(i)=.true.
+			else
+				zo1(i)=.false.
+			endif
+		enddo
+		do i=1,nzones
+			if(zo0(i).ne.zo1(i)) then
+				nz=nz+1
+				region_index(ri)=nz
+				ZonesProDiMo(nz)%Mdust=Zone(1)%Mdust
+				ZonesProDiMo(nz)%Rin=Zone(1)%Rin
+				ZonesProDiMo(nz)%Rout=Zone(1)%Rout
+				ZonesProDiMo(nz)%Rsh=Zone(1)%Rsh
+				ZonesProDiMo(nz)%sh=Zone(1)%sh
+				ZonesProDiMo(nz)%shpow=Zone(1)%shpow
+				ZonesProDiMo(nz)%denspow=Zone(1)%denspow
+				do j=1,nzones
+					if(zo1(j)) then
+						ZonesProDiMo(nz)%Mdust=Zone(j)%Mdust
+						ZonesProDiMo(nz)%Rin=Zone(j)%Rin
+						ZonesProDiMo(nz)%Rout=Zone(j)%Rout
+						ZonesProDiMo(nz)%Rsh=Zone(j)%Rsh
+						ZonesProDiMo(nz)%sh=Zone(j)%sh
+						ZonesProDiMo(nz)%shpow=Zone(j)%shpow
+						ZonesProDiMo(nz)%denspow=Zone(j)%denspow
+						exit
+					endif
+				enddo
+				zonesProDiMo(nz)%Rin=D%R(ri)
+				if(nz.gt.1) zonesProDiMo(nz-1)%Rout=D%R(ri)
+				exit
+			endif
+		enddo
+		zo0=zo1
+	enddo
+	zonesProDiMo(nz)%Rout=D%R(D%nR)
+
+	return
+	end
 
