@@ -349,7 +349,7 @@
 		if(lamism(j).ge.l1.and.lamism(j).le.l2) then
 			if(j.eq.1) then
 				dlamism=lamism(j+1)-lamism(j)
-			else if(i.eq.NLAMISM) then
+			else if(j.eq.NLAMISM) then
 				dlamism=lamism(j)-lamism(j-1)
 			else
 				dlamism=(lamism(j+1)-lamism(j-1))/2d0

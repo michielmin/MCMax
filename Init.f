@@ -2802,25 +2802,42 @@ c in the theta grid we actually store cos(theta) for convenience
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
 					zonedens(iz,1:ngrains,i,j)=0d0
-					njj=10
-					do jj=1,njj
-						theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+					if(Zone(iz)%sh.gt.0d0) then
+						njj=10
+						do jj=1,njj
+							theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+							r=D%R_av(i)*sin(theta)/AU
+							z=D%R_av(i)*cos(theta)/AU
+							hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+							f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+							if (Zone(iz)%roundtype.ne.'NONE') then
+							   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,
+     &								Zone(iz)%roundindex,Zone(iz)%roundscalemin)
+							endif
+							f2=exp(-(z/hr)**2)
+							do ii=1,ngrains
+								if(Zone(iz)%inc_grain(ii)) then
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+								else
+									zonedens(iz,ii,i,j)=0d0
+								endif
+							enddo
+						enddo
+					else
+c	this is a wedge zone!
 						r=D%R_av(i)*sin(theta)/AU
-						z=D%R_av(i)*cos(theta)/AU
-						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
-						if (Zone(iz)%roundtype.ne.'NONE') then
-						   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,Zone(iz)%roundindex,Zone(iz)%roundscalemin)
-						endif
-						f2=exp(-(z/hr)**2)
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
-								zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+								if(j.eq.D%nTheta-1.or.(180d0*D%theta_av(j)/pi).gt.(-Zone(iz)%sh)) then
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*r**(-Zone(iz)%denspow-1d0)
+								else
+									zonedens(iz,ii,i,j)=0d0
+								endif
 							else
 								zonedens(iz,ii,i,j)=0d0
 							endif
 						enddo
-					enddo
+					endif						
 					do ii=1,ngrains
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
@@ -3281,30 +3298,42 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
 					zonedens(iz,1:ngrains,i,j)=0d0
-					njj=10
-					do jj=1,njj
-						theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+					if(Zone(iz)%sh.gt.0d0) then
+						njj=10
+						do jj=1,njj
+							theta=D%thet(j)+(D%thet(j+1)-D%thet(j))*real(jj)/real(njj+1)
+							r=D%R_av(i)*sin(theta)/AU
+							z=D%R_av(i)*cos(theta)/AU
+							hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
+							f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
+							if (Zone(iz)%roundtype.ne.'NONE') then
+							   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,
+     &								Zone(iz)%roundindex,Zone(iz)%roundscalemin)
+							endif
+							f2=exp(-(z/hr)**2)
+							do ii=1,ngrains
+								if(Zone(iz)%inc_grain(ii)) then
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+								else
+									zonedens(iz,ii,i,j)=0d0
+								endif
+							enddo
+						enddo
+					else
+c	this is a wedge zone!
 						r=D%R_av(i)*sin(theta)/AU
-						z=D%R_av(i)*cos(theta)/AU
-						hr=Zone(iz)%sh*(r/Zone(iz)%Rsh)**Zone(iz)%shpow
-						f1=r**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp))
-						if (Zone(iz)%roundtype.ne.'NONE') then
-						   f1=f1*RoundOff(D%R_av(i)/AU,Zone(iz)%Rin+Zone(iz)%roundwidth,Zone(iz)%roundtype,Zone(iz)%roundindex,Zone(iz)%roundscalemin)
-						endif
-						f2=exp(-(z/hr)**2)
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
-								if(Grain(ii)%shtype.eq.'HALO'.or.Zone(iz)%sh.lt.0d0) then
-									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*
-     &			((D%R_av(i)/AU)**(-Zone(iz)%denspow)*exp(-(D%R_av(i)/(AU*Zone(iz)%Rexp))**(Zone(iz)%gamma_exp)))
+								if(j.eq.D%nTheta-1.or.(180d0*D%theta_av(j)/pi).gt.(-Zone(iz)%sh)) then
+									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*r**(-Zone(iz)%denspow-1d0)
 								else
-									zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)+Zone(iz)%abun(ii)*f1*f2/hr/real(njj)
+									zonedens(iz,ii,i,j)=0d0
 								endif
 							else
 								zonedens(iz,ii,i,j)=0d0
 							endif
 						enddo
-					enddo
+					endif						
 					do ii=1,ngrains
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
