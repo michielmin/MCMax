@@ -3465,8 +3465,7 @@ c	this is a wedge zone!
 
 	do j=0,TMAX
 		do iopac=1,Grain(ii)%nopac
-			spec(1:nlam)=BB(1:nlam,j)*Grain(ii)%Kabs(iopac,1:nlam)
-			call integrate(spec,Grain(ii)%Kp(iopac,j))
+			call integrate(BB(1:nlam,j)*Grain(ii)%Kabs(iopac,1:nlam),Grain(ii)%Kp(iopac,j))
 		enddo
 	enddo
 	do iopac=1,Grain(ii)%nopac
@@ -5049,8 +5048,9 @@ c-----------------------------------------------------------------------
 	IMPLICIT NONE
 	real*8 RoundOff
 
+	character*20 type
 	integer i,j,k
-	real*8 scale,r,rmax,type,pow,scalemin
+	real*8 scale,r,rmax,pow,scalemin
 	doubleprecision, PARAMETER :: GG=6.6720000d-08
 	doubleprecision, PARAMETER :: amu=1.66053886d-24
 	

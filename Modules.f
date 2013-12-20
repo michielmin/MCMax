@@ -189,6 +189,29 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 
 	type(ExoPlanet),allocatable :: Planets(:)
 
+	Interface
+		Subroutine outputstruct(filename,vars,nvars,ipart,xx,nxx)
+                Implicit None
+				integer nvars,ivars,ipart
+				integer,optional :: nxx
+				character*7 vars(nvars)
+				character*500 filename
+				real*8,optional :: xx(*)
+		End Subroutine outputstruct
+	End Interface
+
+	Interface
+		Subroutine outputstruct_fits(filename,vars,nvars,ipart,xx,nxx)
+                Implicit None
+				integer nvars,ivars,ipart
+				integer,optional :: nxx
+				character*7 vars(nvars)
+				character*500 filename
+				real*8,optional :: xx(*)
+		End Subroutine outputstruct_fits
+	End Interface
+
+
 	end module Parameters
 	
 	

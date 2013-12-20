@@ -160,7 +160,7 @@ c     -----------------------------------------------------------------
       implicit none
 	integer nlam
 	real*8 nu(nlam),LRF(nlam),Kabs(nlam),Ksca(nlam),QHPemis(nlam)
-	real*8 fracHigh,TQHPMax,Ncarb,tempgrid2(200),tdistrib2(200)
+	real*8 fracHigh,TQHPMax,Ncarb,tempgrid2(*),tdistrib2(*)
       integer iformat,itemp,inu,inu2,idum,it,ntemp2
       doubleprecision temp0,temp1,rho_pah,mp
       logical fex

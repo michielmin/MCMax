@@ -1700,7 +1700,7 @@ c     ..
 	integer na,nangle
 	real*8 rad,lam,e1,e2,csca,cext,F11(na),F12(na),F33(na),F34(na)
 
-	integer nparts,develop,nsubr,ngaur,idis,ndis,i
+	integer nparts,develop,nsubr(1),ngaur(1),idis(1),ndis,i
 	real*8 delta,cutoff,thmin,thmax,step,wavel(1),Rem(1),fImm(1)
 	real*8 par1(1),par2(1),par3(1),rdis(1,300),nwrdis(1,300)
 	real*8 F(4,6000),theta(6000)
@@ -1761,10 +1761,10 @@ c     ..
       character*10 scfile
       dimension F(4,NDang)
      +        , miec(13),u(NDang),w(NDang),coefs(4,4,0:NDcoef)
-     +        , wavel(NDpart), Rem(NDpart), fImm(NDpart), nsubr(NDpart)
-     +        , ngaur(NDpart), idis(NDpart)
-     +        , par1(NDpart), par2(NDpart), par3(NDpart)
-     +        , rdis(NDpart,NDdis), nwrdis(NDpart,NDdis)
+     +        , wavel(*), Rem(*), fImm(*), nsubr(*)
+     +        , ngaur(*), idis(*)
+     +        , par1(*), par2(*), par3(*)
+     +        , rdis(1,*), nwrdis(1,*)
      +        , scfile(NDpart), theta(NDang)
       pi     = dacos(-1.D0)
       radtod = 180.D0/pi
@@ -3365,14 +3365,18 @@ c      endif
 	integer nlam
 	real*8 lam(nlam),Kext(nlam),BB(nlam)
 	integer i,j
-	real*8 integrate,Planck,Ke,Ka,w1,w2,wtot,KR,KP
+	real*8 Planck,Ke,Ka,w1,w2,wtot,KR,KP,tot1,tot2
 
 	do i=1,nlam
 		BB(i)=Planck(1500d0,lam(i))-Planck(1499d0,lam(i))
 	enddo
 	
-	KR=integrate(BB,lam,nlam)/integrate(BB/Kext,lam,nlam)
-	KP=integrate(BB*Kext,lam,nlam)/integrate(BB,lam,nlam)
+	call integrate(BB,tot1)
+	call integrate(BB/Kext,tot2)
+	KR=tot1/tot2
+	call integrate(BB*Kext,tot1)
+	call integrate(BB,tot2)
+	KP=tot1/tot2
 
 	print*,KR,KP
 	print*,KR**2/KP
