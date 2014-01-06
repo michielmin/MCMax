@@ -40,7 +40,7 @@ else
   FFLAGS  = $(FLAG_ALL) $(FLAG_MAC) -diag-disable 8290,8291
   LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f -Wl,-macosx_version_min,10.6
   #LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
-  LIBS	  =  -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib
+  LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib
 endif
 
 # use a suffix in file name (i.e. static, test etc.)
