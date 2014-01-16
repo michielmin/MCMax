@@ -63,6 +63,7 @@
 	D%Tstar=10000d0
 	D%Rstar=2.1d0
 	D%Mstar=2.5d0
+	D%logg=4d0
 	D%distance=100d0
 	D%Av=0d0
 	adjustAv=.false.
@@ -453,6 +454,7 @@ c	Interstellar Radiation Field (IRF)
 	if(key.eq.'startype') startype=value
 	if(key.eq.'starfile') starfile=value
 	if(key.eq.'tstar') read(value,*) D%Tstar
+	if(key.eq.'logg') read(value,*) D%logg
 	if(key.eq.'rstar') read(value,*) D%Rstar
 	if(key.eq.'mstar') read(value,*) D%Mstar
 	if(key.eq.'lstar') then
@@ -1529,6 +1531,11 @@ C	End
 	else if(startype.eq.'FILE') then
 	write(*,'("Star file:            ",a)') starfile(1:len_trim(starfile))
 	write(9,'("Star file:            ",a)') starfile(1:len_trim(starfile))
+	else if(startype.eq.'KURUCZ') then
+	write(*,'("Stellar temperature:  ",f14.3," K")') D%Tstar
+	write(*,'("Stellar log(g):       ",f14.3)') D%logg
+	write(9,'("Stellar temperature:  ",f14.3," K")') D%Tstar
+	write(9,'("Stellar log(g):       ",f14.3)') D%logg
 	else
 	write(*,'("Error in star type")')
 	write(9,'("Error in star type")')
@@ -2457,6 +2464,15 @@ c	lmax  = 4000.0
 		call integrate(D%Fstar,D%Lstar)
 		write(*,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
 		write(9,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
+		nlamHR=nlam
+		allocate(lamHR(nlamHR))
+		allocate(FstarHR(nlamHR))
+		lamHR(1:nlam)=lam(1:nlam)
+		FstarHR(1:nlam)=D%Fstar(1:nlam)
+	else if(startype.eq.'KURUCZ') then
+		call ReadKurucz(D%Tstar,D%logg,lam,D%Fstar,nlam)
+		call integrate(D%Fstar,tot)
+		D%Fstar=D%Lstar*D%Fstar/tot
 		nlamHR=nlam
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
