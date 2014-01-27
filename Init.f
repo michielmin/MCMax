@@ -50,11 +50,12 @@
 	type(DiskZone) ZoneTemp(10) ! maximum of 10 Zones
 	real*8 computepart_amin(MAXPART),computepart_amax(MAXPART),computepart_apow(MAXPART),computepart_fmax(MAXPART)
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
-	real*8 computepart_abun(MAXPART,MAXPART),computepart_norm_abun(MAXPART)
+	real*8 computepart_abun(MAXPART,MAXPART),computepart_norm_abun(MAXPART),computepart_fcarbon(MAXPART)
 	real*8,allocatable :: computepart_T(:,:)
 	integer computepart_ngrains(MAXPART),computepart_nT(MAXPART)
 	logical computepart_blend(MAXPART)
 	character*500,allocatable :: computepart_Tfile(:,:)
+	character*20 computepart_standard(MAXPART)
 
 	allocate(computepart_T(MAXPART,50))
 	allocate(computepart_Tfile(MAXPART,50))
@@ -332,6 +333,8 @@
 	computepart_abun=-1d0
 	computepart_ngrains=1
 	computepart_norm_abun=-1d0
+	computepart_standard(1:MAXPART)='FILE'
+	computepart_fcarbon=0.2
 	
 	maxruntime=-1
 	emptylower=.false.
@@ -722,6 +725,10 @@ c			endif
 			read(value,*) computepart_abun(i,j)
 		else if(keyzone.eq.'norm_abun') then
 			read(value,*) computepart_norm_abun(i)
+		else if(keyzone.eq.'standard') then
+			computepart_standard(i)=value
+		else if(keyzone.eq.'fcarbon') then
+			read(value,*) computepart_fcarbon(i)
 		else
 			write(*,'("ComputePart keyword not understood:",a)') trim(keyzone)
 			write(9,'("ComputePart keyword not understood:",a)') trim(keyzone)
@@ -1231,6 +1238,8 @@ C       End
 				computepart_porosity(i+computepart_ngrains(ii)-1)=computepart_porosity(i)
 				computepart_ngrains(i+computepart_ngrains(ii)-1)=computepart_ngrains(i)
 				computepart_abun(i+computepart_ngrains(ii)-1,:)=computepart_abun(i,:)
+				computepart_standard(i+computepart_ngrains(ii)-1)=computepart_standard(i)
+				computepart_fcarbon(i+computepart_ngrains(ii)-1)=computepart_fcarbon(i)
 				warg(i+computepart_ngrains(ii)-1)=warg(i)
 				powslope(i+computepart_ngrains(ii)-1)=powslope(i)
 				powrad0(i+computepart_ngrains(ii)-1)=powrad0(i)
@@ -1285,6 +1294,8 @@ C       End
 				computepart_porosity(i+ii-1)=computepart_porosity(ii)
 				computepart_abun(i+ii-1,:)=computepart_abun(ii,:)
 				computepart_ngrains(i+ii-1)=1
+				computepart_standard(i+ii-1)=computepart_standard(ii)
+				computepart_fcarbon(i+ii-1)=computepart_fcarbon(ii)
 				rgrain(i+ii-1)=sqrt(computepart_amin(i+ii-1)*computepart_amax(i+ii-1))*1d-4
 				warg(i+ii-1)=warg(ii)
 				powslope(i+ii-1)=powslope(ii)
@@ -3097,10 +3108,22 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 		else if(parttype(ii).eq.5) then
 			call readTopac(partarg(ii),Grain(ii))
 		else if(parttype(ii).eq.7) then
+			if(computepart_standard(ii).eq.'DIANA') then
+				computepart_abun(ii,1)=1d0-computepart_fcarbon(ii)
+				computepart_abun(ii,2)=computepart_fcarbon(ii)
+				computepart_norm_abun(ii)=-1d0
+				computepart_nT(ii)=0
+				partarg(ii)=computepart_standard(ii)
+			else if(computepart_standard(ii).eq.'ASTROSIL') then
+				computepart_norm_abun(ii)=-1d0
+				computepart_nT(ii)=0
+				partarg(ii)=computepart_standard(ii)
+			endif
 			if(computepart_nT(ii).eq.0) then
 				call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),1,computepart_norm_abun(ii))
+     &							,computepart_porosity(ii),computepart_abun(ii,:),1,computepart_norm_abun(ii)
+     &							,computepart_standard(ii))
 			else
 				do i=1,Grain(ii)%nopac
 					jj=i
@@ -3118,7 +3141,8 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 					enddo
 					call ComputePart(Grain(ii),ii,computepart_Tfile(ii,jj),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
-     &							,computepart_porosity(ii),computepart_abun(ii,:),i,computepart_norm_abun(ii))
+     &							,computepart_porosity(ii),computepart_abun(ii,:),i,computepart_norm_abun(ii)
+     &							,computepart_standard(ii))
 					Grain(ii)%Topac(i)=computepart_T(ii,jj)
 				enddo
 				do i=0,D%nR

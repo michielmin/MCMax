@@ -89,7 +89,8 @@ OBJS	      = Modules.o \
 		ComputePAH.o \
 		DeadZone.o \
 		RadialStruct.o \
-		KuruczData.o
+		KuruczData.o \
+		RefIndData.o
 
 # program name and install location
 PROGRAM       = MCMax$(SUFFIX)-$(shell date +%d-%m-%Y)

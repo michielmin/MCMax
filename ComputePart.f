@@ -1,9 +1,10 @@
-	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac,normalize_abun)
+	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac,normalize_abun,standard)
 	use Parameters
 	IMPLICIT NONE
 
 	type(particle) p
 	real*8 amin,amax,apow,fmax,porosity,inp_abun(*),normalize_abun
+	character*20 standard
 	logical blend
 	integer ii,MAXMAT,iopac
 	parameter(MAXMAT=20)
@@ -17,6 +18,7 @@
 	real lambda,Vol,rho_av
 	real,allocatable :: r(:),nr(:,:),f(:),wf(:),rho(:)
 	real,allocatable :: e1(:,:),e2(:,:),frac(:)
+	real*8,allocatable :: e1d(:),e2d(:)
 	integer i,j,k,l,na,nf,ns,nm,ilam,Err,spheres,toolarge
 	complex m,min,mav,alpha
 	real QEXT, QSCA, QBS, GQSC,rcore,wvno,scale
@@ -28,6 +30,7 @@
 	real*8,allocatable :: Mief11(:),Mief12(:),Mief22(:)
 	real*8,allocatable :: Mief33(:),Mief34(:),Mief44(:)
 	logical truefalse,checkparticlefile
+	external Carbon_BE_Zubko1996,Mg07Fe03SiO3_Dorschner1995,AstroSilicate
 
 	write(tmp,'("mkdir -p ",a)') particledir(1:len_trim(particledir)-1)
 	call system(tmp)
@@ -69,34 +72,80 @@
 	p%qhp=.false.
 	p%gascoupled=.false.
 
-	open(unit=30,file=input,RECL=5000)
-	call ignorestar(30)
-	read(30,*) ns
-	call ignorestar(30)
-	read(30,*) nf
-	if(maxf.eq.0e0) nf=1
-	allocate(r(ns))
-	allocate(nr(MAXMAT,ns))
-	allocate(f(nf))
-	allocate(wf(nf))
-	nm=1
-1	call ignorestar(30)
-	read(30,*,end=2) filename(nm)
-	call ignorestar(30)
-	read(30,*) frac(nm),rho(nm)
-	call ignorestar(30)
+	if(standard.eq.'FILE') then
+		open(unit=30,file=input,RECL=5000)
+		call ignorestar(30)
+		read(30,*) ns
+		call ignorestar(30)
+		read(30,*) nf
+		if(maxf.eq.0e0) nf=1
+		allocate(r(ns))
+		allocate(nr(MAXMAT,ns))
+		allocate(f(nf))
+		allocate(wf(nf))
+		nm=1
+1		call ignorestar(30)
+		read(30,*,end=2) filename(nm)
+		call ignorestar(30)
+		read(30,*) frac(nm),rho(nm)
+		call ignorestar(30)
 c change this to the input abundances if they are set
-	if(inp_abun(nm).ge.0d0) then
-		frac(nm)=inp_abun(nm)
-	endif
+		if(inp_abun(nm).ge.0d0) then
+			frac(nm)=inp_abun(nm)
+		endif
 c changed this to mass fractions (11-05-2010)
-	frac(nm)=frac(nm)/rho(nm)
-	call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam,lnkloglog)
-	nm=nm+1
-	goto 1
-2	nm=nm-1
-	close(unit=30)
-
+		frac(nm)=frac(nm)/rho(nm)
+		call readrefindCP(filename(nm),lam(1:nlam),e1(nm,1:nlam),e2(nm,1:nlam),nlam,lnkloglog)
+		nm=nm+1
+		goto 1
+2		nm=nm-1
+		close(unit=30)
+	else if(standard.eq.'DIANA') then
+		ns=1
+		nf=20
+		if(maxf.eq.0e0) nf=1
+		allocate(r(ns))
+		allocate(nr(MAXMAT,ns))
+		allocate(f(nf))
+		allocate(wf(nf))
+		nm=2
+		rho(1)=3.01
+		rho(2)=1.80
+		frac(1)=inp_abun(1)/rho(1)
+		frac(2)=inp_abun(2)/rho(2)
+		allocate(e1d(nlam))
+		allocate(e2d(nlam))
+		filename(1)='Mg07Fe03SiO3_Dorschner1995'
+		call RegridDataLNK(Mg07Fe03SiO3_Dorschner1995,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(1,1:nlam)=e1d(1:nlam)
+		e2(1,1:nlam)=e2d(1:nlam)
+		filename(2)='Carbon_BE_Zubko1996'
+		call RegridDataLNK(Carbon_BE_Zubko1996,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(2,1:nlam)=e1d(1:nlam)
+		e2(2,1:nlam)=e2d(1:nlam)
+		deallocate(e1d)
+		deallocate(e2d)
+	else if(standard.eq.'ASTROSIL') then
+		ns=1
+		nf=20
+		if(maxf.eq.0e0) nf=1
+		allocate(r(ns))
+		allocate(nr(MAXMAT,ns))
+		allocate(f(nf))
+		allocate(wf(nf))
+		nm=1
+		rho(1)=3.0
+		frac(1)=1d0/rho(1)
+		allocate(e1d(nlam))
+		allocate(e2d(nlam))
+		filename(1)='AstroSilicate'
+		call RegridDataLNK(AstroSilicate,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(1,1:nlam)=e1d(1:nlam)
+		e2(1,1:nlam)=e2d(1:nlam)
+		deallocate(e1d)
+		deallocate(e2d)
+	endif
+		
 	min=dcmplx(1d0,0d0)
 
 	tot=0d0
@@ -142,6 +191,7 @@ c changed this to mass fractions (11-05-2010)
 	do j=1,nm
 		write(lnkfile,'(a,a,i0.3,".lnk")') trim(particledir),trim(input),j
 		open(unit=30,file=lnkfile,RECL=200)
+		write(30,'("# ",a)') trim(filename(j))
 		do i=1,nlam
 			write(30,*) lam(i),e1(j,i),e2(j,i)
 		enddo
@@ -348,27 +398,50 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 
 	enddo
 
-	open(unit=30,file=input,RECL=5000)
-	call ignorestar(30)
-	read(30,*) ns
-	call ignorestar(30)
-	read(30,*) nf
-	nm=1
-3	call ignorestar(30)
-	read(30,*,end=4) filename(nm)
-	call ignorestar(30)
-	read(30,*) frac(nm),rho(nm)
+	if(standard.eq.'FILE') then
+		open(unit=30,file=input,RECL=5000)
+		call ignorestar(30)
+		read(30,*) ns
+		call ignorestar(30)
+		read(30,*) nf
+		nm=1
+3		call ignorestar(30)
+		read(30,*,end=4) filename(nm)
+		call ignorestar(30)
+		read(30,*) frac(nm),rho(nm)
 c change this to the input abundances if they are set
-	if(inp_abun(nm).ge.0d0) then
-		frac(nm)=inp_abun(nm)
-	endif
-	call ignorestar(30)
+		if(inp_abun(nm).ge.0d0) then
+			frac(nm)=inp_abun(nm)
+		endif
+		call ignorestar(30)
 c changed this to mass fractions (11-05-2010)
-	frac(nm)=frac(nm)/rho(nm)
-	nm=nm+1
-	goto 3
-4	nm=nm-1
-	close(unit=30)
+		frac(nm)=frac(nm)/rho(nm)
+		nm=nm+1
+		goto 3
+4		nm=nm-1
+		close(unit=30)
+	else if(standard.eq.'DIANA') then
+		ns=1
+		nf=20
+		nm=2
+		rho(1)=3.01
+		rho(2)=1.80
+		frac(1)=inp_abun(1)/rho(1)
+		frac(2)=inp_abun(2)/rho(2)
+		allocate(e1d(nlam))
+		allocate(e2d(nlam))
+		filename(1)='Mg07Fe03SiO3_Dorschner1995'
+		call RegridDataLNK(Mg07Fe03SiO3_Dorschner1995,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(1,1:nlam)=e1d(1:nlam)
+		e2(1,1:nlam)=e2d(1:nlam)
+		filename(2)='Carbon_BE_Zubko1996'
+		call RegridDataLNK(Carbon_BE_Zubko1996,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(2,1:nlam)=e1d(1:nlam)
+		e2(2,1:nlam)=e2d(1:nlam)
+		deallocate(e1d)
+		deallocate(e2d)
+	endif
+
 
 	tot=0d0
 	do i=1,nm

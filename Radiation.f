@@ -1164,7 +1164,7 @@ c				if(fBW(ii,j).lt.1d0) fBW(ii,j)=1d0
 			phot%E=0d0
 			wtot=0d0
 			do ii=1,ngrains
-				if(.not.Grain(ii)%qhp.and.C(i,j)%w(ii).gt.0d0) then
+				if(.not.Grain(ii)%qhp.and.C(i,j)%w(ii).gt.1d-20) then
 					do iopac=1,Grain(ii)%nopac
 						if(BW) then
 							phot%E=phot%E+fBW(ii,j)*Grain(ii)%Kpabsstar(iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
