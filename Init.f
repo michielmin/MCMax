@@ -147,7 +147,7 @@
 	tdes_fast(1:MAXPART)=0d0
 
 	arg_abun=.false.
-	warg=0d0
+	warg=1d0
 	ngrains=0
 	npow=0
 
@@ -375,6 +375,7 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%roundwidth=0d0
 		ZoneTemp(i)%roundindex=0.30
 		ZoneTemp(i)%roundscalemin=1d-60
+		ZoneTemp(i)%fPAH=0d0
 	enddo
 	nzones=0
 	
@@ -1192,6 +1193,8 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%fix_struct
 		else if(keyzone.eq.'sizedis') then
 			read(value,*) ZoneTemp(i)%sizedis
+		else if(keyzone.eq.'fpah') then
+			read(value,*) ZoneTemp(i)%fPAH
 		else if(keyzone(1:4).eq.'abun') then
 			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) ZoneTemp(i)%abun(j)
@@ -1834,6 +1837,10 @@ C	End
 				endif
 			enddo
 		endif
+		if(use_qhp) then
+			write(*,'(a26,f12.4)') "Fraction of QHP:",Zone(i)%fPAH
+			write(9,'(a26,f12.4)') "Fraction of QHP:",Zone(i)%fPAH
+		endif
 	enddo
 	else
 	write(*,'("Error in density type")')
@@ -2120,7 +2127,7 @@ c	write(9,'("Opacity file:         ",a)') opacityfile(1:len_trim(opacityfile))
 c	else
 
 	!  Set abundances to 1/ngrains if not supplied	
-	if(.not.arg_abun .and. .not.(mrn.or.gsd)) then
+	if(.not.arg_abun .and. .not.(mrn.or.gsd) .and. nzones.eq.0) then
 	   write(*,'("Abundances not set, using equal weights")')
 	   write(9,'("Abundances not set, using equal weights")')
 	   do i=1,ngrains
@@ -3272,7 +3279,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				allocate(rtemp(ngrains))
 				j=0
 				do ii=1,ngrains
-					if(Zone(iz)%inc_grain(ii)) then
+					if(Zone(iz)%inc_grain(ii).and..not.Grain(ii)%qhp) then
 						j=j+1
 						rtemp(j)=Grain(ii)%rv
 					endif
@@ -3286,10 +3293,19 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				call gsd_MRN(rtemp(1:ngrains),w(1:ngrains))
 				mrn_ngrains=mrn_ngrains0
 				j=0
+				tot=0d0
 				do ii=1,ngrains
-					if(Zone(iz)%inc_grain(ii)) then
+					if(Grain(ii)%qhp) then
+						tot=tot+warg(ii)
+						print*,ii,warg(ii)
+					endif
+				enddo
+				do ii=1,ngrains
+					if(Zone(iz)%inc_grain(ii).and..not.Grain(ii)%qhp) then
 						j=j+1
-						Zone(iz)%abun(ii)=w(j)
+						Zone(iz)%abun(ii)=w(j)*(1d0-Zone(iz)%fPAH)
+					else if(Grain(ii)%qhp) then
+						Zone(iz)%abun(ii)=Zone(iz)%fPAH*warg(ii)/tot
 					else
 						Zone(iz)%abun(ii)=0d0
 					endif
