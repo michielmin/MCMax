@@ -2482,20 +2482,43 @@ c	lmax  = 4000.0
 		call integrate(D%Fstar,D%Lstar)
 		write(*,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
 		write(9,'("Error on the luminosity: ",f7.3," %")') 100d0*(D%Lstar-Luminosity(D%Tstar,D%Rstar))/D%Lstar
-		nlamHR=nlam
+		nlamHR=nlam+9
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
-		lamHR(1:nlam)=lam(1:nlam)
-		FstarHR(1:nlam)=D%Fstar(1:nlam)
+		lamHR(10:nlam+9)=lam(1:nlam)
+		lamHR(1)=0.01
+		lamHR(2)=0.02
+		lamHR(3)=0.03
+		lamHR(4)=0.04
+		lamHR(5)=0.05
+		lamHR(6)=0.06
+		lamHR(7)=0.07
+		lamHR(8)=0.08
+		lamHR(9)=0.09
+		call sort(lamHR,nlamHR)
+		do i=1,nlamHR
+			FstarHR(i)=pi*D%Rstar**2*Planck(D%Tstar,lamHR(i))
+		enddo
 	else if(startype.eq.'KURUCZ') then
 		call ReadKurucz(D%Tstar,D%logg,lam,D%Fstar,nlam)
 		call integrate(D%Fstar,tot)
 		D%Fstar=D%Lstar*D%Fstar/tot
-		nlamHR=nlam
+		nlamHR=nlam+9
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
-		lamHR(1:nlam)=lam(1:nlam)
-		FstarHR(1:nlam)=D%Fstar(1:nlam)
+		lamHR(10:nlam+9)=lam(1:nlam)
+		lamHR(1)=0.01
+		lamHR(2)=0.02
+		lamHR(3)=0.03
+		lamHR(4)=0.04
+		lamHR(5)=0.05
+		lamHR(6)=0.06
+		lamHR(7)=0.07
+		lamHR(8)=0.08
+		lamHR(9)=0.09
+		call sort(lamHR,nlamHR)
+		call ReadKurucz(D%Tstar,D%logg,lamHR,FstarHR,nlamHR)
+		FstarHR=D%Lstar*FstarHR/tot
 	else if (startype.eq.'FILE') then
 		call readstar(starfile,lam,D%Fstar,nlam)
 		call readspecHR(starfile)
