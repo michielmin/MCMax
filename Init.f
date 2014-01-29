@@ -5493,11 +5493,12 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	character*500 starfile
+	real*8 x,y
 	integer i
 	
 	open(unit=20,file=starfile,RECL=6000)
 	nlamHR=0
-1	read(20,*,end=2)
+1	read(20,*,end=2,err=1) x,y
 	nlamHR=nlamHR+1
 	goto 1
 2	close(unit=20)
@@ -5507,7 +5508,7 @@ c-----------------------------------------------------------------------
 
 	open(unit=20,file=starfile,RECL=6000)
 	do i=1,nlamHR
-		read(20,*) lamHR(i),FstarHR(i)
+3		read(20,*,err=3) lamHR(i),FstarHR(i)
 	enddo
 	close(unit=20)
 	
