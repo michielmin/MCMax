@@ -172,6 +172,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 				Kext=0d0
 				iT=int(C(k,j)%T/dT)
 				if(iT.gt.TMAX) iT=TMAX
+				if(iT.lt.1) iT=1
 				do ii=1,ngrains
 					Kext=Kext+C(k,j)%w(ii)*Kpext(ii,iT)
 				enddo
@@ -252,6 +253,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 					Kext=0d0
 					iT=int(C(jj,j)%T/dT)
 					if(iT.gt.TMAX) iT=TMAX
+					if(iT.lt.1) iT=1
 					do ii=1,ngrains
 						Kext=Kext+C(jj,j)%w(ii)*Kpext(ii,iT)
 					enddo
@@ -260,6 +262,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 					Kext=0d0
 					iT=int(C(jj,j)%T/dT)
 					if(iT.gt.TMAX) iT=TMAX
+					if(iT.lt.1) iT=1
 					do ii=1,ngrains
 						Kext=Kext+C(jj,j)%w(ii)*Kpext(ii,iT)
 					enddo
@@ -268,6 +271,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 						Kext=0d0
 						iT=int(C(l,j)%T/dT)
 						if(iT.gt.TMAX) iT=TMAX
+						if(iT.lt.1) iT=1
 						do ii=1,ngrains
 							Kext=Kext+C(l,j)%w(ii)*Kpext(ii,iT)
 						enddo
@@ -276,6 +280,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 					Kext=0d0
 					iT=int(C(inext,j)%T/dT)
 					if(iT.gt.TMAX) iT=TMAX
+					if(iT.lt.1) iT=1
 					do ii=1,ngrains
 						Kext=Kext+C(inext,j)%w(ii)*Kpext(ii,iT)
 					enddo
