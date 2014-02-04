@@ -779,6 +779,98 @@ c not found, starting from 1 K
 	end
 
 
+c This subroutine computes the temperature assuming thermal balance for all grains
+c so also the QHP. This is only used for exporting to ProDiMo.
+	real*8 function computeT_QHP(i,j)
+	use Parameters
+	IMPLICIT NONE
+	real*8 E1,E,T,Emin,Emax,computeE_QHP
+	integer i,j,ii,iopac,iTmin,iTmax,iT0,iT
+
+	E1=C(i,j)%EJv
+	do ii=1,ngrains
+		if(Grain(ii)%qhp) E1=E1+C(i,j)%EJvQHP(Grain(ii)%qhpnr)
+	enddo
+
+	iTmin=1
+	iTmax=TMAX
+
+	iT=C(i,j)%T/dT
+	if(iT.lt.1) iT=1
+	if(iT.gt.TMAX-1) iT=TMAX-1
+
+	E=computeE_QHP(i,j,iT)
+	Emax=computeE_QHP(i,j,iTmax)
+	Emin=computeE_QHP(i,j,1)
+
+	if(IsNaN(E1)) then
+		computeT_QHP=3d0
+		return
+	endif
+
+	if(E1.gt.Emax) then
+		iT=TMAX-1
+		computeT_QHP=real(iT)*dT
+		return
+	endif
+
+	if(E1.lt.Emin) then
+		iT=1
+		computeT_QHP=real(iT)*dT
+		return
+	endif
+
+	iT0=iT
+	do while(abs(iTmax-iTmin).gt.1)
+		iT=(E1/E)**(0.25)*iT
+		if(iT.eq.iT0) then
+			if(E1.lt.E) iT=iT0-1
+			if(E1.gt.E) iT=iT0+1
+		endif
+1		continue
+		if(iT.le.iTmin) then
+			iT=iTmin+1
+			goto 1
+		endif
+		if(iT.ge.iTmax) then
+			iT=iTmax-1
+			goto 1
+		endif
+		E=computeE_QHP(i,j,iT)
+		if(E.ge.E1) then
+			iTmax=iT
+			Emax=E
+		endif
+		if(E.le.E1) then
+			iTmin=iT
+			Emin=E
+		endif
+		iT0=iT
+	enddo
+
+	if(iTmin.eq.iTmax) then
+		computeT_QHP=real(iTmin)*dT
+	else
+		computeT_QHP=(real(iTmin)**4+(real(iTmax)**4-real(iTmin)**4)*(E1-Emin)/(Emax-Emin))**(0.25d0)*dT
+	endif
+	
+	return
+	end
+
+	real*8 function computeE_QHP(i,j,iT)
+	use Parameters
+	IMPLICIT NONE
+	integer iT,ii,iopac,i,j
+
+	computeE_QHP=0d0
+	do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			computeE_QHP=computeE_QHP+(Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac))
+		enddo
+	enddo
+	return
+	end
+
 
 
 	subroutine emit(phot,spec,Lttot)

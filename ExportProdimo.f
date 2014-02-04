@@ -12,7 +12,7 @@
 	integer,allocatable :: region_index(:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
-	real*8 fUV,tot,pUV
+	real*8 fUV,tot,pUV,computeT_QHP
 	real*8,allocatable :: spec(:)
 	character*2 s
 
@@ -213,7 +213,11 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	   do ri=1, D%nR-1	!n_rad
 		  do zj=j0, D%nTheta-1	!nz
-			 Temperature(ri,D%nTheta-zj,1) = C(ri,zj)%T
+			if(.not.use_qhp) then
+				Temperature(ri,D%nTheta-zj,1) = C(ri,zj)%T
+			else
+				Temperature(ri,D%nTheta-zj,1)=computeT_QHP(ri,zj)
+			endif
 		  enddo !j
 	   enddo !i
 
@@ -602,10 +606,11 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	real*8 kp,epsT1,epsT2
 	real*8,allocatable :: Kabs(:),spec(:)
 	
+	if(use_qhp) return
+
 	allocate(Kabs(nlam))
 	allocate(spec(nlam))
 
-	if(use_qhp) return
 
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
