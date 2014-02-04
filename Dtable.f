@@ -111,7 +111,7 @@
 		return
 	endif
 
-	if(C(ci,cj)%opacity_set) then
+	if(C(ci,cj)%opacity_set.and..not.use_qhp) then
 		Ksca(1:nlam)=C(ci,cj)%KscaTot(1:nlam)
 		Kabs(1:nlam)=C(ci,cj)%KabsTot(1:nlam)
 		Kext(1:nlam)=Kabs(1:nlam)+Ksca(1:nlam)
