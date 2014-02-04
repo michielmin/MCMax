@@ -855,7 +855,6 @@ C	 create the new empty FITS file
 
 	do i=1,D%nR-1
 		D%R_av(i)=array(i,1,1,1)*AU
-		
 	enddo
 	do j=1,D%nTheta-1
 		D%theta_av(j)=array(1,j,2,1)
