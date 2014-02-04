@@ -605,6 +605,8 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	allocate(Kabs(nlam))
 	allocate(spec(nlam))
 
+	if(use_qhp) return
+
 	do i=1,D%nR-1
 	do j=1,D%nTheta-1
 		iT1=C(i,j)%T/dT
