@@ -418,6 +418,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	do ri=1, D%nR-1
 	   do zj=j0,D%nTheta-1
 		  dens(ri,D%nTheta-zj) =  C(ri,zj)%gasdens*gas2dust
+		if(dens(ri,D%nTheta-zj).lt.1d-35) dens(ri,D%nTheta-zj)=1d-35
 	   enddo
 	enddo
 
