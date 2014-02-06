@@ -571,7 +571,7 @@ c not found, starting from 1 K
 	IMPLICIT NONE
 	type(photon) phot
 	real*8 E1,E,T,Emin,Emax,computeE
-	integer i,ii,iopac,iTmin,iTmax,iT0,iT
+	integer i,ii,iopac,iTmin,iTmax,iT0,iT,niter
 
 	E1=phot%E
 	iTmin=1
@@ -603,7 +603,9 @@ c not found, starting from 1 K
 	endif
 
 	iT0=iT
-	do while(abs(iTmax-iTmin).gt.1)
+	niter=0
+	do while(abs(iTmax-iTmin).gt.1.and.niter.le.TMAX)
+		niter=niter+1
 		iT=(E1/E)**(0.25)*iT
 		if(iT.eq.iT0) then
 			if(E1.lt.E) iT=iT0-1
@@ -696,7 +698,7 @@ c not found, starting from 1 K
 	IMPLICIT NONE
 	type(photon) phot
 	real*8 E1,E,T,Emin,Emax,computeEP
-	integer i,ii,iopac,iTmin,iTmax,iT0,iT
+	integer i,ii,iopac,iTmin,iTmax,iT0,iT,niter
 
 	E1=phot%E
 	iTmin=0
@@ -717,7 +719,9 @@ c not found, starting from 1 K
 	endif
 
 	iT0=iT
-	do while(abs(iTmax-iTmin).gt.1)
+	niter=0
+	do while(abs(iTmax-iTmin).gt.1.and.niter.le.TMAX)
+		niter=niter+1
 		iT=(E1/E)**(0.25)*iT
 		if(iT.eq.iT0) then
 			if(E1.lt.E) iT=iT0-1
@@ -1188,11 +1192,11 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 	use Diskstruct
 	IMPLICIT NONE
 	integer ii,iopac
-	real*8 determineT,determineTP,W,r,f
+	real*8 computeT_QHP,determineTP,W,r,f
 	type(photon) phot
 c The parameter BW determines if backwarming is assumed.
 c When backwarming is assumed, the cooling is a factor of 2 less effective.
-	logical BW,BBGrains
+	logical BW
 	integer iter,iT
 	real*8 Tevap,maxT,minT,determinegasfrac,f1,f2,eps
 	real*8 Emax,Efrac,A(ngrains),Er,Sig,wtot
@@ -1223,71 +1227,39 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 		do j=1,D%nTheta-1
 			do ii=1,ngrains
 				fBW(ii,j)=1d0
-c				Tevap=1500d0
-c				minT=0d0
-c				maxT=real(TMAX)*dT
-c				do iter=1,10
-c					if(determinegasfrac(Tevap,i,j,ii).gt.1d0) then
-c						maxT=Tevap
-c						Tevap=(Tevap+minT)/2d0
-c					else
-c						minT=Tevap
-c						Tevap=(Tevap+maxT)/2d0
-c					endif
-c				enddo
-c				iT=int(Tevap/dT)
-c				if(iT.lt.1) iT=1
-c				if(iT.gt.TMAX-1)iT=TMAX-1
-c				eps=Grain(ii)%Kp(1,iT)/(BBint(iT)*Grain(ii)%Kpabsstar(1))
-c				f1=abs((2d0*muRad(j)+1d0/eps)*eps)
-c				f2=abs(muRad(j)*(2d0+3d0*muRad(j)*eps)*eps)
-c				if(f1.gt.f2) then
-c					fBW(ii,j)=f1
-c				else
-c					fBW(ii,j)=f2
-c				endif
-c				if(fBW(ii,j).lt.1d0) fBW(ii,j)=1d0
 			enddo
 				
 			do iter=1,3
 			phot%i=i
 			phot%j=j
-			BBGrains=.false.
 			phot%E=0d0
 			wtot=0d0
 			do ii=1,ngrains
-				if(.not.Grain(ii)%qhp.and.C(i,j)%w(ii).gt.1d-20) then
-					do iopac=1,Grain(ii)%nopac
-						if(BW) then
-							phot%E=phot%E+fBW(ii,j)*Grain(ii)%Kpabsstar(iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-						else
-							phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-						endif
-					enddo
-					wtot=wtot+C(i,j)%w(ii)
-					BBGrains=.true.
-				endif
+				do iopac=1,Grain(ii)%nopac
+					if(BW) then
+						phot%E=phot%E+fBW(ii,j)*Grain(ii)%Kpabsstar(iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					else
+						phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					endif
+				enddo
+				wtot=wtot+C(i,j)%w(ii)
 			enddo
-			if(BBGrains) then
-				phot%E=W*phot%E*D%Lstar/(pi*D%Rstar**2)/wtot
-				if(viscous) then
-					T=ShakuraSunyaevIJ(i,j)
-					iT=T/dT
-					if(iT.gt.TMAX-1)iT=TMAX-1
-					if(iT.lt.1)iT=1
-					do ii=1,ngrains
-						do iopac=1,Grain(ii)%nopac
-							phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-						enddo
+			phot%E=W*phot%E*D%Lstar/(pi*D%Rstar**2)/wtot
+			if(viscous) then
+				T=ShakuraSunyaevIJ(i,j)
+				iT=T/dT
+				if(iT.gt.TMAX-1)iT=TMAX-1
+				if(iT.lt.1)iT=1
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						phot%E=phot%E+Grain(ii)%Kp(iopac,iT)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
 					enddo
-				endif
-				C(i,j)%EJv=phot%E
-				C(i,j)%T=determineT(phot)
-				C(i,j)%TMC=C(i,j)%T
-			else
-				C(i,j)%T=D%Tstar*W**(0.25)
-				C(i,j)%TMC=C(i,j)%T
+				enddo
 			endif
+			C(i,j)%EJv=phot%E
+			if(use_qhp) C(i,j)%EJvQHP=0d0
+			C(i,j)%T=computeT_QHP(i,j)
+			C(i,j)%TMC=C(i,j)%T
 			if(.not.tcontact.or.tdes_iter) then
 				do ii=1,ngrains
 					phot%E=0d0
