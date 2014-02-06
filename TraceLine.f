@@ -178,10 +178,10 @@ c New version of TraceMono that actually does the line radiative integration
 				if(Grain(ii)%trace) then
 				if(.not.Grain(ii)%qhp) then
 				iT=C(i,j)%TP(ii)/dT
+				if(iT.lt.1) iT=1
+				if(iT.gt.TMAX-1) iT=TMAX-1
 				wT1=real(iT+1)-C(i,j)%TP(ii)/dT
 				wT2=C(i,j)%TP(ii)/dT-real(iT)
-				if(iT.lt.1) iT=1
-				if(iT.gt.TMAX) iT=TMAX
 				do iopac=1,Grain(ii)%nopac
 					emis(i,j)=emis(i,j)
      &	+(wl1*(wT1*BB(ilam1,iT)+wT2*BB(ilam1,iT+1))*Grain(ii)%Kabs(iopac,ilam1)
@@ -197,10 +197,10 @@ c New version of TraceMono that actually does the line radiative integration
 			emis(i,j)=emis(i,j)*(1d0-C(i,j)%Albedo)
 		else
 			iT=C(i,j)%T/dT
+			if(iT.lt.1) iT=1
+			if(iT.gt.TMAX-1) iT=TMAX-1
 			wT1=real(iT+1)-C(i,j)%T/dT
 			wT2=C(i,j)%T/dT-real(iT)
-			if(iT.lt.1) iT=1
-			if(iT.gt.TMAX) iT=TMAX
 			emis(i,j)=0d0
 			do ii=1,ngrains
 				if(Grain(ii)%trace) then

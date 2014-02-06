@@ -238,7 +238,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 				wT1=real(iT+1)-C(i,j)%TP(ii)/dT
 				wT2=C(i,j)%TP(ii)/dT-real(iT)
 				if(iT.lt.1) iT=1
-				if(iT.gt.TMAX) iT=TMAX
+				if(iT.gt.TMAX-1) iT=TMAX-1
 				do iopac=1,Grain(ii)%nopac
 					emis(i,j)=emis(i,j)
      &	+(wl1*(wT1*BB(ilam1,iT)+wT2*BB(ilam1,iT+1))*Grain(ii)%Kabs(iopac,ilam1)
@@ -257,7 +257,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			wT1=real(iT+1)-C(i,j)%T/dT
 			wT2=C(i,j)%T/dT-real(iT)
 			if(iT.lt.1) iT=1
-			if(iT.gt.TMAX) iT=TMAX
+			if(iT.gt.TMAX-1) iT=TMAX-1
 			emis(i,j)=0d0
 			do ii=1,ngrains
 				if(Grain(ii)%trace) then
@@ -957,7 +957,7 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 						wT1=real(iT+1)-C(i,j)%TP(ii)/dT
 						wT2=C(i,j)%TP(ii)/dT-real(iT)
 						if(iT.lt.1) iT=1
-						if(iT.gt.TMAX) iT=TMAX
+						if(iT.gt.TMAX-1) iT=TMAX-1
 						do iopac=1,Grain(ii)%nopac
 							EmisDis(i,j)=EmisDis(i,j)
      &	+(phot%wl1*(wT1*BB(phot%ilam1,iT)+wT2*BB(phot%ilam1,iT+1))*Grain(ii)%Kabs(iopac,phot%ilam1)
@@ -974,7 +974,7 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 				wT1=real(iT+1)-C(i,j)%T/dT
 				wT2=C(i,j)%T/dT-real(iT)
 				if(iT.lt.1) iT=1
-				if(iT.gt.TMAX) iT=TMAX
+				if(iT.gt.TMAX-1) iT=TMAX-1
 				EmisDis(i,j)=0d0
 				do ii=1,ngrains
 					if(.not.Grain(ii)%qhp) then
