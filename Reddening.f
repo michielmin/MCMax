@@ -362,6 +362,9 @@
 		Kext=Kext/n
 		Reddening=exp(-scale*Kext)
 		return
+	else if(lam.gt.lamism(NLAMISM)) then
+		Kext=KextISM(NLAMISM)*(lamism(NLAMISM)/lam)**2
+		Reddening=exp(-scale*Kext)
 	else
 		do j=1,NLAMISM-1
 			if(lamism(j).le.lam.and.lamism(j+1).ge.lam) then
@@ -371,6 +374,10 @@
 			endif
 		enddo
 	endif
+	
+	write(*,'("Error in applying the reddening law")')
+	write(9,'("Error in applying the reddening law")')
+	Reddening=1d0
 
 	return
 	end
