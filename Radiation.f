@@ -101,6 +101,8 @@ c No thermal contact
 	epsT1=T1-real(iT1)*dT
 	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
+	if(iT0.lt.1) iT0=1
+	if(iT1.lt.2) iT1=2
 	if(iT0.eq.iT1) then
 		do iopac=1,Grain(i)%nopac
 			do l=1,nlam
@@ -146,6 +148,8 @@ c No thermal contact
 		kp=1d0
 		T0=C(phot%i,phot%j)%Tgas
 		iT0=int(T0/dT)
+		if(iT0.gt.TMAX) iT0=TMAX
+		if(iT0.lt.1) iT0=1
 		spec(1:nlam)=spec(1:nlam)*Edust+Egas*BB(1:nlam,iT0)/BBint(iT0)
 		kp=phot%E
 	endif
@@ -167,6 +171,8 @@ c Thermal contact (single temperature)
 	epsT1=T1-real(iT1)*dT
 	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
+	if(iT0.lt.1) iT0=1
+	if(iT1.lt.2) iT1=2
 
 	if(iT0.eq.iT1) then
 		do l=1,nlam
@@ -218,6 +224,8 @@ c Thermal contact (single temperature)
 		kp=1d0
 		T0=C(phot%i,phot%j)%Tgas
 		iT0=int(T0/dT)
+		if(iT0.gt.TMAX) iT0=TMAX
+		if(iT0.lt.1) iT0=1
 		spec(1:nlam)=spec(1:nlam)*Edust+Egas*BB(1:nlam,iT0)/BBint(iT0)
 		kp=phot%E
 	endif
@@ -1437,6 +1445,8 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 					endif
 				enddo
 				iT=int(Tevap/dT)
+				if(iT.gt.TMAX) iT=TMAX
+				if(iT.lt.1) iT=1
 				kp=0d0
 				Kpabsstar=0d0
 				do iopac=1,Grain(ii)%nopac
@@ -1498,6 +1508,8 @@ c When backwarming is assumed, the cooling is a factor of 2 less effective.
 				else
 					iT=int(C(i,j)%T/dT)
 				endif
+				if(iT.gt.TMAX) iT=TMAX
+				if(iT.lt.1) iT=1
 				kp=0d0
 				Kpabsstar=0d0
 				do iopac=1,Grain(ii)%nopac
@@ -1590,6 +1602,8 @@ c No thermal contact
 	epsT1=T1-real(iT1)*dT
 	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
+	if(iT0.lt.1) iT0=1
+	if(iT1.lt.2) iT1=2
 	if(iT0.eq.iT1) then
 		do iopac=1,Grain(i)%nopac
 			do l=1,nlam
@@ -1634,6 +1648,8 @@ c Thermal contact (single temperature)
 	epsT1=T1-real(iT1)*dT
 	if(iT0.ge.TMAX-1) iT0=TMAX-2
 	if(iT1.ge.TMAX-1) iT1=TMAX-1
+	if(iT0.lt.1) iT0=1
+	if(iT1.lt.2) iT1=2
 
 	if(iT0.eq.iT1) then
 		do l=1,nlam
@@ -1708,6 +1724,7 @@ c Thermal contact (single temperature)
 	T0=C(phot%i,phot%j)%Tgas
 	iT0=int(T0/dT)
 	if(iT0.gt.TMAX-1) iT0=TMAX-1
+	if(iT0.lt.1) iT0=1
 	spec(1:nlam)=spec(1:nlam)*(phot%E-Efrac)+Efrac*BB(1:nlam,iT0)/BBint(iT0)
 	kp=phot%E
 
@@ -1806,6 +1823,8 @@ c=======================================================================
 		Egas=Evisc+C(i,j)%Egas*C(i,j)%dens/C(i,j)%V!+Eabs
 		H=0d0
 		iT=int(Tgas/dT)
+		if(iT.gt.TMAX) iT=TMAX
+		if(iT.lt.1) iT=1
 		do ii=1,ngrains
 			nd=C(i,j)%dens*C(i,j)%w(ii)/(4d0*pi*Grain(ii)%rv**3*Grain(ii)%rho(1)/3d0)
 			if(.not.Grain(ii)%qhp) then
@@ -1834,15 +1853,13 @@ c=======================================================================
 	
 	C(i,j)%Tgas=Tgas
 	iT=int(Tgas/dT)
+	if(iT.gt.TMAX) iT=TMAX
+	if(iT.lt.1) iT=1
 
 	C(i,j)%KappaGas=KappaGas(C(i,j)%gasdens*gas2dust,C(i,j)%Tgas)
 	if(.not.allocated(C(i,j)%FE)) allocate(C(i,j)%FE(0:ngrains))
 	C(i,j)%useFE=.true.
-	if(iT.lt.TMAX) then
-		C(i,j)%FE(0)=BBint(iT)*C(i,j)%KappaGas/(BBint(iT)*C(i,j)%KappaGas+C(i,j)%EJv)
-	else
-		C(i,j)%FE(0)=BBint(TMAX)*C(i,j)%KappaGas/(BBint(TMAX)*C(i,j)%KappaGas+C(i,j)%EJv)
-	endif
+	C(i,j)%FE(0)=BBint(iT)*C(i,j)%KappaGas/(BBint(iT)*C(i,j)%KappaGas+C(i,j)%EJv)
 
 	A=0d0
 	do ii=1,ngrains
