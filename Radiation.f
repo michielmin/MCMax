@@ -564,6 +564,8 @@ c not found, starting from 1 K
 	integer iT,ii,iopac,i,j
 
 	computeE=0d0
+	if(iT.gt.TMAX) iT=TMAX
+	if(iT.lt.1) iT=1
 	do ii=1,ngrains
 		if(.not.Grain(ii)%qhp) then
 			do iopac=1,Grain(ii)%nopac
