@@ -1942,18 +1942,27 @@ c in the theta grid we actually store cos(theta) for convenience
 			d0=C(i,D%nTheta-1)%dens*C(i,D%nTheta-1)%w(ii)
 			d1=d0
 			d0=d0/exp(0.5d0) ! p(z)=p0*e^{-z^2/2H_p^2} -> p(H_p)=p0*e^-0.5
-			z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
-			do j=D%nTheta-2,1,-1
-				z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
-				dens=C(i,j)%dens*C(i,j)%w(ii)
-				if(dens.lt.d0.or.dens.le.1d-50) then
-					sh=(z(j+1)+(z(j)-z(j+1))*(d1-d0)/(d1-dens))
-					goto 2
-				endif
-				d1=dens
-			enddo
+			if(d0.gt.1d-50) then
+				z(D%nTheta-1)=D%R_av(i)*cos(D%theta_av(D%nTheta-1))/AU
+				do j=D%nTheta-2,1,-1
+					z(j)=D%R_av(i)*cos(D%theta_av(j))/AU
+					dens=C(i,j)%dens*C(i,j)%w(ii)
+					if(dens.lt.d0) then
+						sh=(z(j)+(z(j+1)-z(j))*(d0-dens)/(d0-d1))
+						goto 2
+					else if(dens.le.1d-50) then
+						sh=z(j)
+						goto 2
+					endif
+					d1=dens
+				enddo
+			else
+				z(D%nTheta/2)=D%R_av(i)*cos(D%theta_av(D%nTheta/2))/AU
+				sh=z(D%nTheta/2)
+			endif
 2			continue
 			sh_tmp((i-1)*ngrains+ii)=sh/(D%R_av(i)/AU)
+			print*,sh_tmp((i-1)*ngrains+ii)
 		enddo
 	enddo
 
