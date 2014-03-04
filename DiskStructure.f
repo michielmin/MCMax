@@ -1962,7 +1962,6 @@ c in the theta grid we actually store cos(theta) for convenience
 			endif
 2			continue
 			sh_tmp((i-1)*ngrains+ii)=sh/(D%R_av(i)/AU)
-			print*,sh_tmp((i-1)*ngrains+ii)
 		enddo
 	enddo
 
