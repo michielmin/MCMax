@@ -2121,7 +2121,7 @@ c      stop 'program mie terminated'
           save = m*D(n)+xn
           bn(n)= (save*psi(n)-psi(n-1)) / (save*zn-znm1)
 * DEBUG
-*          write(7,*) n,an(n),bn(n)
+*          write(72,*) n,an(n),bn(n),psi(n),chi(n),D(n)
 * END DEBUG
   100 continue
       return
@@ -2411,6 +2411,7 @@ c                           initialize
       perx = 1.D0/x
       sinx = dsin(x)
       cosx = dcos(x)
+      psi(nchi)=0d0
 ************************************************************************
 *  (mis-) use the array psi to calculate the functions rn(x)
 *  De Rooij and van der Stap Eq. (A6)
