@@ -20,7 +20,7 @@ c--------------------------------------------------------------------
 	integer k,i1,i2,ii,itot,jj,l,inext,nrefine,nused,iopac
 	character*100 surfdensfile
 	real*8 tau,tau0,lam0,Kext,dens,w(ngrains),taumax,R
-	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg,ran2
+	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg,ran2,fpert
 	real*8 taustart,dtaumax,tauend,ct,Rmultmax,dtaumaxabs
 	logical escape,hitstar,locfield,RNDWBackup,checkfix
 	integer iT,irefine,inormal,npert
@@ -113,25 +113,15 @@ c regridding with the optical depth
 			npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
 		endif
 	enddo
-	if(npert.gt.(D%nR-D%nRfix-nrefine-3)) npert=(D%nR-D%nRfix-nrefine-3)
+	if(npert.gt.(D%nR-D%nRfix-nrefine-3-nspan)) npert=(D%nR-D%nRfix-nrefine-3-nspan)
 
-	do i=1,D%nR-D%nRfix-nspan-3
+	do i=1,D%nR-D%nRfix-nspan-3-npert
 		do jj=1,D%nR-1
 			if(Rnew(i).ge.D%R(jj).and.Rnew(i).lt.D%R(jj+1)) goto 1
 		enddo
 		jj=1
 1		continue
 		Rmultmax=(D%Rout/Rnew(i))**(1d0/real(D%nR-D%nRfix-nspan-irefine-inormal-3-npert))
-		if(nzones.gt.0) then
-			do jj=1,nzones
-				if(Rnew(i)*Rmultmax.gt.Zone(jj)%Rin.and.Rnew(i).lt.Zone(jj)%Rout
-     &			.and.Rnew(i)*Rmultmax.gt.Zone(jj)%pertR0.and.Zone(jj)%pertA.gt.1d-50) then
-					if(abs(Rnew(i)*(Rmultmax-1d0)).gt.Zone(jj)%pertR/8d0) then
-						Rmultmax=Zone(jj)%pertR/Rnew(i)+1d0
-					endif
-				endif
-			enddo
-		endif
 		if(Rmultmax.le.1d0) Rmultmax=1.001d0
 		Rnew(i+1)=Rnew(i)*Rmultmax
 		if(i.eq.1.and.tdes_iter) Rnew(i+1)=Rbwdes(D%nTheta-1)
@@ -334,6 +324,29 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 		endif
 	enddo
 
+	if(nzones.gt.0) then
+		npert=0
+		do i=1,nzones
+			if(abs(Zone(i)%pertA).gt.1d-50) then
+				npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+			endif
+		enddo
+		fpert=8d0
+		if(npert.gt.(D%nR-nused)) then
+			fpert=fpert*real(D%nR-nused)/real(npert)
+		endif
+		do i=1,nzones
+			if(abs(Zone(i)%pertA).gt.1d-50) then
+				npert=(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
+				do jj=1,npert
+					if(nused.lt.D%nR) then
+						nused=nused+1
+						Rnew(nused)=Zone(i)%Rin+(Zone(i)%Rout-Zone(i)%Rin)*(real(i)-0.5d0)/real(npert)
+					endif
+				enddo
+			endif
+		enddo
+	endif
 
 	if(nused.lt.D%nR) then
 		do i=nused+1,D%nR
