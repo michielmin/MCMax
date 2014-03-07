@@ -56,6 +56,8 @@
 	logical computepart_blend(MAXPART)
 	character*500,allocatable :: computepart_Tfile(:,:)
 	character*20 computepart_standard(MAXPART)
+	integer nused,npert
+	real*8 fpert
 
 	allocate(computepart_T(MAXPART,50))
 	allocate(computepart_Tfile(MAXPART,50))
@@ -2700,11 +2702,38 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 
 
 	if(radfile.eq.' ') then
-		do i=1,D%nR-D%nRfix
-			D%R(i)=10d0**(log10(D%Rin)+(log10(D%Rout)-log10(D%Rin))*real(i-1)/real(D%nR-D%nRfix-1))
+		if(nzones.gt.0) then
+			npert=0
+			do i=1,nzones
+				if(abs(Zone(i)%pertA).gt.1d-50) then
+					npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+				endif
+			enddo
+			fpert=8d0
+			if(npert.gt.(D%nR-D%nRfix)) then
+				fpert=fpert*real(D%nR-D%nRfix)/real(npert)
+			endif
+			nused=0
+			do i=1,nzones
+				if(abs(Zone(i)%pertA).gt.1d-50) then
+					npert=(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
+					do j=1,npert
+						if(nused.lt.D%nR) then
+							nused=nused+1
+							D%R(nused)=Zone(i)%Rin+(Zone(i)%Rout-Zone(i)%Rin)*(real(j)-0.5d0)/real(npert)
+						endif
+					enddo
+				endif
+			enddo
+		endif
+		do i=1,D%nRfix
+			if(nused.lt.D%nR) then
+				nused=nused+1
+				D%R(nused)=D%Rfix(i)
+			endif
 		enddo
-		do i=D%nR-D%nRfix+1,D%nR
-			D%R(i)=D%Rfix(i-(D%nR-D%nRfix))
+		do i=1,D%nR-nused
+			D%R(i+nused)=10d0**(log10(D%Rin)+(log10(D%Rout)-log10(D%Rin))*real(i-1)/real(D%nR-nused-1))
 		enddo
 		call sort(D%R(1:D%nR),D%nR)
 	else

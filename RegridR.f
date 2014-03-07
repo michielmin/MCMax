@@ -341,7 +341,7 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 				do jj=1,npert
 					if(nused.lt.D%nR) then
 						nused=nused+1
-						Rnew(nused)=Zone(i)%Rin+(Zone(i)%Rout-Zone(i)%Rin)*(real(i)-0.5d0)/real(npert)
+						Rnew(nused)=Zone(i)%Rin+(Zone(i)%Rout-Zone(i)%Rin)*(real(jj)-0.5d0)/real(npert)
 					endif
 				enddo
 			endif
