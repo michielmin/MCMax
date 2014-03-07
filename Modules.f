@@ -122,6 +122,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8 Rin,Rout,Mdust,denspow,shpow,sh,Rsh
 		real*8 a_min,a_max,a_pow,Rexp,gamma_exp,gas2dust
 		real*8 roundwidth,roundindex,roundscalemin,fPAH
+		real*8 pertA,pertR,pertR0
 		character*20 roundtype
 		real*8 maxtauV
 		logical fix_struct,sizedis

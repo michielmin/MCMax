@@ -370,6 +370,9 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%a_min=-1d0
 		ZoneTemp(i)%a_max=-1d0
 		ZoneTemp(i)%a_pow=1d5
+		ZoneTemp(i)%pertA=0d0
+		ZoneTemp(i)%pertR=0d0
+		ZoneTemp(i)%pertR0=0d0
 		ZoneTemp(i)%gamma_exp=-1d0
 		ZoneTemp(i)%maxtauV=-1d0
 		ZoneTemp(i)%roundtype='NONE'
@@ -377,6 +380,9 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%roundindex=0.30
 		ZoneTemp(i)%roundscalemin=1d-60
 		ZoneTemp(i)%fPAH=0d0
+		ZoneTemp(i)%pertA=0d0
+		ZoneTemp(i)%pertR=10d0
+		ZoneTemp(i)%pertR0=0d0
 	enddo
 	nzones=0
 	
@@ -1197,6 +1203,12 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%sizedis
 		else if(keyzone.eq.'fpah') then
 			read(value,*) ZoneTemp(i)%fPAH
+		else if(keyzone.eq.'perta') then
+			read(value,*) ZoneTemp(i)%pertA
+		else if(keyzone.eq.'pertr') then
+			read(value,*) ZoneTemp(i)%pertR
+		else if(keyzone.eq.'pertr0') then
+			read(value,*) ZoneTemp(i)%pertR0
 		else if(keyzone(1:4).eq.'abun') then
 			read(keyzone(5:len_trim(keyzone)),*) j
 			read(value,*) ZoneTemp(i)%abun(j)
@@ -1842,6 +1854,14 @@ C	End
 		if(use_qhp) then
 			write(*,'(a26,f12.4)') "Fraction of QHP:",Zone(i)%fPAH
 			write(9,'(a26,f12.4)') "Fraction of QHP:",Zone(i)%fPAH
+		endif
+		if(abs(Zone(i)%pertA).gt.1d-15) then
+			write(*,'(a26,f12.4)') "Pertubation amplitude:",Zone(i)%pertA
+			write(*,'(a26,f12.4)') "Pertubation radius:",Zone(i)%pertR
+			write(*,'(a26,f12.4)') "Pertubation starting radius:",Zone(i)%pertR0
+			write(9,'(a26,f12.4)') "Pertubation amplitude:",Zone(i)%pertA
+			write(9,'(a26,f12.4)') "Pertubation radius:",Zone(i)%pertR
+			write(9,'(a26,f12.4)') "Pertubation starting radius:",Zone(i)%pertR0
 		endif
 	enddo
 	else
@@ -2912,7 +2932,12 @@ c	this is a wedge zone!
 								zonedens(iz,ii,i,j)=0d0
 							endif
 						enddo
-					endif						
+					endif
+					if(D%R_av(i).ge.(Zone(iz)%pertR0*AU)) then
+						do ii=1,ngrains
+							zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)*(1d0+Zone(iz)%pertA*sin(2d0*pi*(D%R_av(i)/AU-Zone(iz)%pertR0)/Zone(iz)%pertR))
+						enddo
+					endif
 					do ii=1,ngrains
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
@@ -3430,7 +3455,12 @@ c	this is a wedge zone!
 								zonedens(iz,ii,i,j)=0d0
 							endif
 						enddo
-					endif						
+					endif
+					if(D%R_av(i).ge.(Zone(iz)%pertR0*AU)) then
+						do ii=1,ngrains
+							zonedens(iz,ii,i,j)=zonedens(iz,ii,i,j)*(1d0+Zone(iz)%pertA*sin(2d0*pi*(D%R_av(i)/AU-Zone(iz)%pertR0)/Zone(iz)%pertR))
+						enddo
+					endif
 					do ii=1,ngrains
 						tot=tot+zonedens(iz,ii,i,j)*C(i,j)%V
 					enddo
