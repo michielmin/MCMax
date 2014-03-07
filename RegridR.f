@@ -23,7 +23,7 @@ c--------------------------------------------------------------------
 	real*8 taunext,dltau,RR1,lR1,lR2,totM0,Mg,ran2
 	real*8 taustart,dtaumax,tauend,ct,Rmultmax,dtaumaxabs
 	logical escape,hitstar,locfield,RNDWBackup,checkfix
-	integer iT,irefine,inormal
+	integer iT,irefine,inormal,npert
 	logical refineR,refining,error,fix1(D%nR),fix2(D%nR)
 	real*8 taustar(0:D%nTheta),taulocal(0:D%nTheta),shtemp(0:D%nR)
 	real*8 taustarabs(0:D%nTheta),taulocalabs(0:D%nTheta),MaxGasMass(ngrains)
@@ -107,13 +107,31 @@ c regridding with the optical depth
 	R1refine=Rnew(1)
 	nused=1
 	
+	npert=0
+	do i=1,nzones
+		if(abs(Zone(i)%pertA).gt.1d-50) then
+			npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+		endif
+	enddo
+	if(npert.gt.(D%nR-D%nRfix-nrefine-3)) npert=(D%nR-D%nRfix-nrefine-3)
+
 	do i=1,D%nR-D%nRfix-nspan-3
 		do jj=1,D%nR-1
 			if(Rnew(i).ge.D%R(jj).and.Rnew(i).lt.D%R(jj+1)) goto 1
 		enddo
 		jj=1
 1		continue
-		Rmultmax=(D%Rout/Rnew(i))**(1d0/real(D%nR-D%nRfix-nspan-irefine-inormal-3))
+		Rmultmax=(D%Rout/Rnew(i))**(1d0/real(D%nR-D%nRfix-nspan-irefine-inormal-3-npert))
+		if(nzones.gt.0) then
+			do jj=1,nzones
+				if(Rnew(i)*Rmultmax.gt.Zone(jj)%Rin.and.Rnew(i).lt.Zone(jj)%Rout
+     &			.and.Rnew(i)*Rmultmax.gt.Zone(jj)%pertR0.and.Zone(jj)%pertA.gt.1d-50) then
+					if(abs(Rnew(i)*(Rmultmax-1d0)).gt.Zone(jj)%pertR/8d0) then
+						Rmultmax=Zone(jj)%pertR/Rnew(i)+1d0
+					endif
+				endif
+			enddo
+		endif
 		if(Rmultmax.le.1d0) Rmultmax=1.001d0
 		Rnew(i+1)=Rnew(i)*Rmultmax
 		if(i.eq.1.and.tdes_iter) Rnew(i+1)=Rbwdes(D%nTheta-1)
