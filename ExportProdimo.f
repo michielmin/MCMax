@@ -3,7 +3,7 @@
 	IMPLICIT NONE
 
 	  integer status,unit,blocksize,bitpix,naxis,naxes(4),j0
-	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac,i
+	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac,i,jstart
 	  logical simple,extend,truefalse
 	character*500 filename,version
 	real*8,allocatable :: grid(:,:,:)
@@ -29,8 +29,13 @@
 		close(unit=90,status='delete')
 	endif
 
+	do jstart=D%nTheta-1,1,-1
+		if(D%Theta(jstart).gt.sin(maxthetaProDiMo*pi/180d0)) goto 2
+	enddo
+	jstart=1
+2	continue
 
-	do j0=1,D%nTheta-2
+	do j0=jstart,D%nTheta-2
 		do i=1,D%nR-1
 			if(C(i,j0)%dens.gt.1d-40) goto 1
 		enddo

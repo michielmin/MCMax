@@ -335,6 +335,8 @@
 	i=i+1
 	keyword(i)='dirprodimo'
 	i=i+1
+	keyword(i)='maxthetaprodimo'
+	i=i+1
 	keyword(i)='exportflits'
 	i=i+1
 	keyword(i)='tsmooth'

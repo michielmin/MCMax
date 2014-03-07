@@ -321,6 +321,7 @@
 	exportProDiMo=.false.
 	runProDiMo=.false.
 	ProDiModir='filesProDiMo'
+	maxthetaProDiMo=75d0
 	exportFLiTs=.false.
 
 	computepart_nT=0
@@ -1153,6 +1154,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
 	if(key.eq.'runprodimo') read(value,*) runProDiMo
 	if(key.eq.'dirprodimo') write(ProDiModir,'(a,"/")') trim(value)
+	if(key.eq.'maxthetaprodimo') read(value,*) maxthetaProDiMo
 	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 
