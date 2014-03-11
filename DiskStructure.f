@@ -734,6 +734,7 @@ c-----------------------------------------------------------------------
 		else
 			ct=D%Theta(i)*0.99+D%Theta(i+1)*0.01
 		endif
+		if(ct.gt.1d0) ct=1d0
 		phot%x=sqrt(1d0-ct**2)*r(i)
 		phot%y=0d0
 		phot%z=ct*r(i)

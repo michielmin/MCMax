@@ -3,13 +3,19 @@ c-----------------------------------------------------------------------
 
 	real*8 function Planck(T,lam)
 	IMPLICIT NONE
-	real*8 T,k,c,h,nu,lam,x
+	real*8 T,k,c,h,nu,lam
+	real*16 x
+
 	k=1.3807d-16
 	c=2.9979d10
 	h=6.6261d-27
 	nu=c/(lam*1d-4)
 	x=h*nu/(k*T)
-	Planck=(2d0*h*nu**3/c**2)/(exp(x)-1d0)
+	if(x.gt.1d3) then
+		Planck=0d0
+	else
+		Planck=(2d0*h*nu**3/c**2)/(exp(x)-1d0)
+	endif
 c	Planck=Planck*1e23
 
 	return

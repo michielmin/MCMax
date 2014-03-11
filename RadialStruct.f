@@ -61,7 +61,8 @@ c	      Mdot=D%MdotR(i)
 	   !  Rescale the density so Er=Eint
 	   !
 	   !  First for Eint > Er in a deadzone (scale down)
-	   if (deadzone.and.D%MPdead(i).and.Eint.gt.Er(i)) then
+	   if (deadzone) then
+	   	if(D%MPdead(i).and.Eint.gt.Er(i)) then
 	      surfscale(i)=fac
 	      type="down"
 
@@ -70,12 +71,12 @@ c		 write(*,'("i=",i3," r=",f6.2," Eint=",e10.3," > Er=",e10.3," fac=",e10.3)') 
 c		 print*,"downscaling not yet implemented!"
 	      endif
 	      
-	   else if (deadzone.and.D%MPdead(i)) then
+	   else if (D%MPdead(i)) then
               !  MP is dead, assume extra mass ends up in deadzone
 	      surfscale(i)=1d0 + (Er(i)-Eint)/(fac*Sig(i))
 	      type="dead"
 
-	   else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.Temp(i,D%nTheta-1).lt.deadtemp) then
+	   else if (Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.Temp(i,D%nTheta-1).lt.deadtemp) then
 !	   else if (deadzone.and.Er(i)/Eint*Sig(i)*gas2dust/2d0.gt.deadcolumn.and.D%MPzombie(i)) then
 	      !  MP becomes dead after rescaling
 	      !  Energy/Surface density in rest of active layer
@@ -100,6 +101,12 @@ c		 print*,"downscaling not yet implemented!"
 		 print*
 	      endif
 
+	   else 
+              ! midplane is active
+	      surfscale(i)=Er(i)/Eint ! equal to dens(i,j)/C(i,j)%gasdens
+	      type="alive"
+
+	   endif
 	   else 
               ! midplane is active
 	      surfscale(i)=Er(i)/Eint ! equal to dens(i,j)/C(i,j)%gasdens

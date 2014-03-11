@@ -2702,6 +2702,7 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 
 
 	if(radfile.eq.' ') then
+		nused=0
 		if(nzones.gt.0) then
 			npert=0
 			do i=1,nzones
@@ -2713,7 +2714,6 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 			if(npert.gt.(D%nR-D%nRfix)) then
 				fpert=fpert*real(D%nR-D%nRfix)/real(npert)
 			endif
-			nused=0
 			do i=1,nzones
 				if(abs(Zone(i)%pertA).gt.1d-50) then
 					npert=(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
