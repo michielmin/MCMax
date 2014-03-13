@@ -1451,7 +1451,13 @@ C       End
 	if(viscous) computeTgas=.true.
 	if(computeTgas.or.viscous.or.denstype.eq.'PRODIMO') useTgas=.true.
 
-	if(runProDiMo) exportProDiMo=.true.
+	if(runProDiMo) then
+		exportProDiMo=.true.
+		call writeExtraProDiMo('use_MCFOST_rgrid','.false.')
+		call writeExtraProDiMo('readMCFOST','.true.')
+		call writeExtraProDiMo('','forProDiMo.fits.gz')
+		call writeExtraProDiMo('FLiTs','.true.')
+	endif
 	if(exportProDiMo) computeLRF=.true.
 	if(fastobs) then
 		if(Nphot.le.0) then

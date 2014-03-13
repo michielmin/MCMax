@@ -739,7 +739,11 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	else
 		open(unit=35,file=filename, status="new", action="write", RECL=1000)
 	end if
-	write(35,'(a,"  ! ",a)') trim(value),trim(key)
+	if(key.ne.' ') then
+		write(35,'(a,"  ! ",a)') trim(value),trim(key)
+	else
+		write(35,'(a)') trim(value)
+	endif
 	close(unit=35)
 
 	return
