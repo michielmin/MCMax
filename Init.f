@@ -325,6 +325,8 @@
 	ProDiModir='filesProDiMo'
 	maxthetaProDiMo=75d0
 	exportFLiTs=.false.
+	runscript=.false.
+	scriptname='postprocessing.sh'
 
 	computepart_nT=0
 	computepart_amin=-1d0
@@ -1162,9 +1164,13 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
 	if(key.eq.'runprodimo') read(value,*) runProDiMo
 	if(key.eq.'dirprodimo') write(ProDiModir,'(a,"/")') trim(value)
+	if(key.eq.'runscript') read(value,*) runscript
+	if(key.eq.'scriptname') scriptname=value
 	if(key.eq.'maxthetaprodimo') read(value,*) maxthetaProDiMo
 	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
+	
+	if(key(1:7).eq.'prodimo') call writeExtraProDiMo(line(9:len_trim(key)),trim(value))
 
 	if(key.eq.'outputfits') read(value,*) outputfits
 	if(key.eq.'multicore') read(value,*) multicore

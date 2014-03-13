@@ -1577,7 +1577,9 @@ C
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
 
 	real*8 ran1
+!$OMP CRITICAL
 	ran2=ran1(idum)
+!$OMP END CRITICAL
 	return
 
       if (idum.le.0) then

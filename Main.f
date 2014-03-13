@@ -847,6 +847,8 @@ c ---------------------------------------------------------------------
 
 	if(runProDiMo) call DoRunProDiMo()
 
+	if(runscript) call DoRunScript()
+
 	open(file=donefile,unit=90)
 	write(90,'("all done!")')
 	close(unit=90)

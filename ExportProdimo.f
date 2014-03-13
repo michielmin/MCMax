@@ -655,13 +655,36 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	use Parameters
 	IMPLICIT NONE
 	character*500 command
+	logical truefalse
 	
 	command='cp ' // trim(ProDiModir) // '/* ' // trim(outdir)
 	
 	call system(command)
 	
-	command='cd ' // trim(outdir) // '; prodimo'
+	inquire(file=trim(outdir) // '/prodimo_extra.in', exist=truefalse)
+	if(truefalse) then
+		command='cd ' // trim(outdir) // '; prodimo prodimo_extra.in'
+	else
+		command='cd ' // trim(outdir) // '; prodimo'
+	endif
 	
+	call system(command)
+	
+	return
+	end
+	
+
+	subroutine DoRunScript()
+	use Parameters
+	IMPLICIT NONE
+	character*500 command
+	
+	command='cp ' // trim(scriptname) // ' ' // trim(outdir)
+	
+	call system(command)
+	
+	command='cd ' // trim(outdir) // '; ' // trim(scriptname)
+
 	call system(command)
 	
 	return
@@ -702,7 +725,26 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	end
 
 
+	subroutine writeExtraProDiMo(key,value)
+	use Parameters
+	IMPLICIT NONE
+	character(*) key,value
+	character*500 filename
+	logical truefalse
 
+	filename=trim(outdir) // '/prodimo_extra.in'
+	inquire(file=filename, exist=truefalse)
+	if (truefalse) then
+		open(unit=35,file=filename, status="old", position="append", action="write", RECL=1000)
+	else
+		open(unit=35,file=filename, status="new", action="write", RECL=1000)
+	end if
+	write(35,'(a,"  ! ",a)') trim(value),trim(key)
+	close(unit=35)
+
+	return
+	end
+	
 
 	subroutine determineZonesProDiMo(zonesProDiMo,nz,region_index)
 	use Parameters

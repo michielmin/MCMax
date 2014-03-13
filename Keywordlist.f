@@ -376,6 +376,10 @@
 	keyword(i)='fastobs'
 	i=i+1
 	keyword(i)='lnkloglog'
+	i=i+1
+	keyword(i)='runscript'
+	i=i+1
+	keyword(i)='scriptname'
 	
 	Nnormal=i
 c from here on keywords with numbers
@@ -481,6 +485,8 @@ c from here on keywords with numbers
 	keyword(i)='computepart'
 	i=i+1
 	keyword(i)='computepah'
+	i=i+1
+	keyword(i)='prodimo'
 
 	Nkey=i
 	if(Nkey.gt.300) then
