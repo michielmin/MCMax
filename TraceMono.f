@@ -813,7 +813,7 @@ c Start tracing the photons
 				s2=tau
 			endif
 		endif
-		tau=-log(ran2(idum)*s2+s1)
+		tau=abs(-log(ran2(idum)*s2+s1))
 		phot%E=phot%E*s2
 	endif
 		
@@ -1238,6 +1238,9 @@ c-----------------------------------------------------------------------
 	logical escape
 	logical hitstar,hitmid
 	integer inext,jnext,ntrace,i,iangle(NPHISCATT),irgnext
+	integer ncells_visit,maxcells_visit
+	
+	maxcells_visit=(D%nR+D%nTheta+90)*2
 
 	escape=.false.
 	hitstar=.false.
@@ -1272,7 +1275,14 @@ c-----------------------------------------------------------------------
    	enddo
 	endif
 
+	ncells_visit=0
 1	continue
+	ncells_visit=ncells_visit+1
+	if(ncells_visit.gt.maxcells_visit) then
+		print*,'something went wrong here...'
+		escape=.true.
+		return
+	endif
 	C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
 	call Trace2edgeRG(phot,v,inext,jnext,irgnext)
 	tau1=v*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
