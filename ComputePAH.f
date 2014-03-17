@@ -21,11 +21,19 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 
 	p%Nc=(rV*1d3)**3d0*468d0
 
+	if(p%Nc.lt.25) then
+		HC=0.5d0
+	else if(p%Nc.lt.100) then
+		HC=0.5/sqrt(p%Nc/25d0)
+	else
+		HC=0.25d0
+	endif
+
 	p%Mc=12d0
 	p%Td_qhp=450d0
 
 	p%rv=(p%Nc/468d0)**(1d0/3d0)*1d-7
-	p%rho(1:p%nopac)=p%Nc*Mc/(4d0*pi*p%rv**3/3d0)
+	p%rho(1:p%nopac)=p%Nc*((12d0+HC)*Mc/12d0)/(4d0*pi*p%rv**3/3d0)
 
 	write(*,'("--------------------------------------------------------")')
 	write(*,'("Computing PAH opacities")')
@@ -36,14 +44,6 @@ c	rV=sqrt( (amax**(3d0-apow)-amin**(3d0-apow))*(1d0-apow)/((amax**(1d0-apow)-ami
 	write(9,'("PAH size:              ",f12.6)') p%rV*1d4
 	write(9,'("Number of carbon atoms:",f12.1)') p%Nc
 
-	if(p%Nc.lt.25) then
-		HC=0.5d0
-	else if(p%Nc.lt.100) then
-		HC=0.5/sqrt(p%Nc/25d0)
-	else
-		Hc=0.25d0
-	endif
-	
 	ionized=.false.
 	call MakePAH(lam,Ka_n,Ks_n,p%Nc,HC,nlam,ionized)
 	fn_n=0.473692

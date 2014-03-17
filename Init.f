@@ -408,6 +408,8 @@ c	Interstellar Radiation Field (IRF)
 		rhograin(i)=3.0	! Gijsexp
 	enddo
 
+c	call system("rm -f " // trim(outdir) // "/prodimo_extra.in")
+
 	inquire(file=input,exist=truefalse)
 	if(.not.truefalse) then
 		write(*,'("Input file not found !")')

@@ -12,9 +12,11 @@
 	integer,allocatable :: region_index(:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
-	real*8 fUV,tot,pUV,computeT_QHP
+	real*8 fUV,tot,pUV,computeT_QHP,fPAHprodimo,amu
+	parameter(amu=1.660531E-24)
 	real*8,allocatable :: spec(:)
 	character*2 s
+	character*20 key,value
 
 	integer nzonesProDiMo
 	type(DiskZone),allocatable :: zonesProDiMo(:)
@@ -151,6 +153,16 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 		call ftpkye(unit,'H0',real(D%sh1au/sqrt(2.0)),-8,'[AU]',status)
 		call ftpkye(unit,'beta',real(D%shpow),-8,'',status)
 		call ftpkye(unit,'alpha',real(-D%denspow),-8,'',status)
+
+		write(key,'("dust_to_gas")')
+		write(value,'(e12.3)') 1d0/gas2dust
+		call writeExtraProDiMo(key,value)
+		if(use_qhp) then
+			write(key,'("fPAH")')
+			fPAHprodimo=ZonesProDiMo(i)%fPAH*1.4/(gas2dust*3e-7*50d0*12.35)
+			write(value,'(e12.3)') fPAHprodimo
+			call writeExtraProDiMo(key,value)
+		endif
 	else
 		do i=1,nzonesProDiMo
 			if(i.eq.1) then
@@ -169,6 +181,24 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 			write(s,'("_",i1)') i
 			call ftpkye(unit,'Rmin_region'//trim(s),real(ZonesProDiMo(i)%Rin),-8,'[AU]',status)
 			call ftpkye(unit,'Rmax_region'//trim(s),real(ZonesProDiMo(i)%Rout),-8,'[AU]',status)
+
+			if(i.eq.1) then
+				write(key,'("dust_to_gas")')
+			else
+				write(key,'("d",i1,"ust_to_gas")') i
+			endif
+			write(value,'(e12.3)') 1d0/gas2dust
+			call writeExtraProDiMo(key,value)
+			if(use_qhp) then
+				if(i.eq.1) then
+					write(key,'("fPAH")')
+				else
+					write(key,'("f",i1,"PAH")') i
+				endif
+				fPAHprodimo=ZonesProDiMo(i)%fPAH*1.4/(gas2dust*3e-7*50d0*12.35)
+				write(value,'(e12.3)') fPAHprodimo
+				call writeExtraProDiMo(key,value)
+			endif
 		enddo
 	endif
 
@@ -785,6 +815,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 				ZonesProDiMo(nz)%sh=Zone(1)%sh
 				ZonesProDiMo(nz)%shpow=Zone(1)%shpow
 				ZonesProDiMo(nz)%denspow=Zone(1)%denspow
+				ZonesProDiMo(nz)%fPAH=Zone(1)%fPAH
 				do j=1,nzones
 					if(zo1(j)) then
 						ZonesProDiMo(nz)%Mdust=Zone(j)%Mdust
@@ -794,6 +825,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 						ZonesProDiMo(nz)%sh=Zone(j)%sh
 						ZonesProDiMo(nz)%shpow=Zone(j)%shpow
 						ZonesProDiMo(nz)%denspow=Zone(j)%denspow
+						ZonesProDiMo(nz)%fPAH=Zone(j)%fPAH
 						exit
 					endif
 				enddo
