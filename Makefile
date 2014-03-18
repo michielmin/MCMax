@@ -35,12 +35,12 @@ FLAG_MAC      = -mssse3 -opt-prefetch -static-intel
 ifeq ($(shell uname),Linux)
   FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec
   LDFLAGS  = $(FLAG_ALL) $(FLAG_LINUX) -fpp Version.f
-  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib
+  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib -L$(HOME)/lib
 else
   FFLAGS  = $(FLAG_ALL) $(FLAG_MAC) -diag-disable 8290,8291
   LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f -Wl,-macosx_version_min,10.6
   #LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
-  LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib
+  LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib -L$(HOME)/lib
 endif
 
 # use a suffix in file name (i.e. static, test etc.)
