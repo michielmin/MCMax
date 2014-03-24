@@ -107,13 +107,17 @@ c regridding with the optical depth
 	R1refine=Rnew(1)
 	nused=1
 	
-	npert=0
+	fpert=8d0
+92	npert=0
 	do i=1,nzones
 		if(abs(Zone(i)%pertA).gt.1d-50) then
-			npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+			npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
 		endif
 	enddo
-	if(npert.gt.(D%nR-D%nRfix-nrefine-3-nspan)) npert=(D%nR-D%nRfix-nrefine-3-nspan)
+	if(npert.gt.(D%nR-D%nRfix-nrefine-3-nspan)/2) then
+		fpert=fpert*real(D%nR-D%nRfix-nrefine-3-nspan)/2d0/real(npert)
+		goto 92
+	endif
 
 	do i=1,D%nR-D%nRfix-nspan-3-npert
 		do jj=1,D%nR-1
@@ -325,15 +329,16 @@ c     &	(taulocal(j-1).lt.taustart.or.taulocal(j+1).lt.taustart)) tau0=dtaumaxab
 	enddo
 
 	if(nzones.gt.0) then
-		npert=0
+		fpert=8d0
+93		npert=0
 		do i=1,nzones
 			if(abs(Zone(i)%pertA).gt.1d-50) then
-				npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+				npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
 			endif
 		enddo
-		fpert=8d0
-		if(npert.gt.(D%nR-nused)) then
-			fpert=fpert*real(D%nR-nused)/real(npert)
+		if(npert.gt.(D%nR-nused)/2) then
+			fpert=fpert*real(D%nR-nused)/2d0/real(npert)
+			goto 93
 		endif
 		do i=1,nzones
 			if(abs(Zone(i)%pertA).gt.1d-50) then
@@ -368,6 +373,8 @@ c			Rnew(i)=(Rnew(i+1)+Rnew(i))/2d0
 
 	call sort(Rnew(0:D%nR),D%nR+1)
 	Rnew(D%nR)=D%Rout
+
+	print*,Rnew(0:D%nR)
 
 71	continue
 	call sort(Rnew(0:D%nR),D%nR+1)

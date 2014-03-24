@@ -2713,20 +2713,19 @@ c	write(9,*) "Rfix, ",D%Rfix(1:D%nRfix)
 		D%theta_av(i)=acos((D%Theta(D%nTheta-i+1)+D%Theta(D%nTheta-i))/2d0)
 	enddo
 
-
-
 	if(radfile.eq.' ') then
 		nused=0
 		if(nzones.gt.0) then
-			npert=0
+			fpert=8d0
+92			npert=0
 			do i=1,nzones
 				if(abs(Zone(i)%pertA).gt.1d-50) then
-					npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*8d0/Zone(i)%pertR
+					npert=npert+(Zone(i)%Rout-Zone(i)%Rin)*fpert/Zone(i)%pertR
 				endif
 			enddo
-			fpert=8d0
-			if(npert.gt.(D%nR-D%nRfix)) then
-				fpert=fpert*real(D%nR-D%nRfix)/real(npert)
+			if(npert.gt.(D%nR-D%nRfix)/2) then
+				fpert=fpert*real(D%nR-D%nRfix)/2d0/real(npert)
+				goto 92
 			endif
 			do i=1,nzones
 				if(abs(Zone(i)%pertA).gt.1d-50) then
@@ -2842,7 +2841,6 @@ c in the theta grid we actually store cos(theta) for convenience
 		enddo
 	enddo
 
-
 	shscale(0:D%nR)=1d0
 	if(scalesh.eq.'FILE') then
 		call regrid(shscalefile,D%R_av/AU,shscale,D%nR)
@@ -2859,7 +2857,6 @@ c in the theta grid we actually store cos(theta) for convenience
 	do i=0,D%nR-1
 		shscale(i)=shscale(i)*(1d0+rimscale*exp(-((D%R(1)-D%R(i))/rimwidth)**2))
 	enddo
-
 
 	MassTot=0d0
 	D%Vtot=0d0
@@ -2963,6 +2960,7 @@ c in the theta grid we actually store cos(theta) for convenience
 						enddo
 					else
 c	this is a wedge zone!
+						theta=D%thet(j)
 						r=D%R_av(i)*sin(theta)/AU
 						do ii=1,ngrains
 							if(Zone(iz)%inc_grain(ii)) then
