@@ -374,8 +374,6 @@ c			Rnew(i)=(Rnew(i+1)+Rnew(i))/2d0
 	call sort(Rnew(0:D%nR),D%nR+1)
 	Rnew(D%nR)=D%Rout
 
-	print*,Rnew(0:D%nR)
-
 71	continue
 	call sort(Rnew(0:D%nR),D%nR+1)
 	if(Rnew(1).eq.Rnew(2)) then
