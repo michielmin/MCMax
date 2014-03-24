@@ -1,3 +1,8 @@
+	module InputOutput
+	IMPLICIT NONE
+
+	contains
+	
 	subroutine outputstruct(filename,vars,nvars,ipart,xx,nxx)
 	use Parameters
 	IMPLICIT NONE
@@ -205,7 +210,7 @@
 	close(unit=20)
 	
 	return
-	end
+	end subroutine outputstruct
 
 
 	subroutine outputstruct_fits(filename,vars,nvars,ipart,xx,nxx)
@@ -537,7 +542,7 @@ C	 create the new empty FITS file
 
 
 	return
-	end
+	end subroutine outputstruct_fits
 
 
 
@@ -764,7 +769,7 @@ C	 create the new empty FITS file
 	ngrains2=ngrains2_tmp
 
 	return
-	end
+	end subroutine readstruct
 
 
 
@@ -1047,9 +1052,10 @@ c	just skip this hdu
 	endif
 
 	return
-	end
+	end subroutine readstruct_fits
 
 
+	end module InputOutput
 
 
 

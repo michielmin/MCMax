@@ -13,6 +13,7 @@ c     --------------------------------------------------------------
 
       subroutine MakeDeadZone(printlocation)
       use Parameters
+      use InputOutput
       implicit none
 
       real*8 Temp(1:D%nR-1,1:D%nTheta-1)

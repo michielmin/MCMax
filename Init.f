@@ -14,6 +14,7 @@
 !c-----------------------------------------------------------------------
 	subroutine initialize(input,Nphot,NphotFirst,NFirst,iter0)
 	use Parameters
+	use InputOutput
 	IMPLICIT NONE
 	integer i,j,k,ii,jj,scale_R,ia,Nphot,iter,iter0,NphotFirst,NFirst,number_invalid,njj
 	real*8,allocatable :: w(:),ww(:,:),spec(:),dBB(:),rtemp(:)

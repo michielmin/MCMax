@@ -7,6 +7,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
 	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening,inc)
 	use Parameters
+	use InputOutput
 	IMPLICIT NONE
 	real*8 lam0,tau,phi,flux,opening,inc
 	integer i,j,k,ii,jj,Nphot,NphotStar

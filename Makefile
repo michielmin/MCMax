@@ -51,6 +51,7 @@ endif
 
 # files to make
 OBJS	      = Modules.o \
+		InputOutput.o \
 		Main.o \
 		DiskStructure.o \
 		RegridR.o \
@@ -84,7 +85,6 @@ OBJS	      = Modules.o \
 		Reddening.o \
 		Smooth.o \
 		ReadParticleFits.o \
-		InputOutput.o \
 		ComputePart.o \
 		ComputePAH.o \
 		DeadZone.o \
@@ -122,3 +122,9 @@ $(PROGRAM):     $(OBJS)
 
 # recompile everything if Modules.f has changed 
 $(OBJS):	Modules.f
+
+# recompile everything if InputOutput.f has changed 
+$(OBJS):	InputOutput.f
+
+
+

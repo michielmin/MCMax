@@ -976,6 +976,7 @@ c-----------------------------------------------------------------------
 
 	subroutine ReadTemperatures()
 	use Parameters
+	use InputOutput
 	IMPLICIT NONE
 	character*500 file
 	integer i,j,nr,nt,nl,ii,l,iopac

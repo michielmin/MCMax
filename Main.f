@@ -24,6 +24,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	program MCMax
 	use Parameters
 	use NAG
+	use InputOutput
 	IMPLICIT NONE
 	character*500 input,denstempfile,tau1file,tmp,tau1fileR,version
 	character*500 comm,gasdenstempfile

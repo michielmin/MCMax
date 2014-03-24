@@ -5,6 +5,7 @@
 
 	subroutine Stochastic(niter)
 	use Parameters
+	use InputOutput
 	IMPLICIT NONE
 	integer niter,ii
 	logical outputionization
