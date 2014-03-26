@@ -498,7 +498,7 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	do k=1,image%nPhi
 		w1=2d0*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 		w2=2d0*pi*abs(image%R(i+1))*AU**2/real(image%nPhi)
-		if(mask.lt.1d0.and.(image%R(i+1)/D%distance).lt.wmask) then
+		if(mask.lt.1d0.and.(image%R(i+1)/(D%distance/parsec)).lt.wmask) then
 			w1=w1*mask
 			w2=w2*mask
 		endif
