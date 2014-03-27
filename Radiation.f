@@ -45,7 +45,7 @@
 	real*8 spec(nlam),Albedo,ran2,T0,T1,increaseT,increaseTP
 	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,Edust,Egas,tot
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),w1,w2,KscaR
-	integer i,iT,iT0,iT1,l,ii,iopac,iscat
+	integer i,iT,iT0,iT1,l,ii,iopac,iscat,iii
 	type(Mueller) M
 	logical pol_scat
 
@@ -303,13 +303,21 @@ c use the slow backup determination of average scattering matrix instead
 				column(1:ngrains,1:ngrains2)=0d0
 			else
 				do i=1,nlam
-					tot=0d0
-					do ii=1,ngrains
+					if(ii.gt.ngrains) then
+						tot=0d0
+						do iii=1,ngrains
+							do iopac=1,Grain(iii)%nopac
+								w1=C(phot%i,phot%j)%w(iii)*C(phot%i,phot%j)%wopac(iii,iopac)
+								tot=tot+w1*Grain(iii)%F(iopac,i)%F11(iscat)*Grain(iii)%Ksca(iopac,i)
+							enddo
+						enddo
+					else
+						tot=0d0
 						do iopac=1,Grain(ii)%nopac
-							w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+							w1=C(phot%i,phot%j)%wopac(ii,iopac)
 							tot=tot+w1*Grain(ii)%F(iopac,i)%F11(iscat)*Grain(ii)%Ksca(iopac,i)
 						enddo
-					enddo
+					endif
 					specemit(i)=specemit(i)*tot/M%F11(iscat)
 				enddo
 				call integrate(specemit,tot)
