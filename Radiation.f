@@ -302,10 +302,7 @@ c			column(1:ngrains,1:ngrains2)=0d0
 				tot=0d0
 				do ii=1,ngrains
 					do iopac=1,Grain(ii)%nopac
-						w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-						w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
-						w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
-						tot=tot+w1*Grain(ii)%F(iopac,phot%ilam1)%F11(iscat)+w2*Grain(ii)%F(iopac,phot%ilam2)%F11(iscat)
+						tot=tot+w1*Grain(ii)%F(iopac,i)%F11(iscat)*Grain(ii)%Ksca(iopac,i)
 					enddo
 				enddo
 				specemit(i)=specemit(i)*tot/M%F11(iscat)
