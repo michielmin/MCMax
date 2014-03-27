@@ -144,7 +144,7 @@
 		endif
 		do j=1,nlam_obs
 		   if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
-				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
+				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
 				ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
 				fstar1=arrinterpol(lam_obs(j),lam,D%Fstar,nlam,1)
 				if(scat_how.ne.2) then
