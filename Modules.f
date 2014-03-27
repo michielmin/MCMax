@@ -175,7 +175,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical usepol,readmcscat,traceinverse,fluxcontr
 		logical,allocatable :: trace(:)
 		logical tracestar,traceemis,tracescat,tracegas,fastobs
-		character*500 psffile,linefile,popfile
+		character*500 psffile,linefile,popfile,lamfile
 		real*8 dvelo,abun
 		integer nvelo,trans_nr1,trans_nr2
 	end type Telescope
@@ -189,29 +189,6 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	end type ExoPlanet
 
 	type(ExoPlanet),allocatable :: Planets(:)
-
-c	Interface
-c		Subroutine outputstruct(filename,vars,nvars,ipart,xx,nxx)
-c				Implicit None
-c				integer nvars,ivars,ipart
-c				integer,optional :: nxx
-c				character*7 vars(nvars)
-c				character*500 filename
-c				real*8,optional :: xx(*)
-c		End Subroutine outputstruct
-c	End Interface
-c
-c	Interface
-c		Subroutine outputstruct_fits(filename,vars,nvars,ipart,xx,nxx)
-c				Implicit None
-c				integer nvars,ivars,ipart
-c				integer,optional :: nxx
-c				character*7 vars(nvars)
-c				character*500 filename
-c				real*8,optional :: xx(*)
-c		End Subroutine outputstruct_fits
-c	End Interface
-
 
 	end module Parameters
 	

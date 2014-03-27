@@ -31,10 +31,22 @@
 		tel%NphotAngle=0
 	endif
 
-	if(tel%nlam_obs.lt.0) then
+	if(tel%nlam_obs.lt.0.and.tel%lamfile.eq.' ') then
 		nlam_obs=nlam
 		allocate(lam_obs(nlam_obs))
 		lam_obs=lam
+	else if(tel%lamfile.ne.' ') then
+		open(unit=25,file=tel%lamfile)
+		nlam_obs=0
+1		read(25,*,end=2,err=1) tot
+		nlam_obs=nlam_obs+1
+		goto 1
+2		continue
+		allocate(lam_obs(nlam_obs))
+		rewind(25)
+		do i=1,nlam_obs
+			read(25,*,err=3) lam_obs(i)
+		enddo
 	else
 		nlam_obs=tel%nlam_obs
 		if(nlam_obs.gt.nlam) nlam_obs=nlam
@@ -121,8 +133,7 @@
 		open(unit=30,file=specfile,RECL=6000)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
-		fstar1=arrinterpol(tel%lam1,lam(nlam),D%Fstar,nlam,1)
-		fstar2=arrinterpol(tel%lam2,lam(nlam),D%Fstar,nlam,1)
+		fstar1=arrinterpol(tel%lam1,lam,D%Fstar,nlam,1)
 		if(scat_how.ne.2) then
 		   write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,
      &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2
@@ -131,23 +142,25 @@
      &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2,
      &                         1d23*fluxQ*ExtISM/D%distance**2
 		endif
-		do j=1,nlam
-		   if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-		      call TraceFlux(image,lam(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
-		      ExtISM=Reddening(lam(j),compute_dlam(lam(j)),Av)
-		      if(scat_how.ne.2) then
-			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
-     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*D%Fstar(j)/D%distance**2
-		      else
-			 write(30,*) lam(j),1d23*spec(j)*ExtISM/D%distance**2,
-     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*D%Fstar(j)/D%distance**2,
+		do j=1,nlam_obs
+		   if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
+				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle)
+				ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
+				fstar1=arrinterpol(lam_obs(j),lam,D%Fstar,nlam,1)
+				if(scat_how.ne.2) then
+					write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
+     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*fstar1/D%distance**2
+				else
+					write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
+     &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*fstar1/D%distance**2,
      &                               1d23*specQ(j)*ExtISM/D%distance**2
-		      endif
-		      call flush(30)
-		   endif
+				endif
+				call flush(30)
+			endif
 		enddo
 		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle)
 		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
+		fstar2=arrinterpol(tel%lam2,lam,D%Fstar,nlam,1)
 		if(scat_how.ne.2) then
 		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
      &          	       1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2
@@ -601,6 +614,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%trans_nr2=1
 	def%popfile=' '
 	def%nlam_obs=-1
+	def%lamfile=' '
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -836,6 +850,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		tel(nobs)%tracegas=def%tracegas
 		tel(nobs)%nlam_obs=def%nlam_obs
 		tel(nobs)%fastobs=def%fastobs
+		tel(nobs)%lamfile=def%lamfile
 	endif
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
@@ -911,6 +926,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			if(i.le.100) read(value,*) def%trace(i)
 		endif
 		if(key.eq.'linefile') def%linefile=value
+		if(key.eq.'lamfile') def%lamfile=value
 		if(key.eq.'popfile') def%popfile=value
 		if(key.eq.'trans_nr') read(value,*) def%trans_nr1
 		if(key.eq.'trans_nr1') read(value,*) def%trans_nr1
@@ -975,7 +991,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%theta(i)=pi*tel(nobs)%theta(i)/180d0
 		endif
 c       Gijsexp: allow more than two wavelength/angle combo's for basevis 
-		if(key(1:3).eq.'lam'.and.tel(nobs)%kind.eq.'BASEVIS') then
+		if(key(1:3).eq.'lam'.and.tel(nobs)%kind.eq.'BASEVIS'.and.key.ne.'lamfile') then
 			read(key(4:len_trim(key)),*) i
 			if(i.gt.tel(nobs)%nlam) tel(nobs)%nlam=i 
 			read(value,*) tel(nobs)%lam(i)
@@ -1012,6 +1028,7 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 			if(i.le.100) read(value,*) tel(nobs)%trace(i)
 		endif
 		if(key.eq.'linefile') tel(nobs)%linefile=value
+		if(key.eq.'lamfile') tel(nobs)%lamfile=value
 		if(key.eq.'popfile') tel(nobs)%popfile=value
 		if(key.eq.'trans_nr') read(value,*) tel(nobs)%trans_nr1
 		if(key.eq.'trans_nr1') read(value,*) tel(nobs)%trans_nr1
