@@ -305,6 +305,7 @@ c use the slow backup determination of average scattering matrix instead
 					tot=0d0
 					do ii=1,ngrains
 						do iopac=1,Grain(ii)%nopac
+							w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
 							tot=tot+w1*Grain(ii)%F(iopac,i)%F11(iscat)*Grain(ii)%Ksca(iopac,i)
 						enddo
 					enddo
