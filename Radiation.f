@@ -292,8 +292,8 @@ c use the slow backup determination of average scattering matrix instead
 		enddo
 		enddo
 
-		pol_scat=phot%pol				
-1		call scatangle(phot,M,iscat)
+1		pol_scat=phot%pol
+		call scatangle(phot,M,iscat)
 		if(multiwav) then
 			if(pol_scat) then
 				specemit(1:nlam)=0d0
@@ -313,6 +313,7 @@ c use the slow backup determination of average scattering matrix instead
 				enddo
 				call integrate(specemit,tot)
 				specemit=specemit/tot
+				column(1:ngrains,1:ngrains2)=0d0
 			endif
 		endif
 	endif
