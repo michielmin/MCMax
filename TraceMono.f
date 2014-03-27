@@ -590,7 +590,7 @@ c-----------------------------------------------------------------------
 	real*8,allocatable :: VisEmisDis(:,:),EmisDis(:,:),vismass(:,:)
 	integer,allocatable :: NEmisDis(:,:)
 	real*8 Einner,fact_IRF
-	integer Nstar,ip,np,jj,Nmin
+	integer Nstar,ip,np,jj,Nmin,iscat
 	type(Mueller) M
 	
 	allocate(VisEmisDis(0:D%nR+1,0:D%nTheta+1))
@@ -763,7 +763,8 @@ c Start tracing the photons
 	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,s1,s2,phot2,ninteract)
+!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,
+!$OMP&   s1,s2,phot2,ninteract,iscat)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,idum,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF)
 !$OMP DO
@@ -844,7 +845,7 @@ c	fstop=C(phot%i,phot%j)%Albedo
 	if(scat_how.eq.1) then
 		call randomdirection(phot%vx,phot%vy,phot%vz)
 	else
-		call scatangle(phot,C(phot%i,phot%j)%F)
+		call scatangle(phot,C(phot%i,phot%j)%F,iscat)
 	endif
 	
 	goto 1

@@ -45,7 +45,7 @@
 	real*8 spec(nlam),Albedo,ran2,T0,T1,increaseT,increaseTP
 	real*8 x,y,z,phi,theta,r,Ksca,Kext,kp,Kabs,Edust,Egas,tot
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),w1,w2,KscaR
-	integer i,iT,iT0,iT1,l,ii,iopac
+	integer i,iT,iT0,iT1,l,ii,iopac,iscat
 	type(Mueller) M
 
 	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
@@ -278,8 +278,8 @@ c use the slow backup determination of average scattering matrix instead
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
 			w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
-			w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
-			w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
+			w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)/Ksca
+			w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)/Ksca
 			M%IF11=M%IF11+w1*Grain(ii)%F(iopac,phot%ilam1)%IF11+w2*Grain(ii)%F(iopac,phot%ilam2)%IF11
 			M%IF12=M%IF12+w1*Grain(ii)%F(iopac,phot%ilam1)%IF12+w2*Grain(ii)%F(iopac,phot%ilam2)%IF12
 			M%F11=M%F11+w1*Grain(ii)%F(iopac,phot%ilam1)%F11+w2*Grain(ii)%F(iopac,phot%ilam2)%F11
@@ -290,13 +290,28 @@ c use the slow backup determination of average scattering matrix instead
 			M%F44=M%F44+w1*Grain(ii)%F(iopac,phot%ilam1)%F44+w2*Grain(ii)%F(iopac,phot%ilam2)%F44
 		enddo
 		enddo
-		
-1		call scatangle(phot,M)
+
+				
+1		call scatangle(phot,M,iscat)
 		if(multiwav) then
-			specemit(1:nlam)=0d0
-			specemit(phot%ilam1)=phot%wl1
-			specemit(phot%ilam2)=phot%wl2
-			column(1:ngrains,1:ngrains2)=0d0
+c			specemit(1:nlam)=0d0
+c			specemit(phot%ilam1)=phot%wl1
+c			specemit(phot%ilam2)=phot%wl2
+c			column(1:ngrains,1:ngrains2)=0d0
+			do i=1,nlam
+				tot=0d0
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						w1=C(phot%i,phot%j)%w(ii)*C(phot%i,phot%j)%wopac(ii,iopac)
+						w2=w1*phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
+						w1=w1*phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
+						tot=tot+w1*Grain(ii)%F(iopac,phot%ilam1)%F11(iscat)+w2*Grain(ii)%F(iopac,phot%ilam2)%F11(iscat)
+					enddo
+				enddo
+				specemit(i)=specemit(i)*tot/M%F11(iscat)
+			enddo
+			call integrate(specemit,tot)
+			specemit=specemit/tot
 		endif
 	endif
 	
@@ -329,13 +344,13 @@ c	F(i)%F11,F12,F22,F33,F34,F44	: elements of the Mueller matrix (normalized)
 c	F(i)%IF11						: integral of the F11 and F12 elements weighted with sin(theta)
 c 
 c------------------------------------------------------------------------
-	subroutine scatangle(phot,M)
+	subroutine scatangle(phot,M,iscat)
 	use Parameters
 	IMPLICIT NONE
 	real*8 theta,Fr,ran2,Fi,FiOld,w1,w2,s1,s2,x,y,z
 	real*8 E,Q,U,V,F,IF11,IF12,I0,I1,Itot,phi,wp1,P,P2,r,thet
 	type(photon) phot
-	integer i,ii,iopac
+	integer i,ii,iopac,iscat
 	type(Mueller) M
 
 	IF11=M%IF11*180d0
@@ -440,6 +455,7 @@ c Rotate the propagation vector.
 
 c Photon is now polarized !
 	if(i.ne.1.and.i.ne.180) phot%pol=.true.
+	iscat=i
 
 	return
 	end
