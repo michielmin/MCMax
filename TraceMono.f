@@ -5,11 +5,11 @@ c					 increase the accuracy of the determination of
 c					 the diffuse field.
 c		20071126 MM: Added the (Z)impol output mode which is Q-U
 
-	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening,inc)
+	subroutine TraceFlux(image,lam0,flux,scatflux,fluxQ,Nphot,NphotStar,opening,inc,mask,wmask)
 	use Parameters
 	use InputOutput
 	IMPLICIT NONE
-	real*8 lam0,tau,phi,flux,opening,inc
+	real*8 lam0,tau,phi,flux,opening,inc,mask,wmask
 	integer i,j,k,ii,jj,Nphot,NphotStar
 	type(RPhiImage) image
 	real*8 tau_e,tau_s,tau_a,w1,w2,nu0,exptau_e
@@ -498,6 +498,10 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 	do k=1,image%nPhi
 		w1=2d0*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 		w2=2d0*pi*abs(image%R(i+1))*AU**2/real(image%nPhi)
+		if(mask.lt.1d0.and.(image%R(i+1)/(D%distance/parsec)).lt.wmask) then
+			w1=w1*mask
+			w2=w2*mask
+		endif
 		flux=flux+(image%R(i+1)-image%R(i))*
      &		(w1*image%image(i,k)+w2*image%image(i+1,k))/2d0
 		scatflux=scatflux+(image%R(i+1)-image%R(i))*
