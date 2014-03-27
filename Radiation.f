@@ -293,6 +293,7 @@ c use the slow backup determination of average scattering matrix instead
 		enddo
 
 1		pol_scat=phot%pol
+		pol_scat=.false.	! this is a bit cheating on the polarization, but this is fine.
 		call scatangle(phot,M,iscat)
 		if(multiwav) then
 			if(pol_scat) then
