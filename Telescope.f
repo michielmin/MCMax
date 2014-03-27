@@ -45,7 +45,7 @@
 		allocate(lam_obs(nlam_obs))
 		rewind(25)
 		do i=1,nlam_obs
-			read(25,*,err=3) lam_obs(i)
+3			read(25,*,err=3) lam_obs(i)
 		enddo
 	else
 		nlam_obs=tel%nlam_obs
