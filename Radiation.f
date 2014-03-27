@@ -47,6 +47,7 @@
 	real*8 epsT1,epsT0,KabsQHP,KabsTot,Ks(nlam),w1,w2,KscaR
 	integer i,iT,iT0,iT1,l,ii,iopac,iscat
 	type(Mueller) M
+	logical pol_scat
 
 	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
 		Egas=phot%E*C(phot%i,phot%j)%FE(0)
@@ -291,24 +292,27 @@ c use the slow backup determination of average scattering matrix instead
 		enddo
 		enddo
 
-				
+		pol_scat=phot%pol				
 1		call scatangle(phot,M,iscat)
 		if(multiwav) then
-c			specemit(1:nlam)=0d0
-c			specemit(phot%ilam1)=phot%wl1
-c			specemit(phot%ilam2)=phot%wl2
-c			column(1:ngrains,1:ngrains2)=0d0
-			do i=1,nlam
-				tot=0d0
-				do ii=1,ngrains
-					do iopac=1,Grain(ii)%nopac
-						tot=tot+w1*Grain(ii)%F(iopac,i)%F11(iscat)*Grain(ii)%Ksca(iopac,i)
+			if(pol_scat) then
+				specemit(1:nlam)=0d0
+				specemit(phot%ilam1)=phot%wl1
+				specemit(phot%ilam2)=phot%wl2
+				column(1:ngrains,1:ngrains2)=0d0
+			else
+				do i=1,nlam
+					tot=0d0
+					do ii=1,ngrains
+						do iopac=1,Grain(ii)%nopac
+							tot=tot+w1*Grain(ii)%F(iopac,i)%F11(iscat)*Grain(ii)%Ksca(iopac,i)
+						enddo
 					enddo
+					specemit(i)=specemit(i)*tot/M%F11(iscat)
 				enddo
-				specemit(i)=specemit(i)*tot/M%F11(iscat)
-			enddo
-			call integrate(specemit,tot)
-			specemit=specemit/tot
+				call integrate(specemit,tot)
+				specemit=specemit/tot
+			endif
 		endif
 	endif
 	
