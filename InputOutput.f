@@ -284,7 +284,7 @@ C	 create the new empty FITS file
 	do i=1,nvars
 		write(hdu,'("HDU",i2)') i
 		call ftpkys(unit,hdu,trim(vars(i)),'',status)
-		print*,i,status
+		print*,i,status,hdu,trim(vars(i))
 	enddo
 
 	!  Write the array to the FITS file.
