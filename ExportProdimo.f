@@ -615,7 +615,6 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	!  Check for any error, and if so print out error messages
 	if (status.gt.0) then
 	   print*,'error in ExportProDiMo'
-	   stop
 	end if
 
 

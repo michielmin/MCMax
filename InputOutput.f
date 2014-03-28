@@ -264,27 +264,18 @@ C	 create the new empty FITS file
 	! Write optional keywords to the header
 
 	call ftpkyd(unit,'Rin',D%Rin,8,'[AU]',status)
-	print*,'Rin',status
 	call ftpkyd(unit,'Rout',D%Rout,8,'[AU]',status)
-	print*,'Rout',status
 
 	call ftpkyj(unit,'nR',D%nR-1,' ',status)
-	print*,'nR',status
 	call ftpkyj(unit,'nTheta',D%nTheta-1,' ',status)
-	print*,'nTheta',status
 	call ftpkyj(unit,'ngrains',ngrains,' ',status)
-	print*,'ngrains',status
 	call ftpkyj(unit,'ngrains2',ngrains2,' ',status)
-	print*,'ngrains2',status
 	call ftpkyj(unit,'nlam',nlam,' ',status)
-	print*,'nlam',status
 
 	call ftpkyj(unit,'nHDU',nvars,' ',status)	
-	print*,'nHDU',status
 	do i=1,nvars
 		write(hdu,'("HDU",i2)') i
 		call ftpkys(unit,hdu,trim(vars(i)),'',status)
-		print*,i,status,hdu,trim(vars(i))
 	enddo
 
 	!  Write the array to the FITS file.
