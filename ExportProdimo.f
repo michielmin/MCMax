@@ -712,7 +712,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	
 	call system(command)
 	
-	command='cd ' // trim(outdir) // '; ' // trim(scriptname)
+	command='cd ' // trim(outdir) // '; ./' // trim(scriptname)
 
 	call system(command)
 	
