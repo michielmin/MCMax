@@ -129,6 +129,7 @@
 
 	NphotUV=250000
 	maxlamUV=0.3d0
+	UV_PAH=.true.
 
 	scattype(1:9)='ISOTROPIC'
 	scat_how=1
@@ -617,6 +618,7 @@ c	endif
 	if(key.eq.'nfirst') read(value,*) NFirst
 	if(key.eq.'nphotuv') read(value,*) NphotUV
 	if(key.eq.'maxlamuv') read(value,*) maxlamUV
+	if(key.eq.'uv_pah') read(value,*) UV_PAH
 
 	if(key.eq.'idum') read(value,*) idum
 

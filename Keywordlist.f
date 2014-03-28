@@ -359,6 +359,8 @@
 	i=i+1
 	keyword(i)='maxlamuv'
 	i=i+1
+	keyword(i)='uv_pah'
+	i=i+1
 	keyword(i)='innergas'
 	i=i+1
 	keyword(i)='rinnergas'
