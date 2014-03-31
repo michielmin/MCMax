@@ -1588,7 +1588,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	integer ii,k,i,j,ii2
-	real*8 tot,f,T,r1,r2
+	real*8 tot,f,T,r1,r2,theta
 	real*8 scale,RoundOff ! Gijsexp, for rounding SDP
 
 c	MassTot0=0d0
@@ -1601,6 +1601,8 @@ c	enddo
 	do j=1,D%nTheta-1
 
 	call tellertje(j,D%nTheta-1)
+
+	theta=D%theta_av(j)*180d0/pi
 
 	do i=0,D%nR-1
 
@@ -1615,7 +1617,8 @@ c	enddo
 	      r2=D%R_av(i)/AU	!*sin(D%thet(j+1))**Grain(ii)%shaperad/AU
 
 	      !  destroy outside [minrad,maxrad], round off using shaperad
-	      if(r2.gt.Grain(ii)%maxrad.or.r1.lt.Grain(ii)%minrad) then
+	      if(r2.gt.Grain(ii)%maxrad.or.r1.lt.Grain(ii)%minrad
+     &			.or.theta.gt.Grain(ii)%maxtheta.or.theta.lt.Grain(ii)%mintheta) then
 		 C(i,j)%w(ii)=0d0
 
 	      !  round rim at minrad?

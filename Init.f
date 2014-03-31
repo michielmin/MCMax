@@ -58,7 +58,7 @@
 	character*500,allocatable :: computepart_Tfile(:,:)
 	character*20 computepart_standard(MAXPART)
 	integer nused,npert
-	real*8 fpert
+	real*8 fpert,mintheta(MAXPART),maxtheta(MAXPART)
 
 	allocate(computepart_T(MAXPART,50))
 	allocate(computepart_Tfile(MAXPART,50))
@@ -208,6 +208,8 @@
 
 	minrad(1:MAXPART)=0d0
 	maxrad(1:MAXPART)=1d50
+	mintheta(1:MAXPART)=-360d0
+	maxtheta(1:MAXPART)=360d0
 	shaperad(1:MAXPART)=0d0
 	roundtype(1:MAXPART)=' '	! Gijsexp: round off rim at minrad 
 	roundwidth(1:MAXPART)=0d0	! Gijsexp
@@ -817,6 +819,20 @@ c			endif
 			read(value,*) maxrad(i)
 		endif
 	endif
+	if(key(1:8).eq.'mintheta') then
+		arg_abun=.true.
+		read(key(9:len_trim(key)),*) i
+		if(i.le.100) then
+			read(value,*) mintheta(i)
+		endif
+	endif
+	if(key(1:8).eq.'maxtheta') then
+		arg_abun=.true.
+		read(key(9:len_trim(key)),*) i
+		if(i.le.100) then
+			read(value,*) maxtheta(i)
+		endif
+	endif
 	if(key(1:8).eq.'shaperad') then
 		arg_abun=.true.
 		read(key(9:len_trim(key)),*) i
@@ -1297,6 +1313,8 @@ C       End
 				part_shscale(i+computepart_ngrains(ii)-1)=part_shscale(i)
 				minrad(i+computepart_ngrains(ii)-1)=minrad(i)
 				maxrad(i+computepart_ngrains(ii)-1)=maxrad(i)
+				mintheta(i+computepart_ngrains(ii)-1)=mintheta(i)
+				maxtheta(i+computepart_ngrains(ii)-1)=maxtheta(i)
 				roundwidth(i+computepart_ngrains(ii)-1)=roundwidth(i)
 				roundpow(i+computepart_ngrains(ii)-1)=roundpow(i)
 				roundpeak(i+computepart_ngrains(ii)-1)=roundpeak(i)
@@ -1354,6 +1372,8 @@ C       End
 				part_shscale(i+ii-1)=part_shscale(ii)
 				minrad(i+ii-1)=minrad(ii)
 				maxrad(i+ii-1)=maxrad(ii)
+				mintheta(i+ii-1)=mintheta(ii)
+				maxtheta(i+ii-1)=maxtheta(ii)
 				roundwidth(i+ii-1)=roundwidth(ii)
 				roundpow(i+ii-1)=roundpow(ii)
 				roundpeak(i+ii-1)=roundpeak(ii)

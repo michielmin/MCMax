@@ -70,7 +70,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		integer qhpnr
 		character*20 material,shtype,roundtype
 		integer nopac,parttype
-		real*8 Rcryst,Tcryst,powcryst,maxtau,maxrad,minrad,shaperad
+		real*8 Rcryst,Tcryst,powcryst,maxtau,maxrad,minrad,shaperad,maxtheta,mintheta
 		real dust_moment1,dust_moment2,dust_moment3
 		real*8 roundwidth,roundpow !Gijsexp, roundoff
 ! parttype=1	Normal particle

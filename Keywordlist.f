@@ -489,6 +489,10 @@ c from here on keywords with numbers
 	keyword(i)='computepah'
 	i=i+1
 	keyword(i)='prodimo'
+	i=i+1
+	keyword(i)='maxtheta'
+	i=i+1
+	keyword(i)='mintheta'
 
 	Nkey=i
 	if(Nkey.gt.300) then
