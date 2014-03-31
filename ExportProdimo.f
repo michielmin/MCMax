@@ -122,6 +122,15 @@ C	 create the new empty FITS file
 
 c	call RenormalizeLRF()
 
+c distance also to the prodimo_extra file
+	write(key,'("dist")')
+	write(value,'(e12.3)') D%distance/parsec
+	call writeExtraProDiMo(key,value)
+c inclination to the prodimo_extra file
+	write(key,'("incl")')
+	write(value,'(f12.3)') D%IA
+	call writeExtraProDiMo(key,value)
+
 	! Write the required header keywords.
 	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
 
@@ -138,6 +147,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'fUV',real(fUV),-3,'',status)
 	call ftpkye(unit,'slope_UV',real(pUV),-3,'',status)
 	call ftpkye(unit,'distance',real(D%distance/parsec),-8,'[pc]',status)
+
 	call ftpkye(unit,'edge',real(D%Rout),-8,'[AU]',status)
 
 	call ftpkye(unit,'disk_dust_mass_tot',real(Mdust),-8,'[Msun]',status)
