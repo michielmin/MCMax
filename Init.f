@@ -3601,6 +3601,8 @@ c	this is a wedge zone!
 	do ii=1,ngrains
 		Grain(ii)%maxrad=maxrad(ii)
 		Grain(ii)%minrad=minrad(ii)
+		Grain(ii)%maxtheta=maxtheta(ii)
+		Grain(ii)%mintheta=mintheta(ii)
 		Grain(ii)%shaperad=shaperad(ii)
 		Grain(ii)%roundtype=roundtype(ii)
 		Grain(ii)%roundpow=roundpow(ii)
