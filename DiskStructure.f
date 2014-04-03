@@ -349,9 +349,12 @@ c	this is not a wedge zone!
 					zz=D%R_av(i)*cos(D%theta_av(j))/AU
 					hr=scale*Zone(fix)%sh*(rr/Zone(fix)%Rsh)**Zone(fix)%shpow
 					f1=rr**(-Zone(fix)%denspow)
-					f2=exp(-(zz/hr)**2)
-					if(j.eq.D%nTheta-1) f2=1d0
-					rho(j,ii)=log(f1*f2/hr)
+c					f2=exp(-(zz/hr)**2)
+c					if(j.eq.D%nTheta-1) f2=1d0
+					f2=-(zz/hr)**2
+					if(j.eq.D%nTheta-1) f2=0d0
+c					rho(j,ii)=log(f1*f2/hr)
+					rho(j,ii)=log(f1/hr)+f2
 				enddo
 			endif
 		endif
