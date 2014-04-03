@@ -200,15 +200,17 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 			write(value,'(e12.3)') 1d0/gas2dust
 			call writeExtraProDiMo(key,value)
 			if(use_qhp) then
-				if(i.eq.1) then
-					write(key,'("fPAH")')
-				else
-					write(key,'("f",i1,"PAH")') i
-				endif
 				fPAHprodimo=ZonesProDiMo(i)%fPAH*1.4/(gas2dust*3e-7*50d0*12.35)
-				write(value,'(e12.3)') fPAHprodimo
-				call writeExtraProDiMo(key,value)
+			else
+				fPAHprodimo=1d-5
 			endif
+			if(i.eq.1) then
+				write(key,'("fPAH")')
+			else
+				write(key,'("f",i1,"PAH")') i
+			endif
+			write(value,'(e12.3)') fPAHprodimo
+			call writeExtraProDiMo(key,value)
 		enddo
 	endif
 

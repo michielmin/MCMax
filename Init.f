@@ -826,7 +826,7 @@ c			endif
 			read(value,*) mintheta(i)
 		endif
 	endif
-	if(key(1:8).eq.'maxtheta') then
+	if(key(1:8).eq.'maxtheta'.and.key.ne.'maxthetaprodimo') then
 		arg_abun=.true.
 		read(key(9:len_trim(key)),*) i
 		if(i.le.100) then
