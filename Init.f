@@ -1193,7 +1193,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
 	
-	if(key(1:7).eq.'prodimo') call writeExtraProDiMo(line(9:len_trim(key)),trim(value))
+	if(key(1:7).eq.'prodimo'.and.key(8:8).eq.':') call writeExtraProDiMo(line(9:len_trim(key)),trim(value))
 
 	if(key.eq.'outputfits') read(value,*) outputfits
 	if(key.eq.'multicore') read(value,*) multicore
