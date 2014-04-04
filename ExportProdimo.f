@@ -152,8 +152,8 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'disk_dust_mass_tot',real(Mdust),-8,'[Msun]',status)
 
-	call ftpkyj(unit,'n_zones',max(nzonesProDiMo,1),'',status)
-	call ftpkyj(unit,'n_regions',max(nzonesProDiMo,1),'',status)
+	call ftpkyj(unit,'n_zones',nzonesProDiMo,'',status)
+	call ftpkyj(unit,'n_regions',nzonesProDiMo,'',status)
 
 	if(nzonesProDiMo.le.0) then
 		call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
@@ -739,7 +739,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	logical zo0(nzones),zo1(nzones)
 
 	if(prodimo1zone) then
-		nz=0
+		nz=1
 		return
 	endif
 
@@ -805,8 +805,24 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	integer region_index(D%nR-1)
 
 	if(prodimo1zone) then
-		nz=0
+		nz=1
 		region_index=1
+		ZonesProDiMo(1)%Mdust=D%Mtot
+		ZonesProDiMo(1)%Rin=D%Rin
+		ZonesProDiMo(1)%Rout=D%Rout
+		if(nzones.gt.0) then
+			ZonesProDiMo(1)%Rsh=Zone(1)%Rsh
+			ZonesProDiMo(1)%sh=Zone(1)%sh
+			ZonesProDiMo(1)%shpow=Zone(1)%shpow
+			ZonesProDiMo(1)%denspow=Zone(1)%denspow
+			ZonesProDiMo(1)%fPAH=Zone(1)%fPAH
+		else
+			ZonesProDiMo(1)%Rsh=1d0
+			ZonesProDiMo(1)%sh=D%sh1au
+			ZonesProDiMo(1)%shpow=D%shpow
+			ZonesProDiMo(1)%denspow=D%denspow
+			ZonesProDiMo(1)%fPAH=1d-5
+		endif
 		return
 	endif
 	if(nzones.lt.1) then
