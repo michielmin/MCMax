@@ -30,7 +30,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer ntau1_lam !Gijsexp
 	integer mrn_ngrains,thinparticle !Gijsexp
 	logical struct_iter,scattering,arraysallocated,RNDW,dosmooth,use_obs_TMC,exportFLiTs
-	logical exportProDiMo,runProDiMo,bg_correct,runscript
+	logical exportProDiMo,runProDiMo,bg_correct,runscript,prodimo1zone
 	logical FLD,storescatt,overflow,tcontact,tdes_iter,shell1D,forcediff,multiwav,outputfits
 	logical useobspol,readmcscat,makeangledependence,gridrefine,thgridrefine,etrace,use_qhp,use_topac,computeLRF
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha

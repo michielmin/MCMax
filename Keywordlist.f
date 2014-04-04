@@ -382,6 +382,8 @@
 	keyword(i)='runscript'
 	i=i+1
 	keyword(i)='scriptname'
+	i=i+1
+	keyword(i)='prodimo1zone'
 	
 	Nnormal=i
 c from here on keywords with numbers

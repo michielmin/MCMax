@@ -328,6 +328,7 @@
 	runProDiMo=.false.
 	ProDiModir='filesProDiMo'
 	maxthetaProDiMo=75d0
+	prodimo1zone=.false.
 	exportFLiTs=.false.
 	runscript=.false.
 	scriptname='postprocessing.sh'
@@ -1185,6 +1186,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'exportprodimo') read(value,*) exportProDiMo
 	if(key.eq.'runprodimo') read(value,*) runProDiMo
 	if(key.eq.'dirprodimo') write(ProDiModir,'(a,"/")') trim(value)
+	if(key.eq.'prodimo1zone') read(value,*) prodimo1zone
 	if(key.eq.'runscript') read(value,*) runscript
 	if(key.eq.'scriptname') scriptname=value
 	if(key.eq.'maxthetaprodimo') read(value,*) maxthetaProDiMo

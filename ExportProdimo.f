@@ -738,6 +738,11 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	integer nz,i,j,ri
 	logical zo0(nzones),zo1(nzones)
 
+	if(prodimo1zone) then
+		nz=1
+		return
+	endif
+
 	if(nzones.le.1) then
 		nz=nzones
 		return
@@ -799,6 +804,11 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	logical zo0(nzones),zo1(nzones)
 	integer region_index(D%nR-1)
 
+	if(prodimo1zone) then
+		nz=1
+		region_index=1
+		return
+	endif
 	if(nzones.lt.1) then
 		nz=nzones
 		region_index=1
