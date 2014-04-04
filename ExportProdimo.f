@@ -152,8 +152,8 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'disk_dust_mass_tot',real(Mdust),-8,'[Msun]',status)
 
-	call ftpkyj(unit,'n_zones',nzonesProDiMo,'',status)
-	call ftpkyj(unit,'n_regions',nzonesProDiMo,'',status)
+	call ftpkyj(unit,'n_zones',max(nzonesProDiMo,1),'',status)
+	call ftpkyj(unit,'n_regions',max(nzonesProDiMo,1),'',status)
 
 	if(nzonesProDiMo.le.0) then
 		call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
