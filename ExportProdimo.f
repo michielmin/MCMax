@@ -739,7 +739,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	logical zo0(nzones),zo1(nzones)
 
 	if(prodimo1zone) then
-		nz=1
+		nz=0
 		return
 	endif
 
@@ -805,7 +805,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	integer region_index(D%nR-1)
 
 	if(prodimo1zone) then
-		nz=1
+		nz=0
 		region_index=1
 		return
 	endif
