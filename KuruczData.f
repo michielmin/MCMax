@@ -1,4 +1,3 @@
-	
       module Kurucz
       IMPLICIT NONE
       integer nkurucz,nkuruczlam

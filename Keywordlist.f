@@ -327,6 +327,8 @@
 	i=i+1
 	keyword(i)='t_irf'
 	i=i+1
+	keyword(i)='t_ismdust'
+	i=i+1
 	keyword(i)='f_irf'
 	i=i+1
 	keyword(i)='exportprodimo'

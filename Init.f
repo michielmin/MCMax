@@ -398,6 +398,7 @@ c	Initialize the 10 temp zones with defaults
 c	Interstellar Radiation Field (IRF)
 	T_BG=2.7d0
 	T_IRF=20000d0
+	T_ISMdust=10d0
 	F_IRF=1d0
 	use_IRF=.false.
 	bg_correct=.false.
@@ -1176,6 +1177,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'irf') read(value,*) use_IRF
 	if(key.eq.'t_bg') read(value,*) T_BG
 	if(key.eq.'t_irf') read(value,*) T_IRF
+	if(key.eq.'t_ismdust') read(value,*) T_ISMdust
 	if(key.eq.'f_irf') read(value,*) F_IRF
 	if(key.eq.'bg_correct') read(value,*) bg_correct
 
@@ -4305,6 +4307,27 @@ c Set the spectrum and energy for the interstellar radiation field
      &                                               +Planck(T_BG,lam(i)))
 		enddo
 		call integrate(IRF,E_IRF)
+		if(T_ISMdust.gt.0d0) then
+			allocate(spec(nlam))
+			do i=1,nlam
+				spec(i)=pi*(D%R(D%nR)*AU)**2*Planck(T_ISMdust,lam(i))
+			enddo
+			call integrate(spec,tot)
+			call integrate(IRF,E_IRF)
+			call ReadISRF(lam,spec,nlam)
+			call integrate(spec,tot2)
+			if(tot.gt.E_IRF) then
+				spec=spec*(tot-E_IRF)/tot2
+				IRF=IRF+spec
+				call integrate(IRF,E_IRF)
+			endif
+			deallocate(spec)
+		endif
+		open(unit=45,file='ISRF.dat',RECL=500)
+		do i=1,nlam
+			write(45,*) lam(i),IRF(i)
+		enddo
+		close(unit=45)
 	endif
 
 	if(nplanets.ne.0) then
