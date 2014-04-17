@@ -505,6 +505,7 @@ C	 create the new empty FITS file
 				if(nxx.gt.1) then
 					naxis=3
 					naxes(3)=nxx
+					nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
 				endif
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1

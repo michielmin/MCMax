@@ -6,6 +6,7 @@
 	subroutine MCRadiation(NphotTot,niter,dofastvisc)
 	use NAG
 	use Parameters
+	use InputOutput
 	IMPLICIT NONE
 	integer i,j,Nphot,NphotTot,nextTout,ii,iruns,niter,iT,iopac
 	real*8 ran2,tau,ct,inp,x,y,z,r,theta,increaseT
@@ -22,7 +23,7 @@
 	real*8 dspec(nlam),spec2(nlam,nangle),Mdot,FracVis,starttime,checktime
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
 	character*500 specfile,pressurefile,timefile
-	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:)
+	real*8,allocatable :: EJvTot(:,:),EJv2Tot(:,:),EJvTotP(:,:,:),betadisk(:,:,:)
 	logical scatbackup,emitted,dofastvisc,phot_irf
 	integer nsplit,isplit,iter,l
 	real*8 split(2),determineT,determineTP,T,ShakuraSunyaevIJ,where_emit,FracIRF
@@ -192,6 +193,8 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 				EJvTotP(ii,i,j)=0d0
 			enddo
 		endif
+		C(i,j)%FradZ=0d0
+		C(i,j)%FradR=0d0
 		if(.not.allocated(C(i,j)%KabsTot)) then
 			allocate(C(i,j)%KabsTot(nlam))
 			allocate(C(i,j)%KscaTot(nlam))
@@ -795,7 +798,23 @@ c	close(unit=20)
 		C(i,j)%FradR=C(i,j)%FradR/gas2dust
 	enddo
 	enddo
-	
+
+	if(radpress) then
+		allocate(betadisk(D%nR-1,D%nTheta-1,2))
+		do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			betadisk(i,j,1)=C(i,j)%FradZ*gas2dust
+			betadisk(i,j,2)=C(i,j)%FradR*gas2dust
+		enddo
+		enddo
+		if(outputfits) then
+			write(pressurefile,'(a,"RadPressure.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(pressurefile,'(a,"RadPressure.dat")') outdir(1:len_trim(outdir))
+		endif
+		call outputstruct(pressurefile,(/'ARRAY  '/),1,0,betadisk(1:D%nR-1,1:D%nTheta-1,1:2),2)
+		deallocate(betadisk)
+	endif
 	
 	if(dofastvisc.and.viscous) then
 	do i=1,D%nR-1
