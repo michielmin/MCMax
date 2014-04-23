@@ -398,7 +398,7 @@ c	Initialize the 10 temp zones with defaults
 c	Interstellar Radiation Field (IRF)
 	T_BG=2.7d0
 	T_IRF=20000d0
-	T_ISMdust=10d0
+	T_ISMdust=2.7d0
 	F_IRF=1d0
 	use_IRF=.false.
 	bg_correct=.false.
