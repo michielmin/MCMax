@@ -1089,12 +1089,12 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 		dphi=abs(p%phi2(i)-p%phi1(i))
 		if(abs(p%phi1(i)).le.opening.and.abs(p%phi2(i)).le.opening) then
 			p%v(i)=0d0
-			p%phi1(i)=opening*p%phi1(i)/abs(p%phi1(i))
+			p%phi1(i)=opening*sign(1d0,p%phi1(i))
 			p%jphi1(i)=real(NPHISCATT)*p%phi1(i)/360d0
 			p%jphi1(i)=p%jphi1(i)+1
 			if(p%jphi1(i).lt.1) p%jphi1(i)=1-p%jphi1(i)
 			if(p%jphi1(i).gt.NPHISCATT/2) p%jphi1(i)=NPHISCATT+1-p%jphi1(i)
-			p%phi2(i)=opening*p%phi2(i)/abs(p%phi2(i))
+			p%phi2(i)=opening*sign(1d0,p%phi2(i))
 			p%jphi2(i)=real(NPHISCATT)*p%phi2(i)/360d0
 			p%jphi2(i)=p%jphi2(i)+1
 			if(p%jphi2(i).lt.1) p%jphi2(i)=1-p%jphi2(i)
