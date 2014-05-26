@@ -844,7 +844,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 		do i=1,nzones
 			if(zo0(i).ne.zo1(i)) then
 				nz=nz+1
-				region_index(ri)=nz
+				region_index(ri:D%nR-1)=nz
 				ZonesProDiMo(nz)%Mdust=Zone(1)%Mdust
 				ZonesProDiMo(nz)%Rin=Zone(1)%Rin
 				ZonesProDiMo(nz)%Rout=Zone(1)%Rout
