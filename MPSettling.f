@@ -101,7 +101,7 @@ c            Grain(ii)%shscale(i)=scale_w(ii,i)
       !  Write scaling factor(s) to a file
       !
       write(outputfile,'(a,"scalefactor.dat")') outdir(1:len_trim(outdir))
-      open(unit=20,file=outputfile)
+      open(unit=20,file=outputfile,RECL=6000)
       do i=1,D%nR-1
 c         write(20,*) D%R_av(i) / AU, omegatau(1:ngrains,i)
 c         write(20,*) D%R_av(i) / AU, sh_dtg_d(1:ngrains,i)
