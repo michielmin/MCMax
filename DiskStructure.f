@@ -173,7 +173,7 @@ c	enddo
 			fix=0
 			do iz=1,nzones
 				if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
-					if(Zone(iz)%inc_grain(ii)) then
+					if(Zone(iz)%fix_struct.and.Zone(iz)%inc_grain(ii)) then
 						fix=iz
 					endif
 				endif
