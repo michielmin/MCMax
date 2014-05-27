@@ -169,18 +169,32 @@ c	enddo
 		enddo
 
 		! Use zones?
-		fix=0
-		do iz=1,nzones
-			if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
-				if(Zone(iz)%fix_struct) then
-					if(ii.eq.0) then
-						fix=iz
-					else if(Zone(iz)%inc_grain(ii)) then
+		if(ii.ne.0) then
+			fix=0
+			do iz=1,nzones
+				if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
+					if(Zone(iz)%inc_grain(ii)) then
 						fix=iz
 					endif
 				endif
-			endif
-		enddo
+			enddo
+		else
+			fix=0
+			do iz=1,nzones
+				if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
+					if(Zone(iz)%fix_struct) then
+						fix=iz
+					endif
+				endif
+			enddo
+			do iz=1,nzones
+				if(D%R_av(i).gt.(Zone(iz)%Rin*AU).and.D%R_av(i).lt.(Zone(iz)%Rout*AU)) then
+					if(.not.Zone(iz)%fix_struct) then
+						fix=0
+					endif
+				endif
+			enddo
+		endif
 		if(fix.eq.0) then
 c	go ahead, no zones with fixed structure
 
