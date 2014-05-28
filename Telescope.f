@@ -1251,7 +1251,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	type(RPhiImage) image
-	real*8 lam0,vmass,tau_e,wl1,wl2,w1,w2,tau0,Kext
+	real*8 lam0,vmass,tau_e,wl1,wl2,w1,w2,tau0,Kext,dens(0:D%nR,0:D%nTheta)
 	integer i,j,k,ip,jp,ilam1,ilam2,iopac,ii
 
 	write(*,*) lam0
@@ -1278,18 +1278,36 @@ c-----------------------------------------------------------------------
 		wl2=1d0
 	endif
 
+!$OMP PARALLEL IF(multicore)
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(i,j,ii,iopac)
+!$OMP& SHARED(dens,C,Grain,wl1,wl2,ilam1,ilam2,ngrains,D)
+!$OMP DO
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
-			C(i,j)%Kext=0d0
+		C(i,j)%Kext=0d0
+		dens(i,j)=0d0
 		do ii=1,ngrains
-		do iopac=1,Grain(ii)%nopac
-			C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
+			do iopac=1,Grain(ii)%nopac
+				C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
      &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-		enddo
+			enddo
+c			if(Grain(ii)%rv.lt.20d-4.and.C(i,j)%T.gt.60d0) then
+				dens(i,j)=dens(i,j)+C(i,j)%dens*C(i,j)%w(ii)
+c			endif
 		enddo
 	enddo
 	enddo
-	
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
+
+
+!$OMP PARALLEL IF(multicore)
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(i,j,tau0,ip,jp,Kext,tau_e)
+!$OMP& SHARED(image,dens,C)
+!$OMP DO
 	do i=1,image%nr
 	do j=1,image%nphi
 		tau0=0d0
@@ -1303,16 +1321,19 @@ c-----------------------------------------------------------------------
 
 			tau_e=image%p(i,j)%v(k)*C(ip,jp)%dens*Kext*AU
 			if((tau0+tau_e).gt.1d0) then
-				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*AU*(1d0-tau0)/tau_e
+				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*dens(ip,jp)*AU*(1d0-tau0)/tau_e
 				goto 1
 			else
-				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*AU
+				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*dens(ip,jp)*AU
 			endif
 			tau0=tau0+tau_e
 		enddo
 1		continue
 	enddo
 	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
 
 	do i=1,image%nr-1
 	do k=1,image%nPhi
