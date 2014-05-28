@@ -460,6 +460,25 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		deallocate(velo)
 		deallocate(velo_flux)
 		deallocate(velo_flux_R)
+	else if(tel%kind(1:11).eq.'VISIBLEMASS') then
+		readmcscat=tel%readmcscat
+		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
+		write(specfile,'(a,"visiblemass",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+     &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
+     &			,tel%flag(1:len_trim(tel%flag))
+		open(unit=30,file=specfile,RECL=6000)
+		call TraceVisibleMass(image,tel%lam1,flux)
+		write(30,*) tel%lam1,flux
+		do j=1,nlam_obs
+		   if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
+				call TraceVisibleMass(image,lam_obs(j),flux)
+				write(30,*) lam_obs(j),flux
+				call flush(30)
+			endif
+		enddo
+		call TraceVisibleMass(image,tel%lam2,flux)
+		write(30,*) tel%lam2,flux
+		close(unit=30)
 	else
 		stop
 	endif
@@ -647,6 +666,11 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		write(9,'("Type: ",a)') tel(nobs)%kind(1:len_trim(tel(nobs)%kind))
 		allocate(tel(nobs)%fov(def%nfov))
 		if(tel(nobs)%kind.eq.'SPECTRUM') then
+			tel(nobs)%angle=def%angle
+			tel(nobs)%lam1=def%lam1
+			tel(nobs)%lam2=def%lam2
+			tel(nobs)%readmcscat=def%readmcscat
+		else if(tel(nobs)%kind.eq.'VISIBLEMASS') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=def%lam1
 			tel(nobs)%lam2=def%lam2
@@ -1223,4 +1247,85 @@ c-----------------------------------------------------------------------
 	end
 	
 
-		
+	subroutine TraceVisibleMass(image,lam0,vmass)	
+	use Parameters
+	IMPLICIT NONE
+	type(RPhiImage) image
+	real*8 lam0,vmass,tau_e,wl1,wl2,w1,w2,tau0,Kext
+	integer i,j,k,ip,jp,ilam1,ilam2,iopac,ii
+
+	write(*,*) lam0
+
+	image%lam=lam0
+	if(lam0.le.lam(1)) then
+		ilam1=1
+		ilam2=2
+		wl1=1d0
+		wl2=0d0
+	endif
+	do i=1,nlam-1
+		if(lam0.ge.lam(i).and.lam0.le.lam(i+1)) then
+			ilam1=i
+			ilam2=i+1
+			wl1=(lam(i+1)-lam0)/(lam(i+1)-lam(i))
+			wl2=(lam0-lam(i))/(lam(i+1)-lam(i))
+		endif
+	enddo
+	if(lam0.ge.lam(nlam)) then
+		ilam1=nlam-1
+		ilam2=nlam
+		wl1=0d0
+		wl2=1d0
+	endif
+
+	do i=0,D%nR-1
+	do j=1,D%nTheta-1
+			C(i,j)%Kext=0d0
+		do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
+     &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+		enddo
+		enddo
+	enddo
+	enddo
+	
+	do i=1,image%nr
+	do j=1,image%nphi
+		tau0=0d0
+		image%image(i,j)=0d0
+		do k=1,image%p(i,j)%n
+
+			ip=image%p(i,j)%i(k)
+			jp=image%p(i,j)%j(k)
+
+			Kext=C(ip,jp)%Kext
+
+			tau_e=image%p(i,j)%v(k)*C(ip,jp)%dens*Kext*AU
+			if((tau0+tau_e).gt.1d0) then
+				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*AU*(1d0-tau0)/tau_e
+				goto 1
+			else
+				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*AU
+			endif
+			tau0=tau0+tau_e
+		enddo
+1		continue
+	enddo
+	enddo
+
+	do i=1,image%nr-1
+	do k=1,image%nPhi
+		w1=2d0*pi*abs(image%R(i))*AU**2/real(image%nPhi)
+		w2=2d0*pi*abs(image%R(i+1))*AU**2/real(image%nPhi)
+		vmass=vmass+(image%R(i+1)-image%R(i))*
+     &		(w1*image%image(i,k)+w2*image%image(i+1,k))/2d0
+	enddo
+	enddo
+
+	vmass=vmass/Msun
+	
+	return
+	end
+	
+
