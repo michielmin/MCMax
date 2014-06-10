@@ -1732,14 +1732,21 @@ c-----------------------------------------------------------------------
 	
 	if(i.eq.n) write(*,*)
 	if(i.eq.n) write(9,*)
-c	if(i.ne.n) then
-c		write(*,'(5a1,$)') (char(8),j=1,5)
-c		write(*,'(5a1,$)') (' ',j=1,5)
-c		write(*,'(5a1,$)') (char(8),j=1,5)
-c	else
-c		write(*,*)
-c	endif
 
+	return
+	end
+
+	logical function checktellertje(i,n)
+	IMPLICIT NONE
+	integer i,n,f
+
+	checktellertje=.false.
+	f=int(20d0*dble(i)/dble(n))
+	
+	if(20d0*real(i-1)/real(n).lt.real(f)
+     &   .and.20d0*real(i+1)/real(n).gt.real(f)) then
+		checktellertje=.true.
+	endif
 
 	return
 	end

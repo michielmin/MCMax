@@ -145,7 +145,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 	call ftpkye(unit,'Rstar',real(D%Rstar/Rsun),-8,'[Rsun]',status)
 	call ftpkye(unit,'Mstar',real(D%Mstar/Msun),-8,'[Msun]',status)
 	call ftpkye(unit,'fUV',real(fUV),-3,'',status)
-	call ftpkye(unit,'slope_UV',real(pUV),-3,'',status)
+	call ftpkye(unit,'slope_UV',real(min(pUV,3d0)),-3,'',status)
 	call ftpkye(unit,'distance',real(D%distance/parsec),-8,'[pc]',status)
 
 	call ftpkye(unit,'edge',real(D%Rout),-8,'[AU]',status)
@@ -184,7 +184,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 			call ftpkye(unit,'Rin'//trim(s),real(ZonesProDiMo(i)%Rin),-8,'[AU]',status)
 			call ftpkye(unit,'Rout'//trim(s),real(ZonesProDiMo(i)%Rout),-8,'[AU]',status)
 			call ftpkye(unit,'Rref'//trim(s),real(ZonesProDiMo(i)%Rsh),-8,'[AU]',status)
-			call ftpkye(unit,'H0'//trim(s),real(ZonesProDiMo(i)%sh/sqrt(2.0)),-8,'[AU]',status)
+			call ftpkye(unit,'H0'//trim(s),real(abs(ZonesProDiMo(i)%sh)/sqrt(2.0)),-8,'[AU]',status)
 			call ftpkye(unit,'beta'//trim(s),real(ZonesProDiMo(i)%shpow),-8,'',status)
 			call ftpkye(unit,'alpha'//trim(s),real(-ZonesProDiMo(i)%denspow),-8,'',status)
 
@@ -874,6 +874,18 @@ c	   wl = tab_lambda(lambda) * 1e-6
 		zo0=zo1
 	enddo
 	zonesProDiMo(nz)%Rout=D%R(D%nR)
+
+	do i=1,nz
+		ZonesProDiMo(i)%Mdust=0d0
+		do ri=1,D%nR-1
+			if(D%R_av(ri)/AU.ge.ZonesProDiMo(i)%Rin.and.D%R_av(ri)/AU.lt.ZonesProDiMo(i)%Rout) then
+				do j=1,D%nTheta-1
+					ZonesProDiMo(i)%Mdust=ZonesProDiMo(i)%Mdust+C(ri,j)%dens*C(ri,j)%V
+				enddo
+			endif
+		enddo
+		ZonesProDiMo(i)%Mdust=ZonesProDiMo(i)%Mdust/Msun
+	enddo
 
 	return
 	end

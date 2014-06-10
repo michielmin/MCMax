@@ -2616,6 +2616,8 @@ c	parameter(IMDIM=500)
 	real*8 al12,ar12,i12,c12,p12,s12
 	real*8 al21,ar21,i21,c21,p21,s21
 	real*8 al22,ar22,i22,c22,p22,s22
+	
+	logical checktellertje
 
 	IMDIM=tel%npixel
 	nintegrate=tel%nint
@@ -2653,9 +2655,15 @@ c	sinwi=sin(wi)
 
 !$OMP DO
 	do i=1,image%nr-1
+
+	if(checktellertje(i+1,image%nr+1)) then
 !$OMP CRITICAL
-	call tellertje(i+1,image%nr+1)
+		write(*,'(".",$)')
+		call flush(6)
+		write(9,'(".",$)')
+		call flush(9)
 !$OMP END CRITICAL
+	endif
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
 		do k=1,nintegrate
@@ -2780,14 +2788,10 @@ c			wy=gasdev(idum)*widthx
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
-!$OMP FLUSH(im)
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
-!$OMP FLUSH(imQ)
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
-!$OMP FLUSH(imU)
 					imU(ix,iy)=imU(ix,iy)+fluxU/real(2*nintegrate)
-!$OMP FLUSH(imV)
 					imV(ix,iy)=imV(ix,iy)+fluxV/real(2*nintegrate)
 				endif
 			endif
@@ -2802,14 +2806,10 @@ c			wy=gasdev(idum)*widthx
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
-!$OMP FLUSH(im)
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
-!$OMP FLUSH(imQ)
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
-!$OMP FLUSH(imU)
 					imU(ix,iy)=imU(ix,iy)-fluxU/real(2*nintegrate)
-!$OMP FLUSH(imV)
 					imV(ix,iy)=imV(ix,iy)-fluxV/real(2*nintegrate)
 				endif
 			endif
