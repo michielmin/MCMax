@@ -216,12 +216,12 @@ c      if (diagnose) write(*,'("total(abun)",e9.3,"=?=",e9.3," (sum)")') sum(abu
 	  if (mrn_ngrains.lt.ngrains) then
 
          ! print abundance
-         if (diagnose) write(*,*)
+c         if (diagnose) write(*,*)
          do ii=1,ngrains
-            if (diagnose) write(*,'("abun",i02,"= ",f10.8)') ii,abun(ii)
+c            if (diagnose) write(*,'("abun",i02,"= ",f10.8)') ii,abun(ii)
          enddo
-         if (diagnose) write(*,*)	  
-         if (diagnose) write(*,*) sum(abun)
+c         if (diagnose) write(*,*)	  
+c         if (diagnose) write(*,*) sum(abun)
 
 	     abun_norm=1d0 - sum(abun(mrn_ngrains+1:ngrains))
 	     abun(1:mrn_ngrains)=abun(1:mrn_ngrains) * abun_norm
@@ -229,12 +229,12 @@ c      if (diagnose) write(*,'("total(abun)",e9.3,"=?=",e9.3," (sum)")') sum(abu
 	  endif
             
       ! print abundance
-      if (diagnose) write(*,*)
+c      if (diagnose) write(*,*)
       do ii=1,ngrains
-         if (diagnose) write(*,'("abun",i02,"= ",f10.8)') ii,abun(ii)
+c         if (diagnose) write(*,'("abun",i02,"= ",f10.8)') ii,abun(ii)
       enddo
-      if (diagnose) write(*,*)
-      if (diagnose) write(*,*) sum(abun)
-      if (diagnose) write(*,*)
+c      if (diagnose) write(*,*)
+c      if (diagnose) write(*,*) sum(abun)
+c      if (diagnose) write(*,*)
 
       end subroutine 
