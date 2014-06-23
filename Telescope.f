@@ -409,7 +409,7 @@ c is still without interstellar extinction
      &			,int((tel%lam1-100d0*int(tel%lam1/100d0))/10d0)
      &			,tel%lam1-10d0*int((tel%lam1/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
-		call tau1temp(specfile,tel%lam1)		
+		call tau1temp(specfile,tel%lam1)
 	else if(tel%kind(1:4).eq.'LINE') then
 		if(tel%trans_nr2.lt.tel%trans_nr1) tel%trans_nr2=tel%trans_nr1
 		allocate(velo(tel%nvelo))
@@ -479,6 +479,21 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		call TraceVisibleMass(image,tel%lam2,flux)
 		write(30,*) tel%lam2,flux
 		close(unit=30)
+	else if(tel%kind(1:12).eq.'OPTICALDEPTH') then
+		readmcscat=.false.
+		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
+		call TraceOpticalDepth(image,tel%lam1)
+		do i=1,tel%nfov
+			if(tel%scaletype.eq.1) then
+				image%rscale=1d0
+				image%zscale=1d0
+			else if(tel%scaletype.eq.2) then
+				tel%fov(i)=tel%fov(i)*D%distance/parsec
+				image%rscale=parsec/D%distance
+				image%zscale=1d0
+			endif
+			call MakeSimpleImage(image,tel,tel%fov(i)/2d0,'OD')
+		enddo
 	else
 		stop
 	endif
@@ -683,6 +698,27 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%nangle=def%nangle
 			tel(nobs)%readmcscat=def%readmcscat
 		else if(tel(nobs)%kind.eq.'IMAGE') then
+			tel(nobs)%angle=def%angle
+			tel(nobs)%lam1=deflam
+			tel(nobs)%nfov=def%nfov
+			tel(nobs)%fov=def%fov
+			tel(nobs)%npixel=def%npixel
+			tel(nobs)%nint=def%nint
+			tel(nobs)%width=def%width
+			tel(nobs)%D=def%D
+			tel(nobs)%D2=def%D2
+			tel(nobs)%spider=def%spider
+			tel(nobs)%mask=def%mask
+			tel(nobs)%wmask=def%wmask
+			tel(nobs)%psffile=def%psffile
+			tel(nobs)%opening=def%opening
+			tel(nobs)%scaletype=def%scaletype			
+			tel(nobs)%Ptelescope=def%Ptelescope
+			tel(nobs)%APtelescope=def%APtelescope
+			tel(nobs)%iwa=def%iwa
+			tel(nobs)%owa=def%owa
+			tel(nobs)%strehl=def%strehl
+		else if(tel(nobs)%kind.eq.'OPTICALDEPTH') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=deflam
 			tel(nobs)%nfov=def%nfov

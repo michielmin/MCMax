@@ -91,6 +91,7 @@ OBJS	      = Modules.o \
 		RadialStruct.o \
 		KuruczData.o \
 		RefIndData.o \
+		TraceOpticalDepth.o \
 		ISRFData.o
 
 # program name and install location
