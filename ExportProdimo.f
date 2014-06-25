@@ -530,7 +530,6 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			N=0d0
 		  do l=1,ngrains
 			do iopac=1,Grain(l)%nopac
-			print*,ri,zj,Grain(l)%mscale(iopac),Grain(l)%rscale(iopac)
 			  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
      &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)
      &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
