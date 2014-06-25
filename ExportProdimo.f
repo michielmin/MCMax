@@ -32,7 +32,7 @@
 	endif
 
 	do jstart=D%nTheta-1,1,-1
-		if(D%Theta(jstart).gt.sin(maxthetaProDiMo*pi/180d0)) goto 2
+		if(D%Theta(jstart).gt.cos(maxthetaProDiMo*pi/180d0)) goto 2
 	enddo
 	jstart=1
 2	continue

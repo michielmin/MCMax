@@ -584,7 +584,7 @@ c-----------------------------------------------------------------------
 	integer starttime,stoptime,starttrace,cr,ia
 	logical escape,hitstar,hitmid,ignore
 	type(Photon) phot,phot2,photinit
-	integer ilam,nabs,iopac
+	integer ilam,nabs,iopac,idumstart
 	real*8 x,y,z,phi,theta,Emin,rho,dangle,EnergyTot2
 	real*8 EnergyTot,Estar,Rad,VETot,tot,tot2,thet,Eirf
 	real*8,allocatable :: VisEmisDis(:,:),EmisDis(:,:),vismass(:,:)
@@ -761,18 +761,21 @@ c Start tracing the photons
 
 	photinit=phot
 	call tellertje(1,100)
+	idumstart=idum
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,
-!$OMP&   s1,s2,phot2,ninteract,iscat)
-!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,idum,
-!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF)
+!$OMP&   s1,s2,phot2,ninteract,iscat,idum)
+!$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart)
 !$OMP DO
 	do iphot=1,Nphot
 !$OMP CRITICAL
 	call tellertje(iphot+1,Nphot+2)
 !$OMP END CRITICAL
 	phot=photinit
+
+	idum=idumstart+iphot
 
 	phot%nr=iphot
 	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,fact_IRF)
