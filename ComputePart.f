@@ -157,7 +157,7 @@ c changed this to mass fractions (11-05-2010)
 		p%mscale(iopac)=1d0
 		p%rscale(iopac)=1d0
 	else
-		p%mscale=0d0
+		p%mscale(iopac)=0d0
 		do i=1,nm
 			p%mscale(iopac)=p%mscale(iopac)+frac(i)*rho(i)/normalize_abun
 		enddo
