@@ -641,6 +641,19 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	deallocate(HRspec)
 
 
+	write(key,'("restart")')
+	write(value,'(".false.")')
+	call writeExtraProDiMo(key,value)
+	write(key,'("radtrans")')
+	write(value,'(".false.")')
+	call writeExtraProDiMo(key,value)
+	write(key,'("readMCFOST")')
+	write(value,'(".true.")')
+	call writeExtraProDiMo(key,value)
+	write(key,'(" ")')
+	write(value,'("forProDiMo.fits.gz")')
+	call writeExtraProDiMo(key,value)
+
 	return
 	end
 
