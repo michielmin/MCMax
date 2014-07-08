@@ -2621,6 +2621,7 @@ c	parameter(IMDIM=500)
 	real*8 al12,ar12,i12,c12,p12,s12
 	real*8 al21,ar21,i21,c21,p21,s21
 	real*8 al22,ar22,i22,c22,p22,s22
+	real*8,allocatable :: rrr(:,:)
 	
 	logical checktellertje
 
@@ -2650,13 +2651,19 @@ c	sinwi=sin(wi)
 		imV=0d0
 	endif
 
+	allocate(rrr(2,nintegrate))
+	do k=1,nintegrate
+		rrr(1,k)=ran2(idum)
+		rrr(2,k)=ran2(idum)
+	enddo
+
 	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,addedname)
+!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,addedname,rrr)
 
 !$OMP DO
 	do i=1,image%nr-1
@@ -2672,8 +2679,8 @@ c	sinwi=sin(wi)
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
 		do k=1,nintegrate
-			ranR=ran2(idum)
-			ranPhi=ran2(idum)
+			ranR=rrr(1,k)		!ran2(idum)
+			ranPhi=rrr(2,k)		!ran2(idum)
 
 			R=image%R(i)+(image%R(i+1)-image%R(i))*ranR
 			phi=pi*(real(j-1)+ranPhi)/real(image%nphi)
@@ -2825,6 +2832,9 @@ c			wy=gasdev(idum)*widthx
 !$OMP FLUSH
 !$OMP END PARALLEL
 	call tellertje(100,100)
+	
+	deallocate(rrr)
+
 
 	call AddPlanet(image,im,imQ,imU,imV,Rmax,IMDIM)
 
