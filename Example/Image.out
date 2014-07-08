@@ -1,10 +1,10 @@
 lam=0.6d0
 nphi=75
 nrad=1
-Nphot=100000
-NphotStar=10000
+Nphot=500000
+NphotStar=50000
 npix=1000
-nint=1000
+nint=5000
 nexits=5
 scaletype=2
 fov01=5d0
@@ -20,6 +20,7 @@ type='IMAGE'
 **************************************************************************
 ** VLT image
 type='IMAGE'
+flag01='VLT'
 D=8.2d0
 D2=1d0
 width=0.1d0
