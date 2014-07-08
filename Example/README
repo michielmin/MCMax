@@ -1,0 +1,21 @@
+These are two example input models and two example observation files:
+
+inputDIANA.dat:	This file is the DIANA standard disk. It is a parameterized disk structure
+	with DIANA standard opacities and PAHs.
+
+inputITER.dat:	This is an model with a vertical structure in hydrostatic equilibrium.
+	It does not have PAHs. Opacities are also DIANA standard.
+	
+Spectrum.out:	This file can be used to generate a raytraced SED. Please take care that
+	the Nphot keywords are high enough to avoid noise.
+	
+Image.out:		This file created two images, one in full res and one convolved with the
+	PSF of the VLT with a seeing of 0.1''. Also here it is important to have the Nphot
+	keywords sufficiently high.
+	
+The following command runs MCMax with the Iterated example, puts it in the directory ITER,
+and created the SED and Images:
+
+MCMax inputITER.dat 100000 -o ITER Image.out Spectrum.out
+
+
