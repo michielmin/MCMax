@@ -2592,7 +2592,7 @@ c-----------------------------------------------------------------------
 	return
 	end
 
-	subroutine MakeImage(image,tel,Rmax,addedname)
+	subroutine MakeImage(image,tel,Rmax)
 c	Rmax,IMDIM,nintegrate,width,SNR,Diam)
 	use Parameters
 	IMPLICIT NONE
@@ -2604,8 +2604,6 @@ c	parameter(IMDIM=500)
 	real*8 wx,wy,wi,coswi,sinwi,cos2pa,sin2pa,Q,U
 	real*8 Eu,Ex,Ey,EE
 	
-	character*2,optional :: addedname
-
 	real*8,allocatable :: im(:,:),imQ(:,:),imU(:,:),imV(:,:),imP(:,:)
 	real*8 lam0,Rmax,i1,tot,ran2,max,psfdev,nphot,err
 	integer ix,iy,i,j,k,i10,nintegrate,inphot
@@ -2663,7 +2661,7 @@ c	sinwi=sin(wi)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,addedname,rrr)
+!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,rrr)
 
 !$OMP DO
 	do i=1,image%nr-1
@@ -2704,7 +2702,7 @@ c	sinwi=sin(wi)
 			wr2=ranR
 			ir2=i+1
 			
-			if(scat_how.eq.2.and..not.present(addedname)) then
+			if(scat_how.eq.2) then
 				if(abs(image%R(ir2)-image%R(ir1)).gt.(Rmax/real(IMDIM))) then
 				i11=image%image(ir1,jp1)-sqrt(image%imageQ(ir1,jp1)**2+image%imageU(ir1,jp1)**2+image%imageV(ir1,jp1)**2)
 				i12=image%image(ir1,jp2)-sqrt(image%imageQ(ir1,jp2)**2+image%imageU(ir1,jp2)**2+image%imageV(ir1,jp2)**2)
@@ -2801,7 +2799,7 @@ c			wy=gasdev(idum)*widthx
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
-				if(scat_how.eq.2.and..not.present(addedname)) then
+				if(scat_how.eq.2) then
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
 					imU(ix,iy)=imU(ix,iy)+fluxU/real(2*nintegrate)
 					imV(ix,iy)=imV(ix,iy)+fluxV/real(2*nintegrate)
@@ -2819,7 +2817,7 @@ c			wy=gasdev(idum)*widthx
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
-				if(scat_how.eq.2.and..not.present(addedname)) then
+				if(scat_how.eq.2) then
 					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
 					imU(ix,iy)=imU(ix,iy)-fluxU/real(2*nintegrate)
 					imV(ix,iy)=imV(ix,iy)-fluxV/real(2*nintegrate)
@@ -2849,7 +2847,7 @@ c			wy=gasdev(idum)*widthx
 	do i=1,IMDIM
 	do j=1,IMDIM
 		im(i,j)=im(i,j)*1d23*image%zscale/D%distance**2
-		if(scat_how.eq.2.and.useobspol.and..not.present(addedname)) then
+		if(scat_how.eq.2.and.useobspol) then
 			imQ(i,j)=imQ(i,j)*1d23*image%zscale/D%distance**2
 			imU(i,j)=imU(i,j)*1d23*image%zscale/D%distance**2
 			imV(i,j)=imV(i,j)*1d23*image%zscale/D%distance**2
@@ -2959,105 +2957,97 @@ c			wy=gasdev(idum)*widthx
 	enddo
 	enddo
 	endif
-	if(scat_how.eq.2.and.tel%Ptelescope.ne.0d0.and..not.present(addedname)) then
+	if(scat_how.eq.2.and.tel%Ptelescope.ne.0d0) then
 c add telescope polarization
 		imQ=imQ+tel%Ptelescope*cos(tel%APtelescope*pi/180d0)*im
 		imU=imU+tel%Ptelescope*sin(tel%APtelescope*pi/180d0)*im
 	endif
 
-	if(present(addedname)) then
-		call FITSImage(image,im,IMDIM,Rmax,addedname,tel%flag)
-	else
-		call FITSImage(image,im,IMDIM,Rmax,'AI',tel%flag)
-		if(scat_how.eq.2.and.useobspol) then
-			call FITSImage(image,imQ,IMDIM,Rmax,'AQ',tel%flag)
-			call FITSImage(image,imU,IMDIM,Rmax,'AU',tel%flag)
-			call FITSImage(image,imV,IMDIM,Rmax,'AV',tel%flag)
-			imP=imQ/im
-			call FITSImage(image,imP,IMDIM,Rmax,'RQ',tel%flag)
-			imP=imU/im
-			call FITSImage(image,imP,IMDIM,Rmax,'RU',tel%flag)
-			imP=sqrt((imQ/im)**2+(imU/im)**2)
-			call FITSImage(image,imP,IMDIM,Rmax,'LP',tel%flag)
-			imP=imV/im
-			call FITSImage(image,imP,IMDIM,Rmax,'CP',tel%flag)
-c			imP=imQ-imU
-c			call FITSImage(image,imP,IMDIM,Rmax,'ZI',tel%flag)
-c			imP=im*2.99792458d-12/image%lam
-c			call FITSImage(image,imP,IMDIM,Rmax,'AF',tel%flag)
-			do i=1,IMDIM
-			do j=1,IMDIM
-				if(i.ne.((IMDIM+1)/2).or.j.ne.((IMDIM+1)/2)) then
-					x=real(i)-real(IMDIM+1)/2d0
-					y=real(j)-real(IMDIM+1)/2d0
-					R=sqrt(x**2+y**2)
-					x=x/R
-					y=y/R
-					z=0d0
-					phot%vx=0d0
-					phot%vy=0d0
-					phot%vz=1d0
-					phot%Sx=1d0
-					phot%Sy=0.00001d0
-					phot%Sz=0d0
-					phot%Q=imQ(i,j)
-					phot%U=imU(i,j)
-					phot%E=im(i,j)
-					call RotateStokes(phot,x,y,z)
-					imP(i,j)=phot%Q
-				endif
-			enddo
-			enddo
-			imP=imP/im
-			call FITSImage(image,imP,IMDIM,Rmax,'DQ',tel%flag)
-			do i=1,IMDIM
-			do j=1,IMDIM
-				if(i.ne.((IMDIM+1)/2).or.j.ne.((IMDIM+1)/2)) then
-					x=real(i)-real(IMDIM+1)/2d0
-					y=real(j)-real(IMDIM+1)/2d0
-					R=sqrt(x**2+y**2)
-					x=x/R
-					y=y/R
-					z=0d0
-					phot%vx=0d0
-					phot%vy=0d0
-					phot%vz=1d0
-					phot%Sx=1d0
-					phot%Sy=0.00001d0
-					phot%Sz=0d0
-					phot%Q=imQ(i,j)
-					phot%U=imU(i,j)
-					phot%E=im(i,j)
-					call RotateStokes(phot,x,y,z)
-					imP(i,j)=phot%U
-				endif
-			enddo
-			enddo
-			imP=imP/im
-			call FITSImage(image,imP,IMDIM,Rmax,'DU',tel%flag)
-			imP=sqrt(imQ**2+imU**2)
-			call FITSImage(image,imP,IMDIM,Rmax,'QU',tel%flag)
-			call ExPoImage(image,im,imQ,imU,IMDIM,Rmax,'EX',tel%flag)
-			if(tel%iprad.gt.0d0) then
-				fluxQ=0d0
-				fluxU=0d0
-				flux=0d0
-				do i=1,IMDIM
-				do j=1,IMDIM
-					x=real(i)-real(IMDIM+1)/2d0
-					y=real(j)-real(IMDIM+1)/2d0
-					R=sqrt(x**2+y**2)
-					if(R.le.tel%iprad) then
-						fluxQ=fluxQ+imQ(i,j)
-						fluxU=fluxU+imU(i,j)
-						flux=flux+im(i,j)
-					endif
-				enddo
-				enddo
-				print*,fluxQ/flux
-				print*,fluxU/flux
-				call ExPoImage(image,im,imQ-im*fluxQ/flux,imU-im*fluxU/flux,IMDIM,Rmax,'CX',tel%flag)
+	call FITSImage(image,im,IMDIM,Rmax,'AI',tel%flag)
+	if(scat_how.eq.2.and.useobspol) then
+		call FITSImage(image,imQ,IMDIM,Rmax,'AQ',tel%flag)
+		call FITSImage(image,imU,IMDIM,Rmax,'AU',tel%flag)
+		call FITSImage(image,imV,IMDIM,Rmax,'AV',tel%flag)
+		imP=imQ/im
+		call FITSImage(image,imP,IMDIM,Rmax,'RQ',tel%flag)
+		imP=imU/im
+		call FITSImage(image,imP,IMDIM,Rmax,'RU',tel%flag)
+		imP=sqrt((imQ/im)**2+(imU/im)**2)
+		call FITSImage(image,imP,IMDIM,Rmax,'LP',tel%flag)
+		imP=imV/im
+		call FITSImage(image,imP,IMDIM,Rmax,'CP',tel%flag)
+		do i=1,IMDIM
+		do j=1,IMDIM
+			if(i.ne.((IMDIM+1)/2).or.j.ne.((IMDIM+1)/2)) then
+				x=real(i)-real(IMDIM+1)/2d0
+				y=real(j)-real(IMDIM+1)/2d0
+				R=sqrt(x**2+y**2)
+				x=x/R
+				y=y/R	
+				z=0d0
+				phot%vx=0d0
+				phot%vy=0d0
+				phot%vz=1d0
+				phot%Sx=1d0
+				phot%Sy=0.00001d0
+				phot%Sz=0d0
+				phot%Q=imQ(i,j)
+				phot%U=imU(i,j)
+				phot%E=im(i,j)
+				call RotateStokes(phot,x,y,z)
+				imP(i,j)=phot%Q
 			endif
+		enddo
+		enddo
+		imP=imP/im
+		call FITSImage(image,imP,IMDIM,Rmax,'DQ',tel%flag)
+		do i=1,IMDIM
+		do j=1,IMDIM
+			if(i.ne.((IMDIM+1)/2).or.j.ne.((IMDIM+1)/2)) then
+				x=real(i)-real(IMDIM+1)/2d0
+				y=real(j)-real(IMDIM+1)/2d0
+				R=sqrt(x**2+y**2)
+				x=x/R
+				y=y/R
+				z=0d0
+				phot%vx=0d0
+				phot%vy=0d0
+				phot%vz=1d0
+				phot%Sx=1d0
+				phot%Sy=0.00001d0
+				phot%Sz=0d0
+				phot%Q=imQ(i,j)
+				phot%U=imU(i,j)
+				phot%E=im(i,j)
+				call RotateStokes(phot,x,y,z)
+				imP(i,j)=phot%U
+			endif
+		enddo
+		enddo
+		imP=imP/im
+		call FITSImage(image,imP,IMDIM,Rmax,'DU',tel%flag)
+		imP=sqrt(imQ**2+imU**2)
+		call FITSImage(image,imP,IMDIM,Rmax,'QU',tel%flag)
+		call ExPoImage(image,im,imQ,imU,IMDIM,Rmax,'EX',tel%flag)
+		if(tel%iprad.gt.0d0) then
+			fluxQ=0d0
+			fluxU=0d0
+			flux=0d0
+			do i=1,IMDIM
+			do j=1,IMDIM
+				x=real(i)-real(IMDIM+1)/2d0
+				y=real(j)-real(IMDIM+1)/2d0
+				R=sqrt(x**2+y**2)
+				if(R.le.tel%iprad) then
+					fluxQ=fluxQ+imQ(i,j)
+					fluxU=fluxU+imU(i,j)
+					flux=flux+im(i,j)
+				endif
+			enddo
+			enddo
+			print*,fluxQ/flux
+			print*,fluxU/flux
+			call ExPoImage(image,im,imQ-im*fluxQ/flux,imU-im*fluxU/flux,IMDIM,Rmax,'CX',tel%flag)
 		endif
 	endif
 	deallocate(im)
