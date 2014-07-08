@@ -79,8 +79,8 @@
 	D%Rout=1000d0
 	D%nR=70
 	D%nTheta=60
-	nspan=8
-	nlev=10
+	nspan=7
+	nlev=7
 	ntspan=0
 	ntlev=0
 	nRfix=0
