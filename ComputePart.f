@@ -1,4 +1,4 @@
-	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac,normalize_abun,standard)
+	subroutine ComputePart(p,ii,input,amin,amax,apow,fmax,blend,porosity,inp_abun,iopac,normalize_abun,standard,nsubgrains)
 	use Parameters
 	IMPLICIT NONE
 
@@ -6,7 +6,7 @@
 	real*8 amin,amax,apow,fmax,porosity,inp_abun(*),normalize_abun
 	character*20 standard
 	logical blend
-	integer ii,MAXMAT,iopac
+	integer ii,MAXMAT,iopac,nsubgrains
 	parameter(MAXMAT=20)
 
 	real cext,csca,maxf
@@ -101,7 +101,7 @@ c changed this to mass fractions (11-05-2010)
 2		nm=nm-1
 		close(unit=30)
 	else if(standard.eq.'DIANA') then
-		ns=1
+		ns=nsubgrains
 		nf=20
 		if(maxf.eq.0e0) nf=1
 		allocate(r(ns))
@@ -126,7 +126,7 @@ c changed this to mass fractions (11-05-2010)
 		deallocate(e1d)
 		deallocate(e2d)
 	else if(standard.eq.'ASTROSIL') then
-		ns=1
+		ns=nsubgrains
 		nf=20
 		if(maxf.eq.0e0) nf=1
 		allocate(r(ns))

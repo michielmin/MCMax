@@ -53,7 +53,7 @@
 	real*8 computepart_porosity(MAXPART),mrn_tmp_rmin,mrn_tmp_rmax,mrn_tmp_index,maxtauV
 	real*8 computepart_abun(MAXPART,MAXPART),computepart_norm_abun(MAXPART),computepart_fcarbon(MAXPART)
 	real*8,allocatable :: computepart_T(:,:)
-	integer computepart_ngrains(MAXPART),computepart_nT(MAXPART)
+	integer computepart_ngrains(MAXPART),computepart_nT(MAXPART),computepart_nsubgrains(MAXPART)
 	logical computepart_blend(MAXPART)
 	character*500,allocatable :: computepart_Tfile(:,:)
 	character*20 computepart_standard(MAXPART)
@@ -342,6 +342,7 @@
 	computepart_porosity=0.25d0
 	computepart_abun=-1d0
 	computepart_ngrains=1
+	computepart_nsubgrains=1
 	computepart_norm_abun=-1d0
 	computepart_standard(1:MAXPART)='FILE'
 	computepart_fcarbon=0.2
@@ -737,6 +738,8 @@ c			endif
 			read(value,*) computepart_fmax(i)
 		else if(keyzone.eq.'ngrains') then
 			read(value,*) computepart_ngrains(i)
+		else if(keyzone.eq.'nsubgrains') then
+			read(value,*) computepart_nsubgrains(i)
 		else if(keyzone.eq.'blend') then
 			read(value,*) computepart_blend(i)
 		else if(keyzone.eq.'porosity') then
@@ -1287,6 +1290,7 @@ C       End
 				computepart_blend(i+computepart_ngrains(ii)-1)=computepart_blend(i)
 				computepart_porosity(i+computepart_ngrains(ii)-1)=computepart_porosity(i)
 				computepart_ngrains(i+computepart_ngrains(ii)-1)=computepart_ngrains(i)
+				computepart_nsubgrains(i+computepart_ngrains(ii)-1)=computepart_nsubgrains(i)
 				computepart_abun(i+computepart_ngrains(ii)-1,:)=computepart_abun(i,:)
 				computepart_standard(i+computepart_ngrains(ii)-1)=computepart_standard(i)
 				computepart_fcarbon(i+computepart_ngrains(ii)-1)=computepart_fcarbon(i)
@@ -1346,6 +1350,7 @@ C       End
 				computepart_porosity(i+ii-1)=computepart_porosity(ii)
 				computepart_abun(i+ii-1,:)=computepart_abun(ii,:)
 				computepart_ngrains(i+ii-1)=1
+				computepart_nsubgrains(i+ii-1)=computepart_nsubgrains(ii)
 				computepart_standard(i+ii-1)=computepart_standard(ii)
 				computepart_fcarbon(i+ii-1)=computepart_fcarbon(ii)
 				rgrain(i+ii-1)=sqrt(computepart_amin(i+ii-1)*computepart_amax(i+ii-1))*1d-4
@@ -3264,7 +3269,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 				call ComputePart(Grain(ii),ii,partarg(ii),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
      &							,computepart_porosity(ii),computepart_abun(ii,:),1,computepart_norm_abun(ii)
-     &							,computepart_standard(ii))
+     &							,computepart_standard(ii),computepart_nsubgrains(ii))
 			else
 				do i=1,Grain(ii)%nopac
 					jj=i
@@ -3283,7 +3288,7 @@ c See Dominik & Dullemond 2008, Eqs. 1 & 2
 					call ComputePart(Grain(ii),ii,computepart_Tfile(ii,jj),computepart_amin(ii),computepart_amax(ii)
      &							,computepart_apow(ii),computepart_fmax(ii),computepart_blend(ii)
      &							,computepart_porosity(ii),computepart_abun(ii,:),i,computepart_norm_abun(ii)
-     &							,computepart_standard(ii))
+     &							,computepart_standard(ii),computepart_nsubgrains(ii))
 					Grain(ii)%Topac(i)=computepart_T(ii,jj)
 				enddo
 				do i=0,D%nR
