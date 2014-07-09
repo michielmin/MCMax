@@ -3668,7 +3668,8 @@ c	this is a wedge zone!
 	do j=0,TMAX
 		do iopac=1,Grain(ii)%nopac
 			spec(1:nlam)=BB(1:nlam,j)*Grain(ii)%Kabs(iopac,1:nlam)
-			call integrate(spec,Grain(ii)%Kp(iopac,j))
+			call integrate(spec,tot)
+			Grain(ii)%Kp(iopac,j)=tot
 		enddo
 	enddo
 	do iopac=1,Grain(ii)%nopac
