@@ -3598,6 +3598,11 @@ c	this is a wedge zone!
 		enddo
 		enddo
 		deallocate(zonedens)
+		if(compositionfile.ne.' ') then
+			write(*,'("Reading composition from file")')
+			write(9,'("Reading composition from file")')
+			call readcomposition(compositionfile)
+		endif
 	endif
 
 	MassTot0=0d0
