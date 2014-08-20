@@ -6,8 +6,8 @@
 	type(RPhiImage) image
 	real*8 spec(nlam),scatspec(nlam),flux,scatflux,R0,angle,FWHM1,FWHM2
 	real*8 arrinterpol,fstar1,fstar2
-	real*8 V(100),starttime,stoptime,tottime,fluxQ,specQ(nlam),clight,Resolution
-	real*8 basegrid(100),V2(100,100),phase(100),phase2(100,100)	!Gijsexp : nbase=100
+	real*8 starttime,stoptime,tottime,fluxQ,specQ(nlam),clight,Resolution
+	real*8,allocatable :: V(:),basegrid(:),V2(:,:),phase(:),phase2(:,:)
 	integer nbase		!Gijsexp
 	integer i,j,k,i_up,i_low
 	character*500 specfile
@@ -233,6 +233,8 @@
 		enddo
 	else if(tel%kind(1:10).eq.'VISIBILITY') then
 		readmcscat=.false.
+		allocate(V(tel%nbaseline))
+		allocate(phase(tel%nbaseline))
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		write(specfile,'(a,"visibility",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
@@ -271,6 +273,11 @@
 	else if(tel%kind(1:7).eq.'BASEVIS') then
 c is still without interstellar extinction
 c       Gijsexp: 
+		nbase=100
+		allocate(basegrid(nbase))
+		allocate(V2(tel%nlam,nbase))
+		allocate(phase2(tel%nlam,nbase))
+
 		readmcscat=.false.
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
 		write(specfile,'(a,"basevis",i1,f3.1,a,".dat")') 
@@ -291,7 +298,6 @@ c$$$		write(30,'("# column ",i3," and further: phase")') tel%nlam+3
 		      call TraceFlux(image,tel%lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
 		   endif
 
-		   nbase=100
 		   do k=1,nbase
 c		   basegrid(k)=tel%b(1)*(tel%b(2)/tel%b(1))**((k-1d0)/(nbase-1d0))  ! log grid
 		      basegrid(k)=tel%b(1)+(tel%b(2)-tel%b(1))*((k-1d0)/(nbase-1d0)) ! linear grid
@@ -1051,6 +1057,16 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 					tel(nobs)%b(j)=temp(j)
 				enddo
 				read(value,*) tel(nobs)%b(i)
+
+				do j=1,tel(nobs)%nbaseline
+					temp(j)=tel(nobs)%theta(j)
+				enddo
+				deallocate(tel(nobs)%theta)
+				allocate(tel(nobs)%theta(i))
+				do j=1,tel(nobs)%nbaseline
+					tel(nobs)%theta(j)=temp(j)
+				enddo
+
 				tel(nobs)%nbaseline=i
 				deallocate(temp)
 			else
@@ -1071,6 +1087,16 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 					tel(nobs)%theta(j)=temp(j)
 				enddo
 				read(value,*) tel(nobs)%theta(i)
+
+				do j=1,tel(nobs)%nbaseline
+					temp(j)=tel(nobs)%b(j)
+				enddo
+				deallocate(tel(nobs)%b)
+				allocate(tel(nobs)%b(i))
+				do j=1,tel(nobs)%nbaseline
+					tel(nobs)%b(j)=temp(j)
+				enddo
+
 				tel(nobs)%nbaseline=i
 				deallocate(temp)
 			else
