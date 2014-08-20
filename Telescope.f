@@ -1040,28 +1040,42 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key(1:4).eq.'base'.and.(tel(nobs)%kind.eq.'VISIBILITY'
      &		   .or.tel(nobs)%kind.eq.'BASEVIS')) then
 			read(key(5:len_trim(key)),*) i
-				if(i.gt.tel(nobs)%nbaseline) then
-					allocate(temp(i))
-					do j=1,tel(nobs)%nbaseline
-						temp(j)=tel(nobs)%b(j)
-					enddo
-					deallocate(tel(nobs)%b)
-					allocate(tel(nobs)%b(i))
-					do j=1,tel(nobs)%nbaseline
-						tel(nobs)%b(j)=temp(j)
-					enddo
-					read(value,*) tel(nobs)%b(i)
-					tel(nobs)%nbaseline=i
-					deallocate(temp)
-				else
-					read(value,*) tel(nobs)%b(i)
-				endif
+			if(i.gt.tel(nobs)%nbaseline) then
+				allocate(temp(i))
+				do j=1,tel(nobs)%nbaseline
+					temp(j)=tel(nobs)%b(j)
+				enddo
+				deallocate(tel(nobs)%b)
+				allocate(tel(nobs)%b(i))
+				do j=1,tel(nobs)%nbaseline
+					tel(nobs)%b(j)=temp(j)
+				enddo
+				read(value,*) tel(nobs)%b(i)
+				tel(nobs)%nbaseline=i
+				deallocate(temp)
+			else
+				read(value,*) tel(nobs)%b(i)
+			endif
 		endif
 		if(key(1:5).eq.'angle'.and.(tel(nobs)%kind.eq.'VISIBILITY'
      &		   .or.tel(nobs)%kind.eq.'BASEVIS')) then
 			read(key(6:len_trim(key)),*) i
-			if(i.gt.tel(nobs)%nbaseline) tel(nobs)%nbaseline=i 
-			read(value,*) tel(nobs)%theta(i)
+			if(i.gt.tel(nobs)%nbaseline) then
+				allocate(temp(i))
+				do j=1,tel(nobs)%nbaseline
+					temp(j)=tel(nobs)%theta(j)
+				enddo
+				deallocate(tel(nobs)%theta)
+				allocate(tel(nobs)%theta(i))
+				do j=1,tel(nobs)%nbaseline
+					tel(nobs)%theta(j)=temp(j)
+				enddo
+				read(value,*) tel(nobs)%theta(i)
+				tel(nobs)%nbaseline=i
+				deallocate(temp)
+			else
+				read(value,*) tel(nobs)%theta(i)
+			endif
 			tel(nobs)%theta(i)=pi*tel(nobs)%theta(i)/180d0
 		endif
 c       Gijsexp: allow more than two wavelength/angle combo's for basevis 
