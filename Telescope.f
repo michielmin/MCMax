@@ -7,7 +7,7 @@
 	real*8 spec(nlam),scatspec(nlam),flux,scatflux,R0,angle,FWHM1,FWHM2
 	real*8 arrinterpol,fstar1,fstar2
 	real*8 starttime,stoptime,tottime,fluxQ,specQ(nlam),clight,Resolution
-	real*8,allocatable :: V(:),basegrid(:),V2(:,:),phase(:),phase2(:,:)
+	real*8,allocatable :: V(:,:),basegrid(:),phase(:,:)
 	integer nbase		!Gijsexp
 	integer i,j,k,i_up,i_low
 	character*500 specfile
@@ -32,9 +32,18 @@
 	endif
 
 	if(tel%nlam_obs.lt.0.and.tel%lamfile.eq.' ') then
-		nlam_obs=nlam
+		nlam_obs=nlam+2
 		allocate(lam_obs(nlam_obs))
-		lam_obs=lam
+		nlam_obs=1
+		lam_obs(1)=tel%lam1
+		do i=1,nlam
+			if(lam(i).gt.tel%lam1.and.lam(i).lt.tel%lam2) then
+				nlam_obs=nlam_obs+1
+				lam_obs(nlam_obs)=lam(i)
+			endif
+		enddo
+		nlam_obs=nlam_obs+1
+		lam_obs(nlam_obs)=tel%lam2
 	else if(tel%lamfile.ne.' ') then
 		open(unit=25,file=tel%lamfile)
 		nlam_obs=0
@@ -131,44 +140,20 @@
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
 		open(unit=30,file=specfile,RECL=6000)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
-		fstar1=arrinterpol(tel%lam1,lam,D%Fstar,nlam,1)
-		if(scat_how.ne.2) then
-		   write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,
-     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2
-		else
-		   write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,
-     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar1/D%distance**2,
-     &                         1d23*fluxQ*ExtISM/D%distance**2
-		endif
 		do j=1,nlam_obs
-		   if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
-				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-				ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
-				fstar1=arrinterpol(lam_obs(j),lam,D%Fstar,nlam,1)
-				if(scat_how.ne.2) then
-					write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
+			call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
+			ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
+			fstar1=arrinterpol(lam_obs(j),lam,D%Fstar,nlam,1)
+			if(scat_how.ne.2) then
+				write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
      &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*fstar1/D%distance**2
-				else
-					write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
+			else
+				write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,
      &                               1d23*scatspec(j)*ExtISM/D%distance**2,1d23*fstar1/D%distance**2,
      &                               1d23*specQ(j)*ExtISM/D%distance**2
-				endif
-				call flush(30)
 			endif
+			call flush(30)
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
-		fstar2=arrinterpol(tel%lam2,lam,D%Fstar,nlam,1)
-		if(scat_how.ne.2) then
-		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
-     &          	       1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2
-		else
-		   write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,
-     &                         1d23*scatflux*ExtISM/D%distance**2,1d23*fstar2/D%distance**2,
-     &                         1d23*fluxQ*ExtISM/D%distance**2
-		endif
 		close(unit=30)
 	else if(tel%kind(1:5).eq.'IMAGE') then
 		readmcscat=.false.
@@ -207,6 +192,7 @@
 		do j=1,nlam
 			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
 				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
+				ExtISM=Reddening(lam(j),compute_dlam(lam(j)),Av)
 				do i=1,tel%nfov
 					if(tel%scaletype.eq.1) then
 						image%rscale=1d0
@@ -233,50 +219,49 @@
 		enddo
 	else if(tel%kind(1:10).eq.'VISIBILITY') then
 		readmcscat=.false.
-		allocate(V(tel%nbaseline))
-		allocate(phase(tel%nbaseline))
+		allocate(V(nlam_obs,tel%nbaseline))
+		allocate(phase(nlam_obs,tel%nbaseline))
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		write(specfile,'(a,"visibility",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+		if(tel%fits) then
+			write(specfile,'(a,"visibility",i1,f3.1,a,".fits.gz")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
-		open(unit=30,file=specfile,RECL=6000)
-		write(30,'("# column   1: wavelength")')
-		write(30,'("# column   2: full disk")')
-		do k=1,tel%nbaseline
-			write(30,'("# column ",i3," and ",i3,": vis and phase for: baseline ",f10.3,", angle ",f10.3)') 
+		else
+			write(specfile,'(a,"visibility",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+     &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
+     &			,tel%flag(1:len_trim(tel%flag))
+			open(unit=30,file=specfile,RECL=6000)
+			write(30,'("# column   1: wavelength")')
+			write(30,'("# column   2: full disk")')
+			do k=1,tel%nbaseline
+				write(30,'("# column ",i3," and ",i3,": vis and phase for: baseline ",f10.3,", angle ",f10.3)') 
      1                  k+2,k+2+tel%nbaseline,tel%b(k),180d0*tel%theta(k)/pi
-		enddo
-
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
-		do k=1,tel%nbaseline
-			call Visibility(image,tel%b(k),tel%theta(k),tel%lam1,V(k),phase(k))
-		enddo
-		write(30,*) tel%lam1,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+			enddo
+		endif
 		do j=1,nlam_obs
-			if(lam_obs(j).gt.tel%lam1.and.lam_obs(j).lt.tel%lam2) then
-				call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-				do k=1,tel%nbaseline
-					call Visibility(image,tel%b(k),tel%theta(k),lam_obs(j),V(k),phase(k))
-				enddo
-				write(30,*) lam_obs(j),1d23*spec(j)*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
+			call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
+			ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
+			spec(j)=1d23*spec(j)*ExtISM/D%distance**2
+			do k=1,tel%nbaseline
+				call Visibility(image,tel%b(k),tel%theta(k),lam_obs(j),V(j,k),phase(j,k))
+			enddo
+			if(.not.tel%fits) then
+				write(30,*) lam_obs(j),spec(j),V(j,1:tel%nbaseline),phase(j,1:tel%nbaseline)
 				call flush(30)
 			endif
 		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
-		do k=1,tel%nbaseline
-			call Visibility(image,tel%b(k),tel%theta(k),tel%lam2,V(k),phase(k))
-		enddo
-		write(30,*) tel%lam2,1d23*flux*ExtISM/D%distance**2,V(1:tel%nbaseline),phase(1:tel%nbaseline)
-		close(unit=30)
+		if(tel%fits) then
+			call visibilityfits(specfile,lam_obs,tel%b,180d0*tel%theta/pi,spec,V,phase,nlam_obs,tel%nbaseline)
+		else
+			close(unit=30)
+		endif
 	else if(tel%kind(1:7).eq.'BASEVIS') then
 c is still without interstellar extinction
 c       Gijsexp: 
 		nbase=100
 		allocate(basegrid(nbase))
-		allocate(V2(tel%nlam,nbase))
-		allocate(phase2(tel%nlam,nbase))
+		allocate(V(tel%nlam,nbase))
+		allocate(phase(tel%nlam,nbase))
 
 		readmcscat=.false.
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
@@ -301,11 +286,11 @@ c$$$		write(30,'("# column ",i3," and further: phase")') tel%nlam+3
 		   do k=1,nbase
 c		   basegrid(k)=tel%b(1)*(tel%b(2)/tel%b(1))**((k-1d0)/(nbase-1d0))  ! log grid
 		      basegrid(k)=tel%b(1)+(tel%b(2)-tel%b(1))*((k-1d0)/(nbase-1d0)) ! linear grid
-		      call Visibility(image,basegrid(k),tel%theta(j),tel%lam(j),V2(j,k),phase2(j,k))
+		      call Visibility(image,basegrid(k),tel%theta(j),tel%lam(j),V(j,k),phase(j,k))
 		   enddo
 		enddo
 		do k=1,nbase
-		   write(30,*) basegrid(k),1d23*flux/D%distance**2,V2(1:tel%nlam,k),phase2(1:tel%nbaseline,k)
+		   write(30,*) basegrid(k),1d23*flux/D%distance**2,V(1:tel%nlam,k),phase(1:tel%nbaseline,k)
 		enddo
 		close(unit=30)
 c       End add
@@ -655,6 +640,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%popfile=' '
 	def%nlam_obs=-1
 	def%lamfile=' '
+	def%fits=.false.
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -917,6 +903,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		tel(nobs)%nlam_obs=def%nlam_obs
 		tel(nobs)%fastobs=def%fastobs
 		tel(nobs)%lamfile=def%lamfile
+		tel(nobs)%fits=def%fits
 	endif
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
@@ -960,6 +947,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'strehl') read(value,*) def%strehl
 		if(key.eq.'iprad') read(value,*) def%iprad
 		if(key.eq.'fluxcontr') read(value,*) def%fluxcontr
+		if(key.eq.'fits') read(value,*) def%fits
 		if(key(1:3).eq.'fov') then
 			if(len_trim(key).ne.3) then
 				read(key(4:len_trim(key)),*) i
@@ -1043,6 +1031,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'strehl') read(value,*) tel(nobs)%strehl
 		if(key.eq.'iprad') read(value,*) tel(nobs)%iprad
 		if(key.eq.'fluxcontr') read(value,*) tel(nobs)%fluxcontr
+		if(key.eq.'fits') read(value,*) tel(nobs)%fits
 		if(key(1:4).eq.'base'.and.(tel(nobs)%kind.eq.'VISIBILITY'
      &		   .or.tel(nobs)%kind.eq.'BASEVIS')) then
 			read(key(5:len_trim(key)),*) i
@@ -1439,4 +1428,167 @@ c			endif
 	return
 	end
 	
+
+
+	subroutine visibilityfits(filename,lam,base,theta,spec,V,phase,nlam,nbase)
+	IMPLICIT NONE
+	character*500 filename
+	integer nlam,nbase
+	real*8 lam(nlam),spec(nlam),base(nbase),theta(nbase),V(nlam,nbase),phase(nlam,nbase)
+	real*8 tb(nbase,2)
+
+      integer status,unit,blocksize,bitpix,naxis,naxes(2)
+      integer i,j,group,fpixel,nelements
+      logical simple,extend,truefalse
+
+	inquire(file=filename,exist=truefalse)
+	if(truefalse) then
+		write(*,'("FITS file already exists, overwriting")')
+		write(9,'("FITS file already exists, overwriting")')
+		open(unit=90,file=filename)
+		close(unit=90,status='delete')
+	endif
+
+      status=0
+C     Get an unused Logical Unit Number to use to create the FITS file
+      call ftgiou(unit,status)
+C     create the new empty FITS file
+      blocksize=1
+      call ftinit(unit,filename,blocksize,status)
+
+C     initialize parameters about the FITS image (64-bit reals)
+	simple=.true.
+	bitpix=-64
+	extend=.true.
+	group=1
+	fpixel=1
+	naxis=2
+	naxes(1)=nbase
+	naxes(2)=2
+	nelements=naxes(1)*naxes(2)
+
+C		write the required header keywords
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+	call ftpkyj(unit,'nlam',nlam,' ',status)
+	call ftpkyj(unit,'nbase',nbase,' ',status)
+
+	!------------------------------------------------------------------------------
+	! HDU 0: baseline grid
+	!------------------------------------------------------------------------------
+
+	do i=1,nbase
+		tb(i,1)=base(i)
+		tb(i,2)=theta(2)
+	enddo
+
+C		Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,tb(1:nbase,1:2),status)
+
+
+	!------------------------------------------------------------------------------
+	! HDU 1: wavelength grid
+	!------------------------------------------------------------------------------
+
+C		create new hdu
+	call ftcrhd(unit, status)
+C     initialize parameters about the FITS image (64-bit reals)
+	simple=.true.
+	bitpix=-64
+	extend=.true.
+	group=1
+	fpixel=1
+	naxis=1
+	naxes(1)=nlam
+	naxes(2)=1
+	nelements=naxes(1)*naxes(2)
+
+C		write the required header keywords
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+C		Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,lam(1:nlam),status)
+
+
+	!------------------------------------------------------------------------------
+	! HDU 2: full disk spectrum
+	!------------------------------------------------------------------------------
+
+C		create new hdu
+	call ftcrhd(unit, status)
+C     initialize parameters about the FITS image (64-bit reals)
+	simple=.true.
+	bitpix=-64
+	extend=.true.
+	group=1
+	fpixel=1
+	naxis=1
+	naxes(1)=nlam
+	naxes(2)=1
+	nelements=naxes(1)*naxes(2)
+
+C		write the required header keywords
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+C		Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,spec(1:nlam),status)
+
+
+	!------------------------------------------------------------------------------
+	! HDU 3: visibilities
+	!------------------------------------------------------------------------------
+
+C		create new hdu
+	call ftcrhd(unit, status)
+C     initialize parameters about the FITS image (64-bit reals)
+	simple=.true.
+	bitpix=-64
+	extend=.true.
+	group=1
+	fpixel=1
+	naxis=2
+	naxes(1)=nlam
+	naxes(2)=nbase
+	nelements=naxes(1)*naxes(2)
+
+C		write the required header keywords
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+C		Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,V(1:nlam,1:nbase),status)
+
+
+	!------------------------------------------------------------------------------
+	! HDU 4: phases
+	!------------------------------------------------------------------------------
+
+C		create new hdu
+	call ftcrhd(unit, status)
+C     initialize parameters about the FITS image (64-bit reals)
+	simple=.true.
+	bitpix=-64
+	extend=.true.
+	group=1
+	fpixel=1
+	naxis=2
+	naxes(1)=nlam
+	naxes(2)=nbase
+	nelements=naxes(1)*naxes(2)
+
+C		write the required header keywords
+	call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+C		Write the array to the FITS file.
+	call ftpprd(unit,group,fpixel,nelements,phase(1:nlam,1:nbase),status)
+
+
+
+
+
+C     close the file and free the unit number
+	call ftclos(unit, status)
+	call ftfiou(unit, status)
+	
+	
+	return
+	end
+	
+	
+
 
