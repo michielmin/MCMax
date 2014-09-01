@@ -173,49 +173,22 @@
 			if(i.eq.1) call RImage(image,tel)
 			call MakeImage(image,tel,tel%fov(i)/2d0)
 		enddo
-	else if(tel%kind(1:5).eq.'IFU') then
+	else if(tel%kind(1:3).eq.'IFU') then
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam1,compute_dlam(tel%lam1),Av)
-		do i=1,tel%nfov
-			if(tel%scaletype.eq.1) then
-				image%rscale=1d0
-				image%zscale=1d0
-			else if(tel%scaletype.eq.2) then
-				tel%fov(i)=tel%fov(i)*D%distance/parsec
-				image%rscale=parsec/D%distance
-				image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
-			endif
-			call MakeImage(image,tel,tel%fov(i)/2d0)
-		enddo
-		do j=1,nlam
-			if(lam(j).gt.tel%lam1.and.lam(j).lt.tel%lam2) then
-				call TraceFlux(image,lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-				ExtISM=Reddening(lam(j),compute_dlam(lam(j)),Av)
-				do i=1,tel%nfov
-					if(tel%scaletype.eq.1) then
-						image%rscale=1d0
-						image%zscale=1d0
-					else if(tel%scaletype.eq.2) then
-						image%rscale=parsec/D%distance
-						image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
-					endif
-					call MakeImage(image,tel,tel%fov(i)/2d0)
-				enddo
-			endif
-		enddo
-		call TraceFlux(image,tel%lam2,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		ExtISM=Reddening(tel%lam2,compute_dlam(tel%lam2),Av)
-		do i=1,tel%nfov
-			if(tel%scaletype.eq.1) then
-				image%rscale=1d0
-				image%zscale=1d0
-			else if(tel%scaletype.eq.2) then
-				image%rscale=parsec/D%distance
-				image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
-			endif
-			call MakeImage(image,tel,tel%fov(i)/2d0)
+		do j=1,nlam_obs
+			call TraceFlux(image,lam_obs(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
+			ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
+			do i=1,tel%nfov
+				if(tel%scaletype.eq.1) then
+					image%rscale=1d0
+					image%zscale=1d0
+				else if(tel%scaletype.eq.2) then
+					image%rscale=parsec/D%distance
+					image%zscale=ExtISM*1d3*((tel%npixel/tel%fov(i))*D%distance/parsec)**2
+				endif
+				call MakeImage(image,tel,tel%fov(i)/2d0)
+			enddo
 		enddo
 	else if(tel%kind(1:10).eq.'VISIBILITY') then
 		readmcscat=.false.
