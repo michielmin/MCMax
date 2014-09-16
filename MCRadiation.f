@@ -18,7 +18,7 @@
 	integer iangle,nangle
 	real*8 clight
 	parameter(nangle=30,clight=2.9979d8)
-	real*8 angle(0:nangle),wangle(nangle),spec(nlam,nangle),cosangle(0:nangle)
+	real*8 angle(0:nangle),wangle(0:nangle),spec(nlam,0:nangle),cosangle(0:nangle)
 	real*8 wlam(nlam),scatspec(nlam,nangle),spectemp(nlam),tot,EUV
 	real*8 dspec(nlam),spec2(nlam,nangle),Mdot,FracVis,starttime,checktime
 	integer ispec(nlam,nangle),iscatspec(nlam,nangle)
@@ -33,7 +33,7 @@
 	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
 	parameter(G=6.67300d-8) ! in cm^3/g/s
 	real*8 Reddening,compute_dlam
-	real*8 WeightedAlpha
+	real*8 WeightedAlpha,obs_opening
 
 	real*8 radtau,radialtau,tau1,Av
 	integer ntau1
@@ -52,6 +52,7 @@
 	enddo
 
 	do i=1,nlam
+	spec(i,0)=0d0
 	do j=1,nangle
 		spec(i,j)=0d0
 		spec2(i,j)=0d0
@@ -75,6 +76,8 @@
 	do i=1,nangle
 		wangle(i)=1d0/(cosangle(i)-cosangle(i-1))
 	enddo
+	obs_opening=1d0+4d0*cos(D%IA*pi/180d0)
+	wangle(0)=1d0/(cos(pi*(D%IA-obs_opening)/180d0)-cos(pi*(D%IA+obs_opening)/180d0))
 
 c====================================================================================
 c include the inner disk like in the Pringle 1981, Akeson 2005 papers
@@ -578,6 +581,9 @@ c emit from the interstellar radiation field
 				if(phot%scatt) then
 					scatspec(1:nlam,iangle)=scatspec(1:nlam,iangle)+spectemp(1:nlam)/real(nruns)
 				endif
+				if(abs(acos(abs(phot%vz))*180d0/pi-D%IA).lt.obs_opening) then
+					spec(1:nlam,0)=spec(1:nlam,0)+spectemp(1:nlam)*wangle(0)/real(nruns)/wangle(iangle)
+				endif
 			else
 				if(phot%wl1.gt.phot%wl2) then
 					spec(phot%ilam1,iangle)=spec(phot%ilam1,iangle)+wangle(iangle)*phot%E*wlam(phot%ilam1)/real(nruns)
@@ -721,6 +727,14 @@ c emit from the interstellar radiation field
 	enddo
 	close(unit=20)
 	enddo
+
+	write(specfile,'(a,"MCSpec.dat")') outdir(1:len_trim(outdir))
+	open(unit=20,file=specfile,RECL=1000)
+	do i=1,nlam
+		write(20,*) lam(i),spec(i,0)*ExtISM(i)/D%distance**2
+	enddo
+	close(unit=20)
+
 
 C	if(scattering) then
 C	write(*,'("Writing scattered spectra")')
