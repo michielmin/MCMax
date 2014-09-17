@@ -136,9 +136,14 @@
 	if(tel%kind(1:8).eq.'SPECTRUM') then
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		write(specfile,'(a,"spectrum",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+		if(tel%noangle) then
+			write(specfile,'(a,"spectrum",a,".dat")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+		else
+			write(specfile,'(a,"spectrum",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+		endif
 		open(unit=30,file=specfile,RECL=6000)
 		do j=1,nlam_obs
 			call TraceFlux(image,lam_obs(j),spec(j),scatspec(j),specQ(j),tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
@@ -196,13 +201,23 @@
 		allocate(phase(nlam_obs,tel%nbaseline))
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		if(tel%fits) then
-			write(specfile,'(a,"visibility",i1,f3.1,a,".fits.gz")') outdir(1:len_trim(outdir))
+			if(tel%noangle) then
+				write(specfile,'(a,"visibility",a,".fits.gz")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+			else
+				write(specfile,'(a,"visibility",i1,f3.1,a,".fits.gz")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+			endif
 		else
-			write(specfile,'(a,"visibility",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+			if(tel%noangle) then
+				write(specfile,'(a,"visibility",a,".dat")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+			else
+				write(specfile,'(a,"visibility",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+			endif
 			open(unit=30,file=specfile,RECL=6000)
 			write(30,'("# column   1: wavelength")')
 			write(30,'("# column   2: full disk")')
@@ -238,10 +253,16 @@ c       Gijsexp:
 
 		readmcscat=.false.
 		call TracePath(image,angle,tel%nphi,tel%nr,tel%lam1)
-		write(specfile,'(a,"basevis",i1,f3.1,a,".dat")') 
+		if(tel%noangle) then
+			write(specfile,'(a,"basevis",a,".dat")') 
+     &                  outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+		else
+			write(specfile,'(a,"basevis",i1,f3.1,a,".dat")') 
      &                  outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+		endif
 		open(unit=30,file=specfile,RECL=6000)
 		write(30,'("# column   1: baseline")')
 		write(30,'("# column   2: full disk (only last wavelength)")')
@@ -291,9 +312,14 @@ c is still without interstellar extinction
 			image%zscale=1d3*(D%distance/parsec)**2
 		endif
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		write(specfile,'(a,"FWHM",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+		if(tel%noangle) then
+			write(specfile,'(a,"FWHM",a,".dat")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+		else
+			write(specfile,'(a,"FWHM",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+		endif
 		open(unit=30,file=specfile,RECL=6000)
 		write(30,'("# column   1: wavelength")')
 		write(30,'("# column   2: long axis")')
@@ -334,9 +360,14 @@ c is still without interstellar extinction
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
 		call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
-		write(specfile,'(a,"FWHM",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+		if(tel%noangle) then
+			write(specfile,'(a,"FWHM",a,".dat")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+		else
+			write(specfile,'(a,"FWHM",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+		endif
 		open(unit=30,file=specfile,RECL=6000)
 		write(30,'("# column   1: wavelength")')
 		write(30,'("# column   2: East-West axis")')
@@ -427,9 +458,14 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	else if(tel%kind(1:11).eq.'VISIBLEMASS') then
 		readmcscat=tel%readmcscat
 		call TracePath(image,angle,tel%nphi,tel%nr,0.55d0)
-		write(specfile,'(a,"visiblemass",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
+		if(tel%noangle) then
+			write(specfile,'(a,"visiblemass",a,".dat")') outdir(1:len_trim(outdir))
+     &			,tel%flag(1:len_trim(tel%flag))
+		else
+			write(specfile,'(a,"visiblemass",i1,f3.1,a,".dat")') outdir(1:len_trim(outdir))
      &			,int((tel%angle)/10d0),tel%angle-10d0*int((tel%angle/10d0))
      &			,tel%flag(1:len_trim(tel%flag))
+		endif
 		open(unit=30,file=specfile,RECL=6000)
 		call TraceVisibleMass(image,tel%lam1,flux)
 		write(30,*) tel%lam1,flux
@@ -614,6 +650,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%nlam_obs=-1
 	def%lamfile=' '
 	def%fits=.false.
+	def%noangle=.false.
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -877,6 +914,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		tel(nobs)%fastobs=def%fastobs
 		tel(nobs)%lamfile=def%lamfile
 		tel(nobs)%fits=def%fits
+		tel(nobs)%noangle=def%noangle
 	endif
 	if(setdef) then
 		if(key.eq.'nphi') read(value,*) def%nphi
@@ -962,6 +1000,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'dvelo') read(value,*) def%dvelo
 		if(key.eq.'abun') read(value,*) def%abun
 		if(key.eq.'fastobs') read(value,*) def%fastobs
+		if(key.eq.'noangle') read(value,*) def%noangle
 	else
 		if(key.eq.'nphi') read(value,*) tel(nobs)%nphi
 		if(key.eq.'nrad') read(value,*) tel(nobs)%nr
@@ -1113,6 +1152,7 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 		if(key.eq.'dvelo') read(value,*) tel(nobs)%dvelo
 		if(key.eq.'abun') read(value,*) tel(nobs)%abun
 		if(key.eq.'fastobs') read(value,*) tel(nobs)%fastobs
+		if(key.eq.'noangle') read(value,*) tel(nobs)%noangle
 	endif
 	
 	goto 1

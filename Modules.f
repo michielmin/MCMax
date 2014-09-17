@@ -174,7 +174,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: b(:),theta(:),fov(:),lam(:) ! Gijsexp
 		logical usepol,readmcscat,traceinverse,fluxcontr,fits
 		logical,allocatable :: trace(:)
-		logical tracestar,traceemis,tracescat,tracegas,fastobs
+		logical tracestar,traceemis,tracescat,tracegas,fastobs,noangle
 		character*500 psffile,linefile,popfile,lamfile
 		real*8 dvelo,abun
 		integer nvelo,trans_nr1,trans_nr2
