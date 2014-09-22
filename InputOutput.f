@@ -190,6 +190,13 @@
 						write(20,*) C(i,j)%ne
 					enddo
 				enddo
+			case ('NH')
+				write(20,'("# NH (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%gasdens*gas2dust / (1.3*1.67262158d-24)
+					enddo
+				enddo
 			case ('ARRAY')
 				do l=1,nxx
 					write(20,'("# array (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
@@ -479,6 +486,13 @@ C	 create the new empty FITS file
 				do i=1,D%nR-1
 					do j=1,D%nTheta-1
 						array(i,j,1,1)=C(i,j)%ne
+					enddo
+				enddo
+			case ('NH')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%gasdens*gas2dust / (1.3*1.67262158d-24)
 					enddo
 				enddo
 			case ('OPACITY')

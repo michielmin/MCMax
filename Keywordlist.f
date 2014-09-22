@@ -331,6 +331,10 @@
 	i=i+1
 	keyword(i)='f_irf'
 	i=i+1
+	keyword(i)='uvdes'
+	i=i+1
+	keyword(i)='g_nh'
+	i=i+1
 	keyword(i)='exportprodimo'
 	i=i+1
 	keyword(i)='runprodimo'

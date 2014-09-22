@@ -360,6 +360,9 @@
 	
 	f_ne=1d0
 	qhp_solver=0
+	
+	UVdes=.false.
+	gammaUVdes=0d0
 
 	lnkloglog=.false.
 	
@@ -1197,6 +1200,9 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'maxthetaprodimo') read(value,*) maxthetaProDiMo
 	if(key.eq.'exportflits') read(value,*) exportFLiTs
 	if(key.eq.'tsmooth') read(value,*) Tsmooth
+
+	if(key.eq.'gammauvdes') read(value,*) gammaUVdes
+	if(key.eq.'uvdes') read(value,*) UVdes
 	
 	if(key(1:7).eq.'prodimo'.and.key(8:8).eq.':') call writeExtraProDiMo(line(9:len_trim(key)),trim(value))
 
@@ -4163,7 +4169,7 @@ c		f_weight=1d0
 		enddo
 c		f_weight=f_weight_backup
 	endif
-	if (use_topac) call Topac()
+	if (use_topac) call Topac(0)
 	tauincrease=1.25d0
 
 	iter0=0

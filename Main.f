@@ -721,7 +721,7 @@ c Regridding now only when error larger than 2 times epsiter
 			enddo
 10			continue
 		endif
-		if (use_topac) call Topac()
+		if (use_topac) call Topac(niter)
 
 	        ! Write surface density file at end of each iteration
 		open(unit=90,file=surfdensfile,RECL=100)

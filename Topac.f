@@ -5,13 +5,17 @@ c
 c-----------------------------------------------------------------------
 
 
-      subroutine Topac()
+      subroutine Topac(niter)
       use Parameters
+	use InputOutput
       implicit none
-      integer i,j,ii,iopac,nopac
+      integer i,j,ii,iopac,nopac,niter
       logical InRange,InBetween
       real*8 checksum,lininterpol
+	character*500 filename
 
+	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) call CreateLRF(NphotUV,10000)
+  
       ! loop over all grains
       do ii=1,ngrains 
          if (Grain(ii)%parttype .eq. 5) then
@@ -73,10 +77,23 @@ c-----------------------------------------------------------------------
                      stop 63635
                   endif
 
+					if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) call UVdestruction(ii,i,j)
                enddo            ! theta loop
             enddo               ! r loop
          endif                  ! graintype=5
       enddo                     ! graintype loop
+
+
+	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) then
+		if(outputfits) then
+			write(filename,'(a,"/UVdestruction.fits.gz")') outdir(1:len_trim(outdir))
+		else
+			write(filename,'(a,"/UVdestruction.dat")') outdir(1:len_trim(outdir))
+		endif
+		call outputstruct(filename,(/'G0     ','NH     '/),2,0)
+	endif
+
+
 
       return
       end
@@ -116,3 +133,43 @@ c-----------------------------------------------------------------------
 
       return
       end
+
+
+
+	subroutine UVdestruction(ii,i,j)
+	use Parameters
+	IMPLICIT NONE
+	real*8 G,spec(nlam),lam1,lam2,mu,nH,dens0,A,B
+	integer i,j,l,ii
+	parameter(mu=1.3*1.67262158d-24) !1.3 times the proton mass in gram
+
+	lam1=0.0953
+	lam2=0.206
+	
+	spec(1:nlam)=C(i,j)%LRF(1:nlam)
+	do l=1,nlam
+		if(lam(l).lt.lam1) spec(l)=0d0
+		if(lam(l).gt.lam2) spec(l)=0d0
+	enddo
+	call integrate(spec,G)
+
+	G=4d0*pi*G/5.33d-14/3d10
+c	if(G.lt.1d-6) G=1d-6
+
+	nH = C(i,j)%gasdens*gas2dust / mu
+	
+	C(i,j)%G=G
+	C(i,j)%ne=1.5e-4*f_ne*nH
+
+	A=Grain(ii)%TdesA
+	B=Grain(ii)%TdesB
+	dens0=10d0**(A/B-1d4/(C(i,j)%T*B)-log10(C(i,j)%T))+gammaUVdes*G/sqrt(C(i,j)%T)
+
+	if(C(i,j)%dens.lt.dens0) then
+		C(i,j)%wopac(ii,1:Grain(ii)%nopac-1)=0d0
+		C(i,j)%wopac(ii,Grain(ii)%nopac)=1d0
+	endif
+
+	return
+	end
+
