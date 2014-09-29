@@ -271,9 +271,9 @@ c       Gijsexp:
      &		j+2,j+2+tel%nlam,tel%lam(j),180d0*tel%theta(j)/pi
 		enddo
 c$$$		write(30,'("# column ",i3," and further: phase")') tel%nlam+3
-		Call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
+c		Call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
 		do j=1,tel%nlam
-		   if (j.ne.1.and.tel%lam(j).ne.tel%lam(j-1)) then
+		   if (j.eq.1.or.(tel%lam(j).ne.tel%lam(j-1))) then
 		      call TraceFlux(image,tel%lam(j),flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,tel%opening,angle,tel%mask,tel%wmask)
 		   endif
 
