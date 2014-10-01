@@ -5291,8 +5291,13 @@ c-----------------------------------------------------------------------
 	doubleprecision, PARAMETER :: amu=1.66053886d-24
 	
 	scale=scalemin
+
+	!  do not apply a scale factor if outside rmax
+	if(r.ge.rmax) then
+	   scale= 1d0
+
         !  use a soft edge
-	if(type.eq.'softedge') then
+	else if(type.eq.'softedge') then
 	   scale=       (2.3 * amu)/(kb*C(i,D%nTheta-1)%T)* (GG * D%Mstar)/D%R_av(i)
 	   scale=scale* (1d0 - 0.5d0*(rmax/r - r/rmax))
 	   scale=exp(scale) * ((r/rmax)**(D%denspow)) 
