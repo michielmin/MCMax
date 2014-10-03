@@ -333,7 +333,7 @@
 	i=i+1
 	keyword(i)='uvdes'
 	i=i+1
-	keyword(i)='g_nh'
+	keyword(i)='gammauvdes'
 	i=i+1
 	keyword(i)='exportprodimo'
 	i=i+1
