@@ -2595,6 +2595,7 @@ c	lmax  = 4000.0
 		call ReadKurucz(D%Tstar,D%logg,lam,D%Fstar,nlam)
 		call integrate(D%Fstar,tot)
 		D%Fstar=D%Lstar*D%Fstar/tot
+		D%Rstar=sqrt(D%Lstar/Luminosity(D%Tstar,1d0))
 		nlamHR=nlam+9
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
