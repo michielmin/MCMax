@@ -591,7 +591,8 @@ c-----------------------------------------------------------------------
 	integer,allocatable :: NEmisDis(:,:)
 	real*8 Einner,fact_IRF
 	integer Nstar,ip,np,jj,Nmin,iscat
-	type(Mueller) M
+	type(Mueller) M,ML(ngrains,ngrains2)
+	real*8 KabsL(ngrains,ngrains2),KscaL(ngrains,ngrains2),KextL(ngrains,ngrains2)
 	
 	allocate(VisEmisDis(0:D%nR+1,0:D%nTheta+1))
 	allocate(EmisDis(0:D%nR+1,0:D%nTheta+1))
@@ -637,10 +638,38 @@ c-----------------------------------------------------------------------
 		phot%nu=1d0/lam0
 	endif
 
+	do ii=1,ngrains
+		do iopac=1,Grain(ii)%nopac
+			KabsL(ii,iopac)=phot%wl1*Grain(ii)%Kabs(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Kabs(iopac,phot%ilam2)
+			KextL(ii,iopac)=phot%wl1*Grain(ii)%Kext(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Kext(iopac,phot%ilam2)
+			KscaL(ii,iopac)=phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
+
+			ML(ii,iopac)%IF11=(Grain(ii)%F(iopac,phot%ilam1)%IF11*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%IF11*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+			ML(ii,iopac)%IF12=(Grain(ii)%F(iopac,phot%ilam1)%IF12*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%IF12*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+			do ia=1,180
+				ML(ii,iopac)%F11(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F12(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F22(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F33(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F34(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F44(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(Grain(ii)%F(iopac,phot%ilam2)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+			enddo
+		enddo
+	enddo
+	
+
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,ii,iopac,ia)
-!$OMP& SHARED(D,C,ngrains,Grain,phot,scattering,scat_how,useobspol)
+!$OMP& SHARED(D,C,ngrains,Grain,phot,scattering,scat_how,useobspol,KabsL,KextL,KscaL,ML)
 !$OMP DO
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
@@ -649,12 +678,9 @@ c-----------------------------------------------------------------------
 		C(i,j)%Ksca=0d0
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
-			C(i,j)%Kabs=C(i,j)%Kabs+(phot%wl1*Grain(ii)%Kabs(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%Kabs(iopac,phot%ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Kext=C(i,j)%Kext+(phot%wl1*Grain(ii)%Kext(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%Kext(iopac,phot%ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Ksca=C(i,j)%Ksca+(phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &			+phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			C(i,j)%Kabs=C(i,j)%Kabs+KabsL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			C(i,j)%Kext=C(i,j)%Kext+KextL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			C(i,j)%Ksca=C(i,j)%Ksca+KscaL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
 		enddo
 		enddo
 		C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
@@ -664,12 +690,8 @@ c-----------------------------------------------------------------------
 		C(i,j)%F%IF12=0d0
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
-			C(i,j)%F%IF11=C(i,j)%F%IF11+((Grain(ii)%F(iopac,phot%ilam1)%IF11*Grain(ii)%Ksca(iopac,phot%ilam1)*C(i,j)%w(ii))
-     &		*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%IF11*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))*phot%wl2)
-     &		*C(i,j)%wopac(ii,iopac)
-			C(i,j)%F%IF12=C(i,j)%F%IF12+((Grain(ii)%F(iopac,phot%ilam1)%IF12*Grain(ii)%Ksca(iopac,phot%ilam1)*C(i,j)%w(ii))
-     &		*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%IF12*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))*phot%wl2)
-     &		*C(i,j)%wopac(ii,iopac)
+			C(i,j)%F%IF11=C(i,j)%F%IF11+ML(ii,iopac)%IF11*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			C(i,j)%F%IF12=C(i,j)%F%IF12+ML(ii,iopac)%IF12*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
     	enddo
 		enddo
 		C(i,j)%F%IF11=C(i,j)%F%IF11/C(i,j)%Ksca
@@ -683,25 +705,13 @@ c-----------------------------------------------------------------------
 			C(i,j)%F%F44(ia)=0d0
 			do ii=1,ngrains
 			do iopac=1,Grain(ii)%nopac
-				C(i,j)%F%F11(ia)=C(i,j)%F%F11(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%F%F11(ia)=C(i,j)%F%F11(ia)+ML(ii,iopac)%F11(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)+ML(ii,iopac)%F12(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
      			if(useobspol) then
-					C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)+((Grain(ii)%F(iopac,phot%ilam1)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam1)
-     &		*C(i,j)%w(ii))*phot%wl1+(Grain(ii)%F(iopac,phot%ilam2)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam2)*C(i,j)%w(ii))
-     &		*phot%wl2)*C(i,j)%wopac(ii,iopac)
+					C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)+ML(ii,iopac)%F22(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)+ML(ii,iopac)%F33(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)+ML(ii,iopac)%F34(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)+ML(ii,iopac)%F44(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
 				endif
 			enddo
 			enddo
@@ -903,6 +913,8 @@ c-----------------------------------------------------------------------
 
 	fact_IRF=1d0+(1d0-f)*(Estar/Eirf-1d0)
 
+	if(fact_IRF.lt.(0.1d0*(Estar+Eirf)/Eirf)) fact_IRF=0.1d0*(Estar+Eirf)/Eirf
+
 	if(fact_IRF.lt.10d0) fact_IRF=10d0
 	if(fact_IRF.gt.1d4) fact_IRF=1d4
 
@@ -1083,8 +1095,6 @@ c-----------------------------------------------------------------------
 	type(photon) phot
 	logical ignore
 	
-c	fact_IRF=1000d0
-
 	phot%pol=.false.
 
 	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)

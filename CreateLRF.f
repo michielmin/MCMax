@@ -8,7 +8,6 @@
 	storescatt=.false.
 	useobspol=.false.
 	old_forcefirst=forcefirst
-	forcefirst=.true.
 	
 	if(scattering.and.Nphot.ne.0) then
 		do i=0,D%nR
@@ -58,7 +57,12 @@
 		enddo
 		if(lam(ilam).lt.maxlamUV) then
 			nexits=0
+			forcefirst=.true.
 			call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
+		else
+			nexits=0
+			forcefirst=.false.
+			call TraceMono(lam(ilam),Nphot/10,45d0,NphotStar)
 		endif
 		do i=1,D%nR-1
 			do j=1,D%nTheta-1

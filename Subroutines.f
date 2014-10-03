@@ -722,6 +722,9 @@ c	call writefitsfile(filename,seeing(1:IMDIM,1:IMDIM),IMDIM)
 		tot=tot+psf(i,n+1-j)
 	enddo
 	enddo
+	
+	write(filename,'("aperture.fits")')
+	call writefitsfile(filename,psf(1:IMDIM,1:IMDIM),IMDIM)
 
 	if(mask.lt.1d0) then
 		psfcor=psf/tot
