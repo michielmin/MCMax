@@ -128,6 +128,8 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		logical fix_struct,sizedis
 		real*8,allocatable :: abun(:)
 		logical,allocatable :: inc_grain(:)
+		integer Mconnect,Sconnect
+		real*8 Rconnect
 	end type DiskZone
 	
 	type(DiskZone),allocatable :: Zone(:)

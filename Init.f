@@ -396,6 +396,9 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%pertA=0d0
 		ZoneTemp(i)%pertR=10d0
 		ZoneTemp(i)%pertR0=0d0
+		ZoneTemp(i)%Mconnect=0
+		ZoneTemp(i)%Sconnect=0
+		ZoneTemp(i)%Rconnect=-1d0
 	enddo
 	nzones=0
 	
@@ -1265,6 +1268,12 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%roundindex
 		else if(keyzone.eq.'roundscalemin') then
 			read(value,*) ZoneTemp(i)%roundscalemin
+		else if(keyzone.eq.'mconnect') then
+			read(value,*) ZoneTemp(i)%Mconnect
+		else if(keyzone.eq.'sconnect') then
+			read(value,*) ZoneTemp(i)%Sconnect
+		else if(keyzone.eq.'rconnect') then
+			read(value,*) ZoneTemp(i)%Rconnect
 		else
 			write(*,'("Zone keyword not understood:",a)') trim(keyzone)
 			write(9,'("Zone keyword not understood:",a)') trim(keyzone)
@@ -1481,6 +1490,7 @@ C       End
 			if(Zone(i)%Rin.lt.D%Rin) D%Rin=Zone(i)%Rin
 			if(Zone(i)%Rout.gt.D%Rout) D%Rout=Zone(i)%Rout
 		enddo
+		call ConnectZones()
 	endif
 
 	if(D%Minfall.lt.0d0) D%Minfall=D%Mdot
@@ -5679,3 +5689,68 @@ c-----------------------------------------------------------------------
 	end
 		
 	
+	
+	subroutine ConnectZones()
+	use Parameters
+	IMPLICIT NONE
+	integer izone,iter,i1,i2,ir,nr
+	real*8 Mtot,M1,M2,R,S1,S2,SdensZone,RR1,RR2,RR
+
+	do izone=1,nzones
+		if(Zone(izone)%Rconnect.lt.0d0) Zone(izone)%Rconnect=Zone(izone)%Rout
+	enddo
+
+	nr=250
+	do iter=1,100
+		do izone=1,nzones
+			if(Zone(izone)%Mconnect.gt.0) then
+				i1=izone
+				i2=Zone(izone)%Mconnect
+				R=Zone(izone)%Rconnect
+				M1=0d0
+				M2=0d0
+				do ir=1,nr
+					RR1=Zone(i1)%Rin+(Zone(i1)%Rout-Zone(i1)%Rin)*real(ir-1)/real(nr)
+					RR2=Zone(i1)%Rin+(Zone(i1)%Rout-Zone(i1)%Rin)*real(ir)/real(nr)
+					RR=sqrt(RR1*RR2)
+					S1=SdensZone(RR,Zone(i1)%denspow,Zone(i1)%Rexp,Zone(i1)%gamma_exp)
+					M1=M1+S1*(RR2-RR1)*RR
+
+					RR1=Zone(i2)%Rin+(Zone(i2)%Rout-Zone(i2)%Rin)*real(ir-1)/real(nr)
+					RR2=Zone(i2)%Rin+(Zone(i2)%Rout-Zone(i2)%Rin)*real(ir)/real(nr)
+					RR=sqrt(RR1*RR2)
+					S2=SdensZone(RR,Zone(i2)%denspow,Zone(i2)%Rexp,Zone(i2)%gamma_exp)
+					M2=M2+S2*(RR2-RR1)*RR
+				enddo
+				S1=SdensZone(R,Zone(i1)%denspow,Zone(i1)%Rexp,Zone(i1)%gamma_exp)
+				S2=SdensZone(R,Zone(i2)%denspow,Zone(i2)%Rexp,Zone(i2)%gamma_exp)
+				M1=M1/S1
+				M2=M2/S2
+				Mtot=Zone(i1)%Mdust+Zone(i2)%Mdust
+				Zone(i1)%Mdust=Mtot*M1/(M1+M2)
+				Zone(i2)%Mdust=Mtot*M2/(M1+M2)
+			endif
+			if(Zone(izone)%Sconnect.gt.0) then
+				i1=izone
+				i2=Zone(izone)%Mconnect
+				R=Zone(izone)%Rconnect
+				Zone(i2)%Rsh=R
+				Zone(i2)%sh=Zone(i1)%sh*(R/Zone(i1)%Rsh)**Zone(i1)%shpow
+			endif
+		enddo
+	enddo
+	
+	return
+	end
+
+
+	real*8 function SdensZone(R,denspow,Rexp,gamma)
+	IMPLICIT NONE
+	real*8 R,denspow,Rexp,gamma
+	
+	SdensZone=R**(-denspow)*exp(-(R/Rexp)**gamma)
+	
+	return
+	end
+	
+
