@@ -27,7 +27,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	use InputOutput
 	IMPLICIT NONE
 	character*500 input,denstempfile,tau1file,tmp,tau1fileR,version
-	character*500 comm,gasdenstempfile
+	character*500 comm,gasdenstempfile,radtaufile
 	character*500 photfile,output,pshfile,logfile,kappafile,errfile
 	character*500 denstempfileND,radgridfile,qhpfile,donefile
 	character*500 surfdensfile,mdotrfile,FLiTsfile
@@ -264,6 +264,7 @@ c ---------------------------------------------------------------------
 		write(radgridfile,'(a,"radgrid",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(tau1file,'(a,"height",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(tau1fileR,'(a,"heightR",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
+		write(radtaufile,'(a,"radtau",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
 		write(mdotrfile,'(a,"MdotR",i2.2,".dat")') outdir(1:len_trim(outdir)),niter
 		write(surfdensfile,'(a,"surfacedens",i2.2,".dat")') outdir(1:len_trim(outdir)),niter
@@ -296,6 +297,8 @@ c ---------------------------------------------------------------------
 		write(tau1file,'(a,"height",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
 		write(tau1fileR,'(a,"heightR",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
+     &																,niter-10*(niter/10)
+		write(radtaufile,'(a,"radtau",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
 		write(pshfile,'(a,"scaleheight",i1,i1,i1,".dat")') outdir(1:len_trim(outdir)),niter/100,(niter-100*(niter/100))/10
      &																,niter-10*(niter/10)
@@ -334,6 +337,7 @@ c ---------------------------------------------------------------------
 		write(radgridfile,'(a,"radgrid.dat")') outdir(1:len_trim(outdir))
 		write(tau1file,'(a,"height.dat")')outdir(1:len_trim(outdir))
 		write(tau1fileR,'(a,"heightR.dat")')outdir(1:len_trim(outdir))
+		write(radtaufile,'(a,"radtau.dat")')outdir(1:len_trim(outdir))
 		write(pshfile,'(a,"scaleheight.dat")')outdir(1:len_trim(outdir))
 		write(mdotrfile,'(a,"MdotR.dat")') outdir(1:len_trim(outdir))
 		write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
@@ -376,6 +380,7 @@ c		call PAHMCMax(niter)
 
 	call tau1height(tau1file)
 	call tau1heightR(tau1fileR)
+	call radialtaumidplane(radtaufile)
 	open(unit=20,file=radgridfile,RECL=100)
 	do i=1,D%nR
 		write(20,*) D%R(i)

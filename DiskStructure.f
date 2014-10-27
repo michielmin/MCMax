@@ -634,6 +634,69 @@ c
 	
 
 c-----------------------------------------------------------------------
+c This subroutine outputs the cumulative radial tau for stellar
+c radiation to the file filename
+c-----------------------------------------------------------------------
+	subroutine radialtaumidplane(filename)
+	use Parameters
+	IMPLICIT NONE
+	character*500 filename
+	real*8 tau(0:D%nR-1,0:ntau1_lam),lam0,wl1,wl2
+	integer ilam1,ilam2,l,i,j,ii,iopac,jj
+
+	jj=D%nTheta-1
+	do l=0,ntau1_lam
+		if(l.ne.0) then
+			lam0=tau1_lam(l)
+			do j=1,nlam-1
+				if(lam0.ge.lam(j).and.lam0.le.lam(j+1)) then
+					ilam1=j
+					ilam2=j+1
+					wl1=(lam(j+1)-lam0)/(lam(j+1)-lam(j))
+					wl2=(lam0-lam(j))/(lam(j+1)-lam(j))
+				endif
+			enddo
+			do ii=1,ngrains
+				do iopac=1,Grain(ii)%nopac
+					Grain(ii)%KextL(iopac)=Grain(ii)%Kext(iopac,ilam1)*wl1+
+     &     Grain(ii)%Kext(iopac,ilam2)*wl2
+				enddo
+			enddo
+			tau(0,l)=0d0
+			do i=1,D%nR-1
+				tau(i,l)=tau(i-1,l)
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						tau(i,l)=tau(i,l)+(D%R(i+1)-D%R(i))*AU*
+     &					C(i,jj)%dens*C(i,jj)%wopac(ii,iopac)*C(i,jj)%w(ii)*Grain(ii)%KextL(iopac)
+					enddo
+				enddo
+			enddo
+		else
+			tau(0,l)=0d0
+			do i=1,D%nR-1
+				tau(i,l)=tau(i-1,l)
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						tau(i,l)=tau(i,l)+(D%R(i+1)-D%R(i))*AU*
+     &				C(i,jj)%dens*C(i,jj)%wopac(ii,iopac)*C(i,jj)%w(ii)*Grain(ii)%Kpstar(iopac)
+					enddo
+				enddo
+			enddo
+		endif
+	enddo
+
+	open(unit=80,file=filename,RECL=6000)
+	do i=1,D%nR-1
+		write(80,*) D%R(i+1),(tau(i,0:ntau1_lam))
+	enddo
+	close(unit=80)
+
+	return
+	end
+
+
+c-----------------------------------------------------------------------
 c This subroutine outputs the tau=1 height of the disk for stellar
 c radiation to the file filename
 c-----------------------------------------------------------------------
