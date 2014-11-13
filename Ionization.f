@@ -5,6 +5,12 @@
 	integer i,j,l,ii
 	parameter(mu=1.3*1.67262158d-24) !1.3 times the proton mass in gram
 
+	if(.not.PAHion) then
+		C(i,j)%wopac(ii,1)=1d0
+		C(i,j)%wopac(ii,2)=0d0
+		return
+	endif
+
 	lam1=0.0953
 	lam2=0.206
 	

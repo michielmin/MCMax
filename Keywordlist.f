@@ -367,6 +367,8 @@
 	i=i+1
 	keyword(i)='uv_pah'
 	i=i+1
+	keyword(i)='pahion'
+	i=i+1
 	keyword(i)='innergas'
 	i=i+1
 	keyword(i)='rinnergas'
