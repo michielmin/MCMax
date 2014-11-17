@@ -284,7 +284,7 @@ c		   basegrid(k)=tel%b(1)*(tel%b(2)/tel%b(1))**((k-1d0)/(nbase-1d0))  ! log gri
 		   enddo
 		enddo
 		do k=1,nbase
-		   write(30,*) basegrid(k),1d23*flux/D%distance**2,V(1:tel%nlam,k),phase(1:tel%nbaseline,k)
+		   write(30,*) basegrid(k),1d23*flux/D%distance**2,V(1:tel%nlam,k),phase(1:tel%nlam,k)
 		enddo
 		close(unit=30)
 c       End add
