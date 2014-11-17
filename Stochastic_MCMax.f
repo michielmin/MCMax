@@ -19,6 +19,9 @@ c use the PAH module from Michiel Min
 	else if(qhp_solver.eq.1) then
 c use the PAH module from Kees Dullemond
 		call PAHMCMax(niter)
+	else if(qhp_solver.eq.2) then
+c use the PAH module from Kees Dullemond
+		call PAHequilibrium(niter)
 	else
 		write(*,'("QHP solver unknown")')
 		write(9,'("QHP solver unknown")')
@@ -340,3 +343,48 @@ c use the PAH module from Kees Dullemond
 	return
 	end
 	
+	
+	
+	
+	
+	
+
+	subroutine PAHequilibrium(niter)
+	use Parameters
+	IMPLICIT NONE
+	integer i,j,ii,niter,iqhp
+	real*8 determineTP
+	type(Photon) phot
+
+	write(*,'("--------------------------------------------------------")')
+	write(9,'("--------------------------------------------------------")')
+	write(*,'("Computing PAH emissivity assuming equilibrium")')
+	write(9,'("Computing PAH emissivity assuming equilibrium")')
+
+	do i=1,D%nR-1
+		call tellertje(i,D%nR-1)
+		do j=1,D%nTheta-1
+			do ii=1,ngrains
+				if(Grain(ii)%qhp) then
+					iqhp=Grain(ii)%qhpnr
+					phot%i=i
+					phot%j=j
+					phot%E=C(i,j)%EJvQHP(iqhp)/C(i,j)%w(ii)
+					C(i,j)%Tqhp(iqhp)=determineTP(phot,ii)
+					print*,i,j,C(i,j)%T,C(i,j)%Tqhp
+				endif
+			enddo
+		enddo
+	enddo
+
+
+	write(*,'("--------------------------------------------------------")')
+	write(9,'("--------------------------------------------------------")')
+
+	deallocate(BBQHP)
+	deallocate(Kabs)
+
+	return
+	end
+	
+
