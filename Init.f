@@ -3740,7 +3740,7 @@ c	this is a wedge zone!
 		enddo
 	enddo
 
-	if(.not.arraysallocated.and.(.not.tcontact.or.tdes_iter)) then
+	if(.not.arraysallocated.and.(.not.tcontact.or.tdes_iter.or.qhp_solver.eq.2)) then
 	do i=0,D%nR
 	do j=0,D%nTheta
 		allocate(C(i,j)%TP(ngrains))
@@ -4438,7 +4438,7 @@ c-----------------------------------------------------------------------
 	do j=0,D%nTheta
 		deallocate(C(i,j)%w)
 		if(storescatt) deallocate(C(i,j)%scattfield)
-		if(.not.tcontact.or.tdes_iter) then
+		if(.not.tcontact.or.tdes_iter.or.qhp_solver.eq.2) then
 			deallocate(C(i,j)%TP)
 			deallocate(C(i,j)%EJvP)
 			deallocate(C(i,j)%EabsP)

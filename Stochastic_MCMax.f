@@ -352,8 +352,8 @@ c use the PAH module from Kees Dullemond
 	subroutine PAHequilibrium(niter)
 	use Parameters
 	IMPLICIT NONE
-	integer i,j,ii,niter,iqhp
-	real*8 determineTP
+	integer i,j,ii,niter,iqhp,iopac,l
+	real*8 determineTP,tot,Planck
 	type(Photon) phot
 
 	write(*,'("--------------------------------------------------------")')
@@ -366,12 +366,31 @@ c use the PAH module from Kees Dullemond
 		do j=1,D%nTheta-1
 			do ii=1,ngrains
 				if(Grain(ii)%qhp) then
+					if(niter.eq.0) C(i,j)%LRF(1:nlam)=D%Fstar(1:nlam)/(4d0*pi*D%R_av(i)**2)
+					if(Grain(ii)%nopac.gt.1) call PAHionization(ii,i,j)
 					iqhp=Grain(ii)%qhpnr
 					phot%i=i
 					phot%j=j
-					phot%E=C(i,j)%EJvQHP(iqhp)/C(i,j)%w(ii)
+					if(niter.eq.0) then
+						phot%E=0d0
+						do iopac=1,Grain(ii)%nopac
+							phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*C(i,j)%wopac(ii,iopac)
+						enddo
+						phot%E=0.5d0*(1d0-sqrt(1d0-(D%Rstar/D%R_av(i))**2))*phot%E*D%Lstar/(pi*D%Rstar**2)
+					else
+						phot%E=C(i,j)%EJvQHP(iqhp)/C(i,j)%w(ii)
+					endif
 					C(i,j)%Tqhp(iqhp)=determineTP(phot,ii)
-					print*,i,j,C(i,j)%T,C(i,j)%Tqhp
+					if(C(i,j)%Tqhp(iqhp).lt.2.8) C(i,j)%Tqhp(iqhp)=2.8
+					do l=1,nlam
+						C(i,j)%QHP(iqhp,l)=0d0
+						do iopac=1,Grain(ii)%nopac
+							C(i,j)%QHP(iqhp,l)=C(i,j)%QHP(iqhp,l)+Planck(C(i,j)%Tqhp(iqhp),lam(l))*
+     &								C(i,j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
+						enddo
+					enddo
+					call integrate(C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
+					C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(i,j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
 				endif
 			enddo
 		enddo
@@ -380,9 +399,6 @@ c use the PAH module from Kees Dullemond
 
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
-
-	deallocate(BBQHP)
-	deallocate(Kabs)
 
 	return
 	end
