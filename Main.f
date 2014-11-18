@@ -632,7 +632,7 @@ c
 					endif
 					write(*,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
 					write(9,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
-					call outputstruct(qhpfile,(/'LAM    ','QHPEJv ','QHPRF  '/),3,ii)
+					call outputstruct(qhpfile,(/'LAM    ','QHPEJv ','QHPRF  ','TQHP   '/),4,ii)
 				endif
 			enddo
 		endif

@@ -102,18 +102,6 @@ c	end module PAHModule
 				enddo
 			endif
 		enddo
-		do j=1,D%nTheta-1
-			do ii=1,nqhp
-				C(i,j)%Tqhp(ii)=0d0
-				do itemp=1,NTQHP
-					C(i,j)%Tqhp(ii)=C(i,j)%Tqhp(ii)+C(i,j)%tdistr(ii,itemp)*tgridqhp(itemp)**4
-				enddo
-				C(i,j)%Tqhp(ii)=C(i,j)%Tqhp(ii)**0.25d0
-			enddo
-		enddo
-	enddo
-	do j=1,D%nTheta-1
-		C(0,j)%Tqhp(1:nqhp)=C(1,j)%Tqhp(1:nqhp)
 	enddo
 
 

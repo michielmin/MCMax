@@ -174,6 +174,13 @@
 				enddo
 			case ('QHPRF')
 
+			case ('TQHP')
+				write(20,'("# Average T for QHP (for ir=0,nr-1 do for it=0,nt-1 do ...)")')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						write(20,*) C(i,j)%Tqhp(Grain(ipart)%qhpnr)
+					enddo
+				enddo
 			case ('OPACITY')
 
 			case ('G0')
@@ -474,6 +481,13 @@ C	 create the new empty FITS file
 						enddo
 					enddo
 				enddo
+			case ('TQHP')
+				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						array(i,j,1,1)=C(i,j)%Tqhp(Grain(ipart)%qhpnr)
+					enddo
+				enddo
 			case ('G0')
 				allocate(array(naxes(1),naxes(2),naxes(3),naxes(4)))
 				do i=1,D%nR-1
@@ -750,6 +764,8 @@ C	 create the new empty FITS file
 				enddo
 			case ('QHPRF')
 
+			case ('TQHP')
+
 			case ('SKIP')
 				read(20,*) ! comments
 				do i=1,D%nR-1
@@ -1015,6 +1031,12 @@ C	 create the new empty FITS file
 						do l=1,nlam
 							C(i,j)%QHP(Grain(ipart)%qhpnr,l)=array(i,j,l,1)
 						enddo
+					enddo
+				enddo
+			case ('TQHP')
+				do i=1,D%nR-1
+					do j=1,D%nTheta-1
+						C(i,j)%Tqhp(Grain(ipart)%qhpnr)=array(i,j,1,1)
 					enddo
 				enddo
 			case ('SKIP')
