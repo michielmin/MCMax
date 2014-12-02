@@ -501,6 +501,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
      &													*C(ri,D%nTheta-zj)%dens*Grain(l)%Kabs(iopac,lambda)
 					enddo
 				enddo ! k
+			    if(opacite(ri,zj,1,lambda).lt.3d-32) opacite(ri,zj,1,lambda)=3d-32 
 			 enddo ! lambda
 	   enddo ! ri
 	enddo !zj	
