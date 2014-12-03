@@ -360,7 +360,93 @@ c use the PAH module from Kees Dullemond
 	
 	
 	
-	
+
+
+	subroutine increaseQHPeq(phot,ii)
+	use Parameters
+	IMPLICIT NONE
+	type(photon) phot
+	real*8 E1,kp0,kp1,tot,T0,T1,Planck,spec(nlam)
+	integer i,j,ii,iopac,l,iqhp,iT0,iT1,epsT0,epsT1
+
+	iqhp=Grain(ii)%qhpnr
+
+	E1=C(phot%i,phot%j)%EabsQHP(iqhp)/(C(phot%i,phot%j)%mass*C(phot%i,phot%j)%w(ii))
+	T0=C(phot%i,phot%j)%Tqhp(iqhp)
+	j=int(T0/dT)
+
+	kp0=0d0
+	do iopac=1,Grain(ii)%nopac
+		kp0=kp0+Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%wopac(ii,iopac)
+	enddo
+	do i=j,TMAX-1
+		kp1=0d0
+		do iopac=1,Grain(ii)%nopac
+			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
+		enddo
+		if(kp0.le.E1.and.kp1.ge.E1) then
+			C(phot%i,phot%j)%Tqhp(iqhp)=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			goto 1
+		endif
+		kp0=kp1
+	enddo
+c not found, starting from 1 K
+	j=1
+	kp0=0d0
+	do iopac=1,Grain(ii)%nopac
+		kp0=kp0+Grain(ii)%Kp(iopac,j)*C(phot%i,phot%j)%wopac(ii,iopac)
+	enddo
+	do i=j,TMAX-1
+		kp1=0d0
+		do iopac=1,Grain(ii)%nopac
+			kp1=kp1+Grain(ii)%Kp(iopac,i+1)*C(phot%i,phot%j)%wopac(ii,iopac)
+		enddo
+		if(kp0.le.E1.and.kp1.ge.E1) then
+			C(phot%i,phot%j)%Tqhp(iqhp)=(real(i)**4+(real(i+1)**4-real(i)**4)*(E1-kp0)/(kp1-kp0))**(0.25d0)*dT
+			goto 1
+		endif
+		kp0=kp1
+	enddo
+	C(phot%i,phot%j)%Tqhp(iqhp)=real(TMAX-1)*dT
+
+1	continue
+
+	T1=C(phot%i,phot%j)%Tqhp(iqhp)
+
+	iT0=int(T0/dT)
+	iT1=int(T1/dT)
+
+	epsT0=T0-real(iT0)*dT
+	epsT1=T1-real(iT1)*dT
+	if(iT0.ge.TMAX-1) iT0=TMAX-2
+	if(iT1.ge.TMAX-1) iT1=TMAX-1
+	if(iT0.lt.1) iT0=1
+	if(iT1.lt.2) iT1=2
+
+	if(iT0.eq.iT1) then
+		do l=1,nlam
+			spec(l)=(BB(l,iT0+1)-BB(l,iT0))
+		enddo
+	else
+		do l=1,nlam
+			spec(l)=(epsT1*BB(l,iT1+1)+(1d0-epsT1)*BB(l,iT1)-epsT0*BB(l,iT0+1)-(1d0-epsT0)*BB(l,iT0))
+		enddo
+	endif
+
+	do l=1,nlam
+		C(phot%i,phot%j)%QHP(iqhp,l)=0d0
+		do iopac=1,Grain(ii)%nopac
+			C(phot%i,phot%j)%QHP(iqhp,l)=C(phot%i,phot%j)%QHP(iqhp,l)+
+     &				spec(l)*C(phot%i,phot%j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
+		enddo
+	enddo
+	call integrate(C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
+	C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
+
+	return
+	end
+
+
 	
 	
 

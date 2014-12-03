@@ -90,7 +90,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		type(Mueller) F
 		real*8,allocatable :: w(:),scattfield(:,:,:),w0(:),QHP(:,:),LRF(:)
 		integer,allocatable :: nLRF(:)
-		real*8,allocatable :: tdistr(:,:),Tqhp(:),EabsP(:),thetrg(:),Tphi(:)
+		real*8,allocatable :: tdistr(:,:),Tqhp(:),EabsP(:),thetrg(:),Tphi(:),EabsQHP(:)
 		real*8,allocatable :: scattQ(:,:,:),scattU(:,:,:),scattV(:,:,:)
 		logical thick,diff,randomwalk
 		real*8 KextLRF,ILRF

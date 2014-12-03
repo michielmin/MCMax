@@ -246,7 +246,7 @@ c ---------------------------------------------------------------------
 	write(*,'("--------------------------------------------------------")')
 	write(9,'("--------------------------------------------------------")')
 
-	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.gt.0.and..not.lastiter.and.maxiter.gt.0) then
+	if((struct_iter.or.tdes_iter.or.(use_qhp.and.qhp_solver.ne.2).or.use_topac).and.Nphot.gt.0.and..not.lastiter.and.maxiter.gt.0) then
 		if(niter.lt.100) then
 		if(outputfits) then
 			write(denstempfile,'(a,"denstemp",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),niter/10,niter-10*(niter/10)
@@ -433,6 +433,7 @@ c	   enddo
 				allocate(Cprev(i,j)%tdistr(nqhp,NTQHP))
 				allocate(Cprev(i,j)%Tqhp(nqhp))
 				allocate(Cprev(i,j)%EJvQHP(nqhp))
+				allocate(Cprev(i,j)%EabsQHP(nqhp))
 			endif
 			if(computeLRF) then
 				allocate(Cprev(i,j)%LRF(nlam))
@@ -535,6 +536,7 @@ c
 		C(0,j)%dT=dT
 	enddo
 	if(convection.and.niter.gt.NFirst) call MakeAdiabatic(2d0/7d0)
+	if(use_qhp.and.qhp_solver.eq.2) call Stochastic(niter)
 	endif
 
 	do j=1,D%nTheta-1
@@ -663,7 +665,7 @@ c Recalculate the disk structure after the MC simulation.
 c (Unless it's the final iteration)
 c ---------------------------------------------------------------------
 
-	if((struct_iter.or.tdes_iter.or.use_qhp.or.use_topac).and.Nphot.ne.0.and..not.lastiter.and.maxiter.gt.0) then
+	if((struct_iter.or.tdes_iter.or.(use_qhp.and.qhp_solver.ne.2).or.use_topac).and.Nphot.ne.0.and..not.lastiter.and.maxiter.gt.0) then
 		niter=niter+1
 		if(niter.gt.niter0) then
 			call TempAverage(dble(1d0/(niter-niter0)))
@@ -829,6 +831,7 @@ c ---------------------------------------------------------------------
 				deallocate(Cprev(i,j)%tdistr)
 				deallocate(Cprev(i,j)%Tqhp)
 				deallocate(Cprev(i,j)%EJvQHP)
+				deallocate(Cprev(i,j)%EabsQHP)
 			endif
 			if(computeLRF) then
 				deallocate(Cprev(i,j)%LRF)

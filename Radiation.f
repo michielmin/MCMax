@@ -132,16 +132,26 @@ c No thermal contact
 		kp=1d0
 	endif
 	do i=1,ngrains
-		do iopac=1,Grain(i)%nopac
 		if(Grain(i)%qhp) then
+		if(qhp_solver.eq.2) then
+			KabsQHP=0d0
+			do iopac=1,Grain(i)%nopac
+				KabsQHP=KabsQHP+(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
+     &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
+			enddo
+			C(phot%i,phot%j)%EabsQHP(Grain(i)%qhpnr)=C(phot%i,phot%j)%EabsQHP(Grain(i)%qhpnr)
+     &						+Edust*KabsQHP/KabsTot
+			call increaseQHPeq(phot,i)
+		endif
+		do iopac=1,Grain(i)%nopac
 			KabsQHP=(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
      &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
 			if(use_qhp) then
 				spec(1:nlam)=spec(1:nlam)
      &	+KabsQHP*C(phot%i,phot%j)%QHP(Grain(i)%qhpnr,1:nlam)/KabsTot
 			endif
-		endif
 		enddo
+		endif
 	enddo
 
 	if(C(phot%i,phot%j)%useFE.and.computeTgas.and.g2d_heat) then
@@ -209,6 +219,16 @@ c Thermal contact (single temperature)
 	endif
 	do i=1,ngrains
 		if(Grain(i)%qhp) then
+		if(qhp_solver.eq.2) then
+			KabsQHP=0d0
+			do iopac=1,Grain(i)%nopac
+				KabsQHP=KabsQHP+(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
+     &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)
+			enddo
+			C(phot%i,phot%j)%EabsQHP(Grain(i)%qhpnr)=C(phot%i,phot%j)%EabsQHP(Grain(i)%qhpnr)
+     &						+Edust*KabsQHP/KabsTot
+			call increaseQHPeq(phot,i)
+		endif
 		do iopac=1,Grain(i)%nopac
 			KabsQHP=(Grain(i)%Kabs(iopac,phot%ilam1)*phot%wl1+
      &     Grain(i)%Kabs(iopac,phot%ilam2)*phot%wl2)*C(phot%i,phot%j)%w(i)*C(phot%i,phot%j)%wopac(i,iopac)

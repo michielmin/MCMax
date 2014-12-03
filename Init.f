@@ -3756,6 +3756,7 @@ c	this is a wedge zone!
 			allocate(C(i,j)%tdistr(nqhp,NTQHP))
 			allocate(C(i,j)%Tqhp(nqhp))
 			allocate(C(i,j)%EJvQHP(nqhp))
+			allocate(C(i,j)%EabsQHP(nqhp))
 		enddo
 		enddo
 		computeLRF=.true.
@@ -4448,6 +4449,7 @@ c-----------------------------------------------------------------------
 		if(allocated(C(i,j)%nLRF)) deallocate(C(i,j)%nLRF)
 		if(allocated(C(i,j)%tdistr)) deallocate(C(i,j)%tdistr)
 		if(allocated(C(i,j)%EJvQHP)) deallocate(C(i,j)%EJvQHP)
+		if(allocated(C(i,j)%EabsQHP)) deallocate(C(i,j)%EabsQHP)
 		if(allocated(C(i,j)%EviscDirect)) deallocate(C(i,j)%EviscDirect)
 		if(allocated(C(i,j)%FE)) deallocate(C(i,j)%FE)
 	enddo
@@ -4538,6 +4540,7 @@ c-----------------------------------------------------------------------
 		endif
 		if(use_qhp) then
 			C(i,j)%EJvQHP(1:nqhp)=0d0
+			C(i,j)%EabsQHP(1:nqhp)=0d0
 		endif
 		if(computeLRF) then
 			C(i,j)%LRF(1:nlam)=0d0
