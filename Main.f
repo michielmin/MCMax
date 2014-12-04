@@ -536,7 +536,7 @@ c
 		C(0,j)%dT=dT
 	enddo
 	if(convection.and.niter.gt.NFirst) call MakeAdiabatic(2d0/7d0)
-	if(use_qhp.and.qhp_solver.eq.2) call Stochastic(niter)
+	if(use_qhp.and.qhp_solver.eq.2) call Stochastic(niter+1)
 	endif
 
 	do j=1,D%nTheta-1
