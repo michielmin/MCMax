@@ -2516,12 +2516,14 @@ c	lmax  = 4000.0
 
 	else if(use_qhp.and.Nphot.le.0) then
 
+	nqhp=0
 	do ii=1,ngrains
 		if(parttype(ii).eq.4.or.parttype(ii).eq.8) then
+			nqhp=nqhp+1
 			if(outputfits) then
-				write(file,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				write(file,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),nqhp/10,nqhp-10*(nqhp/10)
 			else
-				write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+				write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),nqhp/10,nqhp-10*(nqhp/10)
 			endif
 			write(*,'("Reading wavelength grid from:       ",a)') file(1:len_trim(file))
 			write(9,'("Reading wavelength grid from:       ",a)') file(1:len_trim(file))

@@ -539,7 +539,7 @@ c------------------------------------------------------------------------
 	real*8 E1,kp0,kp1,determineT,computeE
 	integer i,j,ii,iopac
 
-	E1=C(phot%i,phot%j)%Eabs/C(phot%i,phot%j)%mass
+	E1=C(phot%i,phot%j)%Eabs/(C(phot%i,phot%j)%mass*(1d0-C(phot%i,phot%j)%fQHP))
 	j=int(C(phot%i,phot%j)%T/dT)
 	kp0=computeE(phot%i,phot%j,j)
 
@@ -1137,9 +1137,11 @@ c-----------------------------------------------------------------------
 		do ii=1,ngrains
 			if(Grain(ii)%qhp) then
 				if(outputfits) then
-					write(file,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+					write(file,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),
+     &						Grain(ii)%qhpnr/10,Grain(ii)%qhpnr-10*(Grain(ii)%qhpnr/10)
 				else
-					write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+					write(file,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),
+     &						Grain(ii)%qhpnr/10,Grain(ii)%qhpnr-10*(Grain(ii)%qhpnr/10)
 				endif
 				write(*,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))
 				write(9,'("Reading QHP emission from:          ",a)') file(1:len_trim(file))

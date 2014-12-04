@@ -219,6 +219,10 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 			enddo
 		enddo
 		C(i,j)%opacity_set=.true.
+		C(i,j)%fQHP=0d0
+		do ii=1,ngrains
+			if(Grain(ii)%qhp) C(i,j)%fQHP=C(i,j)%fQHP+C(i,j)%w(ii)
+		enddo
 	enddo
 	enddo
 

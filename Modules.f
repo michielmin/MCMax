@@ -84,7 +84,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	type Cell
 		real*8 T,dens,mass,xedge(6),EJv,V,xedge2(6),Eabs
 		integer Ni,iedge(6),lastphotnr,iTD,nrg
-		real*8 Kabs,Ksca,Kext,Albedo,dT,ddens,gasfrac,EJv2,dEJv,TMC
+		real*8 Kabs,Ksca,Kext,Albedo,dT,ddens,gasfrac,EJv2,dEJv,TMC,fQHP
 		real*8 tauexit,dens0,KDext,KDabs,gasdens,HighTQHP,KDQHP,Tav
 		real*8,allocatable :: TP(:),EJvP(:),EJvQHP(:),EviscDirect(:),KabsTot(:),KscaTot(:)
 		type(Mueller) F

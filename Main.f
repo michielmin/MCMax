@@ -628,9 +628,11 @@ c
 			do ii=1,ngrains
 				if(Grain(ii)%qhp) then
 					if(outputfits) then
-						write(qhpfile,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+						write(qhpfile,'(a,"QHPemis",i1,i1,".fits.gz")') outdir(1:len_trim(outdir)),
+     &							Grain(ii)%qhpnr/10,Grain(ii)%qhpnr-10*(Grain(ii)%qhpnr/10)
 					else
-						write(qhpfile,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),ii/10,ii-10*(ii/10)
+						write(qhpfile,'(a,"QHPemis",i1,i1,".dat")') outdir(1:len_trim(outdir)),
+     &							Grain(ii)%qhpnr/10,Grain(ii)%qhpnr-10*(Grain(ii)%qhpnr/10)
 					endif
 					write(*,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
 					write(9,'("Writing QHP emission to:          ",a)') qhpfile(1:len_trim(qhpfile))
