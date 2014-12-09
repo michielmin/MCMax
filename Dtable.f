@@ -111,7 +111,7 @@
 		return
 	endif
 
-	if(C(ci,cj)%opacity_set.and..not.use_qhp) then
+	if(C(ci,cj)%opacity_set) then
 		Ksca(1:nlam)=C(ci,cj)%KscaTot(1:nlam)
 		Kabs(1:nlam)=C(ci,cj)%KabsTot(1:nlam)
 		Kext(1:nlam)=Kabs(1:nlam)+Ksca(1:nlam)
@@ -140,6 +140,11 @@
 			endif
 		enddo
 	enddo
+	if(use_qhp.and.C(ci,cj)%opacity_set) then
+		Kabs(1:nlam)=Kabs(1:nlam)+Kqhp(1:nlam)
+		Kext(1:nlam)=Kext(1:nlam)+Kqhp(1:nlam)
+	endif
+
 	if(scattering) then
 		g(1:nlam)=g(1:nlam)/Ksca(1:nlam)
 	else
@@ -153,13 +158,10 @@
 	call integrate(dBB,int2)
 	C(ci,cj)%KDext=int2/int1
 
-	if(C(ci,cj)%opacity_set) then
-		spec(1:nlam)=dBB(1:nlam)*Kabs(1:nlam)
-	else
-		spec(1:nlam)=dBB(1:nlam)*(Kabs(1:nlam)-Kqhp(1:nlam))
-	endif
+	spec(1:nlam)=dBB(1:nlam)*(Kabs(1:nlam)-Kqhp(1:nlam))
 	call integrate(spec,int1)
 	C(ci,cj)%KDabs=int1/int2
+
 	if(use_qhp) then
 		spec(1:nlam)=dBB(1:nlam)*Kqhp(1:nlam)
 		call integrate(spec,int1)

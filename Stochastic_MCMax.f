@@ -423,25 +423,25 @@ c not found, starting from 1 K
 	if(iT0.lt.1) iT0=1
 	if(iT1.lt.2) iT1=2
 
+	do l=1,nlam
+		spec(l)=0d0
+		do iopac=1,Grain(ii)%nopac
+			spec(l)=spec(l)+C(phot%i,phot%j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
+		enddo
+	enddo
+
 	if(iT0.eq.iT1) then
 		do l=1,nlam
-			spec(l)=(BB(l,iT0+1)-BB(l,iT0))
+			spec(l)=spec(l)*(BB(l,iT0+1)-BB(l,iT0))
 		enddo
 	else
 		do l=1,nlam
-			spec(l)=(epsT1*BB(l,iT1+1)+(1d0-epsT1)*BB(l,iT1)-epsT0*BB(l,iT0+1)-(1d0-epsT0)*BB(l,iT0))
+			spec(l)=spec(l)*(epsT1*BB(l,iT1+1)+(1d0-epsT1)*BB(l,iT1)-epsT0*BB(l,iT0+1)-(1d0-epsT0)*BB(l,iT0))
 		enddo
 	endif
 
-	do l=1,nlam
-		C(phot%i,phot%j)%QHP(iqhp,l)=0d0
-		do iopac=1,Grain(ii)%nopac
-			C(phot%i,phot%j)%QHP(iqhp,l)=C(phot%i,phot%j)%QHP(iqhp,l)+
-     &				spec(l)*C(phot%i,phot%j)%wopac(ii,iopac)*Grain(ii)%Kabs(iopac,l)
-		enddo
-	enddo
-	call integrate(C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam),tot)
-	C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam)=C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam)/tot
+	call integrate(spec,tot)
+	C(phot%i,phot%j)%QHP(Grain(ii)%qhpnr,1:nlam)=spec(1:nlam)/tot
 
 	return
 	end

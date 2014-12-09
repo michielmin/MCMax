@@ -91,31 +91,39 @@ c				delta-Eddington approximation.
 	phot%y=phot%y+dmin*phot%vy
 	phot%z=phot%z+dmin*phot%vz
 
-	EJv=phot%E*v*AU*C(phot%i,phot%j)%dens
+	EJv=phot%E*v*AU
 
-	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs!*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
+	C(phot%i,phot%j)%Eabs=C(phot%i,phot%j)%Eabs+EJv*Kabs*C(phot%i,phot%j)%dens
+	if(use_qhp) then
+		do ii=1,ngrains
+			if(Grain(ii)%qhp) then
+				C(phot%i,phot%j)%EabsQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EabsQHP(Grain(ii)%qhpnr)
+     &							+EJv*C(phot%i,phot%j)%KDQHP*C(phot%i,phot%j)%dens
+			endif
+		enddo
+	endif
 	if(.not.tcontact.or.tdes_iter) then
 		do i=1,ngrains
-			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs!*C(phot%i,phot%j)%dens*C(phot%i,phot%j)%V
+			C(phot%i,phot%j)%EabsP(i)=C(phot%i,phot%j)%EabsP(i)+EJv*Kabs*C(phot%i,phot%j)%dens
 		enddo
 	endif
 
 c==============================================================================
 c Change 15-02-2012, do not use the random walk module to compute the EJv's
 c
-	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs/C(phot%i,phot%j)%dens
-	nEJv=nEJv+EJv*Kabs/C(phot%i,phot%j)%dens
-c	if(use_qhp) then
-c		do ii=1,ngrains
-c			if(Grain(ii)%qhp) then
-c				C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
-c     &							+EJv*C(phot%i,phot%j)%KDQHP*C(phot%i,phot%j)%w(ii)
-c			endif
-c		enddo
-c	endif
+	C(phot%i,phot%j)%EJv=C(phot%i,phot%j)%EJv+EJv*Kabs
+	nEJv=nEJv+EJv*Kabs
+	if(use_qhp) then
+		do ii=1,ngrains
+			if(Grain(ii)%qhp) then
+				C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)=C(phot%i,phot%j)%EJvQHP(Grain(ii)%qhpnr)
+     &							+EJv*C(phot%i,phot%j)%KDQHP
+			endif
+		enddo
+	endif
 	if(.not.tcontact.or.tdes_iter) then
 		do i=1,ngrains
-			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs/C(phot%i,phot%j)%dens
+			C(phot%i,phot%j)%EJvP(i)=C(phot%i,phot%j)%EJvP(i)+EJv*Kabs
 		enddo
 	endif
 c==============================================================================
@@ -218,7 +226,7 @@ c==============================================================================
 	call integrate(wfunc,int2)
 	
 	do j=1,nlam
-		C(ci,cj)%LRF(j)=C(ci,cj)%LRF(j)+EJv*wfunc(j)/(int2*C(ci,cj)%dens)
+		C(ci,cj)%LRF(j)=C(ci,cj)%LRF(j)+EJv*wfunc(j)/(int2)
 		C(ci,cj)%nLRF(j)=C(ci,cj)%nLRF(j)+1
 	enddo
 
