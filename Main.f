@@ -539,12 +539,6 @@ c
 	if(use_qhp.and.qhp_solver.eq.2) call Stochastic(niter+1)
 	endif
 
-	open(unit=90,file='PAHT.dat',RECL=6000)
-	do i=1,D%nR-1
-		write(90,*) D%R_av(i)/AU,C(i,D%nTheta-1)%T,C(i,D%nTheta-1)%Tqhp(1),C(i,D%nTheta-10)%T,C(i,D%nTheta-10)%Tqhp(1)
-	enddo
-	close(unit=90)
-
 	do j=1,D%nTheta-1
 		do i=1,D%nR-1
 			C(i,j)%TMC=C(i,j)%T

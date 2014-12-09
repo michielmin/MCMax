@@ -8,8 +8,8 @@
 	character*500 filename,version
 	real*8,allocatable :: grid(:,:,:)
 	real,allocatable :: temperature(:,:,:)
-	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:)
-	integer,allocatable :: region_index(:)
+	real,allocatable :: spectre(:),J_io(:,:,:),dens(:,:),PTQHP(:,:,:,:)
+	integer,allocatable :: region_index(:),is_eq(:,:,:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
 	real*8 fUV,tot,pUV,computeT_QHP,fPAHprodimo,amu
@@ -49,7 +49,12 @@
 	endif
 
 	allocate(grid(D%nR-1,D%nTheta-j0,2))
-	allocate(temperature(D%nR-1,D%nTheta-j0,2))
+	if(use_qhp) then
+		allocate(temperature(D%nR-1,D%nTheta-j0,nqhp))
+		allocate(is_eq(D%nR-1,D%nTheta-j0,nqhp))
+	else
+		allocate(temperature(D%nR-1,D%nTheta-j0,1))
+	endif
 	allocate(spectre(nlam))
 	allocate(J_io(D%nR-1,D%nTheta-j0,nlam))
 	allocate(dens(D%nR-1,D%nTheta-j0))
@@ -138,7 +143,7 @@ c inclination to the prodimo_extra file
 	call VersionDateTime(version)
 	call ftpkys(unit,'MCMax',trim(version),'',status)
 c	call ftpkys(unit,'mcfost_id',sha_id,'',status)
-	call ftpkyj(unit,'mcfost2prodimo',104,'',status)
+	call ftpkyj(unit,'mcfost2prodimo',105,'',status)
 c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkye(unit,'Teff',real(D%Tstar),-8,'[K]',status)
@@ -154,6 +159,12 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	call ftpkyj(unit,'n_zones',nzonesProDiMo,'',status)
 	call ftpkyj(unit,'n_regions',nzonesProDiMo,'',status)
+
+	if (use_qhp) then
+		call ftpkyj(unit,'PAH_present',1,' ',status)
+	else
+		call ftpkyj(unit,'PAH_present',0,' ',status)
+	endif
 
 	if(nzonesProDiMo.le.0) then
 		call ftpkye(unit,'disk_dust_mass',real(Mdust),-8,'[Msun]',status)
@@ -260,11 +271,7 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 
 	   do ri=1, D%nR-1	!n_rad
 		  do zj=j0, D%nTheta-1	!nz
-			if(.not.use_qhp) then
-				Temperature(ri,D%nTheta-zj,1) = C(ri,zj)%T
-			else
-				Temperature(ri,D%nTheta-zj,1)=computeT_QHP(ri,zj)
-			endif
+			Temperature(ri,D%nTheta-zj,1) = C(ri,zj)%T
 		  enddo !j
 	   enddo !i
 
@@ -494,12 +501,14 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			  opacite(ri,zj,1,lambda) = 0d0
 			  opacite(ri,zj,2,lambda) = 0d0
 				do l=1,ngrains
+					if(.not.Grain(l)%qhp) then
 					do iopac=1,Grain(l)%nopac
 					   opacite(ri,zj,1,lambda) = opacite(ri,zj,1,lambda) + C(ri,D%nTheta-zj)%w(l)*C(ri,D%nTheta-zj)%wopac(l,iopac)
      &													*C(ri,D%nTheta-zj)%dens*Grain(l)%Kext(iopac,lambda)
 					   opacite(ri,zj,2,lambda) = opacite(ri,zj,2,lambda) + C(ri,D%nTheta-zj)%w(l)*C(ri,D%nTheta-zj)%wopac(l,iopac)
      &													*C(ri,D%nTheta-zj)%dens*Grain(l)%Kabs(iopac,lambda)
 					enddo
+					endif
 				enddo ! k
 			    if(opacite(ri,zj,1,lambda).lt.3d-32) opacite(ri,zj,1,lambda)=3d-32 
 			 enddo ! lambda
@@ -619,6 +628,209 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	call ftppre(unit,group,fpixel,nelements,HRspec,status)
 
 	!------------------------------------------------------------------------------
+
+
+
+	if (use_qhp) then
+       !------------------------------------------------------------------------------
+       ! HDU 15 : PAH density
+       !------------------------------------------------------------------------------
+		bitpix=-32
+		naxis=2
+		naxes(1)=D%nR-1
+		naxes(2)=D%nTheta-j0
+		nelements=naxes(1)*naxes(2)
+
+       ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+       ! Write  optional keywords to the header
+		call ftpkys(unit,'UNIT',"g.cm^-3",' ',status)
+
+       !  Write the array to the FITS file.
+
+		do ri=1, D%nR-1
+			do zj=j0,D%nTheta-1
+				dens(ri,D%nTheta-zj) = 0d0
+				do i=1,ngrains
+					if(Grain(i)%qhp) then
+						dens(ri,D%nTheta-zj) =  dens(ri,D%nTheta-zj)+C(ri,zj)%dens*C(ri,zj)%w(i)
+					endif
+				enddo
+				if(dens(ri,D%nTheta-zj).lt.1d-35) dens(ri,D%nTheta-zj)=1d-35
+			enddo
+		enddo
+
+		call ftppre(unit,group,fpixel,nelements,dens,status)
+
+       !------------------------------------------------------------------------------
+       ! HDU 16 : PAH opacity
+       !------------------------------------------------------------------------------
+		bitpix=-32
+		naxis=4
+		naxes(1)=D%nR-1
+		naxes(2)=D%nTheta-j0
+		naxes(3)=2
+		naxes(4)=nlam
+		nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
+
+       ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+
+		do zj=1,D%nTheta-j0
+			do ri=1,D%nR-1
+				do lambda=1,nlam
+					opacite(ri,zj,1,lambda) = 0d0
+					opacite(ri,zj,2,lambda) = 0d0
+					do l=1,ngrains
+						if(Grain(l)%qhp) then
+						do iopac=1,Grain(l)%nopac
+							opacite(ri,zj,1,lambda) = opacite(ri,zj,1,lambda) + C(ri,D%nTheta-zj)%w(l)*C(ri,D%nTheta-zj)%wopac(l,iopac)
+     &													*C(ri,D%nTheta-zj)%dens*Grain(l)%Kext(iopac,lambda)
+							opacite(ri,zj,2,lambda) = opacite(ri,zj,2,lambda) + C(ri,D%nTheta-zj)%w(l)*C(ri,D%nTheta-zj)%wopac(l,iopac)
+     &													*C(ri,D%nTheta-zj)%dens*Grain(l)%Kabs(iopac,lambda)
+						enddo
+						endif
+					enddo ! k
+					if(opacite(ri,zj,1,lambda).lt.3d-32) opacite(ri,zj,1,lambda)=3d-32 
+				enddo ! lambda
+			enddo ! ri
+		enddo !zj	
+		opacite=opacite*AU
+
+		call ftppre(unit,group,fpixel,nelements,opacite,status)
+
+       !------------------------------------------------------------------------------
+       ! HDU 17 : PAH Teq
+       !------------------------------------------------------------------------------
+		bitpix=-32
+		naxis=3
+		naxes(1)=D%nR-1
+		naxes(2)=D%nTheta-j0
+		naxes(3)=nqhp
+		nelements=naxes(1)*naxes(2)*naxes(3)
+
+        ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+		do ri=1, D%nR-1	!n_rad
+			do zj=j0, D%nTheta-1	!nz
+				do l=1,nqhp
+					Temperature(ri,D%nTheta-zj,l) = C(ri,zj)%TQHP(l)
+				enddo
+			enddo !j
+		enddo !i
+
+		call ftppre(unit,group,fpixel,nelements,Temperature,status)
+
+       !------------------------------------------------------------------------------
+       ! HDU 18 : is PAH at equilibrium
+       !------------------------------------------------------------------------------
+		bitpix=32
+		naxis=3
+		naxes(1)=D%nR-1
+		naxes(2)=D%nTheta-j0
+		naxes(3)=nqhp
+
+       ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+       !  Write the array to the FITS file.
+		group=1
+		fpixel=1
+		nelements=naxes(1)*naxes(2)*naxes(3)
+
+       ! le j signifie integer
+		do ri=1, D%nR-1	!n_rad
+			do zj=j0, D%nTheta-1	!nz
+				do l=1,nqhp
+					if(qhp_solver.eq.2) then
+						is_eq(ri,D%nTheta-zj,l) = 1
+					else
+						is_eq(ri,D%nTheta-zj,l) = 0
+					endif
+				enddo
+			enddo !j
+		enddo !i
+
+		call ftpprj(unit,group,fpixel,nelements,is_eq,status)
+
+       !------------------------------------------------------------------------------
+       ! HDU 19 : temperature table
+       !------------------------------------------------------------------------------
+		bitpix=-32
+		naxis=1
+		naxes(1)=NTQHP
+		nelements=naxes(1)
+
+       ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+       ! le e signifie real*4
+		call ftppre(unit,group,fpixel,nelements,real(tgridqhp),status)
+
+       !------------------------------------------------------------------------------
+       ! HDU 20 : PAH temperature probability density
+       !------------------------------------------------------------------------------
+		bitpix=-32
+		naxis=4
+		naxes(1)=NTQHP
+		naxes(2)=D%nR-1
+		naxes(3)=D%nTheta-j0
+		naxes(4)=nqhp
+		nelements=naxes(1)*naxes(2)*naxes(3)*naxes(4)
+
+		allocate(PTQHP(naxes(1),naxes(2),naxes(3),naxes(4)))
+
+       ! create new hdu
+		call ftcrhd(unit, status)
+
+       !  Write the required header keywords.
+		call ftphpr(unit,simple,bitpix,naxis,naxes,0,1,extend,status)
+
+		do ri=1, D%nR-1	!n_rad
+			do zj=j0, D%nTheta-1	!nz
+				do l=1,nqhp
+					if(qhp_solver.eq.2) then
+						PTQHP(1:NTQHP,ri,D%nTheta-zj,l)=0d0
+						call hunt(tgridqhp,NTQHP,C(ri,zj)%Tqhp(l),i)
+						if(i.ge.1.and.i.lt.NTQHP) then
+							PTQHP(i,ri,D%nTheta-zj,l)=abs(C(ri,zj)%Tqhp(l)-tgridqhp(i))/abs(tgridqhp(i+1)-tgridqhp(i))
+							PTQHP(i+1,ri,D%nTheta-zj,l)=abs(C(ri,zj)%Tqhp(l)-tgridqhp(i+1))/abs(tgridqhp(i+1)-tgridqhp(i))
+						else if(i.lt.1) then
+							PTQHP(1,ri,D%nTheta-zj,l)=1d0
+						else if(i.ge.NTQHP) then
+							PTQHP(NTQHP,ri,D%nTheta-zj,l)=1d0
+						endif
+					else
+						do i=1,NTQHP
+							PTQHP(i,ri,D%nTheta-zj,l) = C(ri,zj)%tdistr(l,i)
+						enddo
+					endif
+				enddo
+			enddo !j
+		enddo !i
+
+       ! le e signifie real*4
+		call ftppre(unit,group,fpixel,nelements,PTQHP,status)
+		deallocate(PTQHP)
+	endif
 
 
 	!  Close the file and free the unit number.

@@ -18,7 +18,7 @@ c-----------------------------------------------------------------------
 	real*8 Krjm,rhojm,rjm,tjm,Krjp,rhojp,rjp,tjp,T4jm,T4jp,T4j0,prgopt(4),ErrorE,Error0
 	logical,allocatable :: ok(:)
 	type(photon) phot
-	real*8 Rrad,Rthet,Ra,kp,ComputeCoolingFraction
+	real*8 Rrad,Rthet,Ra,kp,ComputeCoolingFraction,computeEP
 
 	niter=3
 	if(FLD) niter=10
@@ -284,6 +284,16 @@ c the theta part
 			endif
 			if(number_invalid(C(celi(i),celj(i))%T).ne.0) C(celi(i),celj(i))%T=1d0
 			if(.not.tcontact) C(celi(i),celj(i))%TP(1:ngrains)=C(celi(i),celj(i))%T
+
+			if(use_qhp) then
+				do ii=1,ngrains
+					if(Grain(ii)%qhp) then
+						C(celi(i),celj(i))%Tqhp(Grain(ii)%qhpnr)=C(celi(i),celj(i))%T
+						C(celi(i),celj(i))%EJvQHP(Grain(ii)%qhpnr)=computeEP(celi(i),celj(i),iT,ii)*C(celi(i),celj(i))%w(ii)
+					endif
+				enddo
+			endif
+
 			if(computeLRF) then
 				iT=(C(celi(i),celj(i))%T/dT+0.5d0)
 				if(iT.le.1) iT=1
