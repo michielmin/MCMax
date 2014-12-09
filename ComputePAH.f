@@ -2,7 +2,7 @@
 	use Parameters
 	IMPLICIT NONE
 	type(particle) p
-	real*8 HC,x,lam1,lam2,rV,amin,amax,apow,theta,Mc,fn_i,fn_n,fn
+	real*8 HC,x,lam1,lam2,rV,amin,amax,apow,theta,Mc,fn_i,fn_n,fn,tot,tot2
 	integer i,j,ilam,ia
 	logical ionized
 	parameter(Mc=12d0*1.66d-24) !mass of a carbon atom in gram
@@ -72,25 +72,35 @@ c		write(32,*) lam(i),p%Kabs(1,i),p%Kabs(2,i),p%Ksca(1,i),p%Ksca(2,i),Ka_n(i),Ka
 c	enddo
 c	close(unit=32)
 
+	tot=0d0
+	tot2=0d0
+	do ia=1,180
+		theta=(real(ia)-0.5d0)*pi/180d0
+		tot=tot+((1d0+cos(theta)**2)/2d0)*sin(theta)
+		tot2=tot2+sin(theta)
+	enddo
+
 	do i=1,nlam
 		do ia=1,180
 			theta=(real(ia)-0.5d0)*pi/180d0
-			p%F(1,i)%F11(ia)=(1d0+cos(theta)**2)/2d0
-			p%F(1,i)%F12(ia)=-(1d0-cos(theta)**2)/2d0
-			p%F(1,i)%F22(ia)=(1d0+cos(theta)**2)/2d0
-			p%F(1,i)%F33(ia)=cos(theta)
+			p%F(1,i)%F11(ia)=(tot2/tot)*(1d0+cos(theta)**2)/2d0
+			p%F(1,i)%F12(ia)=-(tot2/tot)*(1d0-cos(theta)**2)/2d0
+			p%F(1,i)%F22(ia)=(tot2/tot)*(1d0+cos(theta)**2)/2d0
+			p%F(1,i)%F33(ia)=(tot2/tot)*cos(theta)
 			p%F(1,i)%F34(ia)=0d0
-			p%F(1,i)%F44(ia)=cos(theta)
-			p%F(2,i)%F11(ia)=(1d0+cos(theta)**2)/2d0
-			p%F(2,i)%F12(ia)=-(1d0-cos(theta)**2)/2d0
-			p%F(2,i)%F22(ia)=(1d0+cos(theta)**2)/2d0
-			p%F(2,i)%F33(ia)=cos(theta)
+			p%F(1,i)%F44(ia)=(tot2/tot)*cos(theta)
+			p%F(2,i)%F11(ia)=(tot2/tot)*(1d0+cos(theta)**2)/2d0
+			p%F(2,i)%F12(ia)=-(tot2/tot)*(1d0-cos(theta)**2)/2d0
+			p%F(2,i)%F22(ia)=(tot2/tot)*(1d0+cos(theta)**2)/2d0
+			p%F(2,i)%F33(ia)=(tot2/tot)*cos(theta)
 			p%F(2,i)%F34(ia)=0d0
-			p%F(2,i)%F44(ia)=cos(theta)
+			p%F(2,i)%F44(ia)=(tot2/tot)*cos(theta)
 		enddo
 		p%Kext(1,i)=p%Kabs(1,i)+p%Ksca(1,i)
 		p%Kext(2,i)=p%Kabs(2,i)+p%Ksca(2,i)
 	enddo
+
+
 
 	deallocate(Ka_n)
 	deallocate(Ka_i)

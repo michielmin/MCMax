@@ -174,7 +174,6 @@ c Thermal contact (single temperature)
 	T0=C(phot%i,phot%j)%T
 	T1=increaseT(phot)
 
-
 	iT0=int(T0/dT)
 	iT1=int(T1/dT)
 
@@ -216,6 +215,9 @@ c Thermal contact (single temperature)
 	if(kp.ne.0d0.and.use_qhp) then
 		spec(1:nlam)=spec(1:nlam)*(KabsTot-KabsQHP)/(kp*KabsTot)
 		kp=1d0
+	else if(kp.eq.0d0) then
+		spec=0d0
+		kp=KabsQHP/KabsTot
 	endif
 	do i=1,ngrains
 		if(Grain(i)%qhp) then
@@ -539,7 +541,7 @@ c------------------------------------------------------------------------
 	real*8 E1,kp0,kp1,determineT,computeE
 	integer i,j,ii,iopac
 
-	E1=C(phot%i,phot%j)%Eabs/(C(phot%i,phot%j)%mass*(1d0-C(phot%i,phot%j)%fQHP))
+	E1=C(phot%i,phot%j)%Eabs/C(phot%i,phot%j)%mass
 	j=int(C(phot%i,phot%j)%T/dT)
 	kp0=computeE(phot%i,phot%j,j)
 

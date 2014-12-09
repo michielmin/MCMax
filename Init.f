@@ -4541,6 +4541,7 @@ c-----------------------------------------------------------------------
 			enddo
 		endif
 		if(use_qhp) then
+			if(qhp_solver.eq.2) C(i,j)%Tqhp(1:nqhp)=0d0
 			C(i,j)%EJvQHP(1:nqhp)=0d0
 			C(i,j)%EabsQHP(1:nqhp)=0d0
 		endif
