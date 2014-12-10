@@ -38,7 +38,7 @@ ifeq ($(shell uname),Linux)
   LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib -L$(HOME)/lib
 else
   FFLAGS  = $(FLAG_ALL) $(FLAG_MAC) -diag-disable 8290,8291
-  LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f -Wl,-macosx_version_min,10.6
+  LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f
   #LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
   LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib -L$(HOME)/lib
 endif
@@ -101,7 +101,7 @@ DEST	      = ${HOME}/bin
 # make actions 
 all:		version $(PROGRAM)
 version:;	echo "#define gitversion \"$(shell git rev-parse HEAD)\"" > gitversion.h
-clean:;		rm -f $(OBJS) $(PROGRAM)
+clean:;		rm -f $(OBJS) $(PROGRAM) *.mod *.i
 install:	$(PROGRAM)
 		mv $(PROGRAM) $(DEST)
 echo:;		@echo $(SUFFIX)
