@@ -590,9 +590,11 @@ c-----------------------------------------------------------------------
 	real*8,allocatable :: VisEmisDis(:,:),EmisDis(:,:),vismass(:,:)
 	integer,allocatable :: NEmisDis(:,:)
 	real*8 Einner,fact_IRF
-	integer Nstar,ip,np,jj,Nmin,iscat
+	integer Nstar,ip,np,jj,Nmin,iscat,omp_get_thread_num
 	type(Mueller) M,ML(ngrains,ngrains2)
 	real*8 KabsL(ngrains,ngrains2),KscaL(ngrains,ngrains2),KextL(ngrains,ngrains2)
+	type(Cell), pointer :: CC
+	type(Particle), pointer :: GG
 	
 	allocate(VisEmisDis(0:D%nR+1,0:D%nTheta+1))
 	allocate(EmisDis(0:D%nR+1,0:D%nTheta+1))
@@ -638,94 +640,104 @@ c-----------------------------------------------------------------------
 		phot%nu=1d0/lam0
 	endif
 
+!$OMP PARALLEL IF(ngrains.gt.(omp_get_thread_num()*3))
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(ii,iopac,ia,GG)
+!$OMP& SHARED(ngrains,Grain,KabsL,KextL,KscaL,phot,ML)
+!$OMP DO
 	do ii=1,ngrains
-		do iopac=1,Grain(ii)%nopac
-			KabsL(ii,iopac)=phot%wl1*Grain(ii)%Kabs(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Kabs(iopac,phot%ilam2)
-			KextL(ii,iopac)=phot%wl1*Grain(ii)%Kext(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Kext(iopac,phot%ilam2)
-			KscaL(ii,iopac)=phot%wl1*Grain(ii)%Ksca(iopac,phot%ilam1)+phot%wl2*Grain(ii)%Ksca(iopac,phot%ilam2)
+		GG => Grain(ii)
+		do iopac=1,GG%nopac
+			KabsL(ii,iopac)=phot%wl1*GG%Kabs(iopac,phot%ilam1)+phot%wl2*GG%Kabs(iopac,phot%ilam2)
+			KextL(ii,iopac)=phot%wl1*GG%Kext(iopac,phot%ilam1)+phot%wl2*GG%Kext(iopac,phot%ilam2)
+			KscaL(ii,iopac)=phot%wl1*GG%Ksca(iopac,phot%ilam1)+phot%wl2*GG%Ksca(iopac,phot%ilam2)
 
-			ML(ii,iopac)%IF11=(Grain(ii)%F(iopac,phot%ilam1)%IF11*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%IF11*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-			ML(ii,iopac)%IF12=(Grain(ii)%F(iopac,phot%ilam1)%IF12*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%IF12*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+			ML(ii,iopac)%IF11=(GG%F(iopac,phot%ilam1)%IF11*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%IF11*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+			ML(ii,iopac)%IF12=(GG%F(iopac,phot%ilam1)%IF12*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%IF12*GG%Ksca(iopac,phot%ilam2))*phot%wl2
 			do ia=1,180
-				ML(ii,iopac)%F11(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F11(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-				ML(ii,iopac)%F12(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F12(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-				ML(ii,iopac)%F22(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F22(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-				ML(ii,iopac)%F33(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F33(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-				ML(ii,iopac)%F34(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F34(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
-				ML(ii,iopac)%F44(ia)=(Grain(ii)%F(iopac,phot%ilam1)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam1))*phot%wl1
-     &			+(Grain(ii)%F(iopac,phot%ilam2)%F44(ia)*Grain(ii)%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F11(ia)=(GG%F(iopac,phot%ilam1)%F11(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F11(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F12(ia)=(GG%F(iopac,phot%ilam1)%F12(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F12(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F22(ia)=(GG%F(iopac,phot%ilam1)%F22(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F22(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F33(ia)=(GG%F(iopac,phot%ilam1)%F33(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F33(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F34(ia)=(GG%F(iopac,phot%ilam1)%F34(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F34(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
+				ML(ii,iopac)%F44(ia)=(GG%F(iopac,phot%ilam1)%F44(ia)*GG%Ksca(iopac,phot%ilam1))*phot%wl1
+     &			+(GG%F(iopac,phot%ilam2)%F44(ia)*GG%Ksca(iopac,phot%ilam2))*phot%wl2
 			enddo
 		enddo
 	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
 	
 
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(j,ii,iopac,ia)
+!$OMP& PRIVATE(j,ii,iopac,ia,CC)
 !$OMP& SHARED(D,C,ngrains,Grain,phot,scattering,scat_how,useobspol,KabsL,KextL,KscaL,ML)
 !$OMP DO
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
-		C(i,j)%Kabs=0d0
-		C(i,j)%Kext=0d0
-		C(i,j)%Ksca=0d0
+		CC => C(i,j)
+		CC%Kabs=0d0
+		CC%Kext=0d0
+		CC%Ksca=0d0
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
-			C(i,j)%Kabs=C(i,j)%Kabs+KabsL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Kext=C(i,j)%Kext+KextL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%Ksca=C(i,j)%Ksca+KscaL(ii,iopac)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			CC%Kabs=CC%Kabs+KabsL(ii,iopac)*CC%w(ii)*CC%wopac(ii,iopac)
+			CC%Kext=CC%Kext+KextL(ii,iopac)*CC%w(ii)*CC%wopac(ii,iopac)
+			CC%Ksca=CC%Ksca+KscaL(ii,iopac)*CC%w(ii)*CC%wopac(ii,iopac)
 		enddo
 		enddo
-		C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
+		CC%Albedo=CC%Ksca/CC%Kext
 		if(scattering.and.scat_how.eq.2) then
-		if(C(i,j)%Ksca.ne.0d0) then
-		C(i,j)%F%IF11=0d0
-		C(i,j)%F%IF12=0d0
+		if(CC%Ksca.ne.0d0) then
+		CC%F%IF11=0d0
+		CC%F%IF12=0d0
 		do ii=1,ngrains
 		do iopac=1,Grain(ii)%nopac
-			C(i,j)%F%IF11=C(i,j)%F%IF11+ML(ii,iopac)%IF11*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-			C(i,j)%F%IF12=C(i,j)%F%IF12+ML(ii,iopac)%IF12*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+			CC%F%IF11=CC%F%IF11+ML(ii,iopac)%IF11*CC%w(ii)*CC%wopac(ii,iopac)
+			CC%F%IF12=CC%F%IF12+ML(ii,iopac)%IF12*CC%w(ii)*CC%wopac(ii,iopac)
     	enddo
 		enddo
-		C(i,j)%F%IF11=C(i,j)%F%IF11/C(i,j)%Ksca
-		C(i,j)%F%IF12=C(i,j)%F%IF12/C(i,j)%Ksca
+		CC%F%IF11=CC%F%IF11/CC%Ksca
+		CC%F%IF12=CC%F%IF12/CC%Ksca
 		do ia=1,180
-			C(i,j)%F%F11(ia)=0d0
-			C(i,j)%F%F12(ia)=0d0
-			C(i,j)%F%F22(ia)=0d0
-			C(i,j)%F%F33(ia)=0d0
-			C(i,j)%F%F34(ia)=0d0
-			C(i,j)%F%F44(ia)=0d0
+			CC%F%F11(ia)=0d0
+			CC%F%F12(ia)=0d0
+			CC%F%F22(ia)=0d0
+			CC%F%F33(ia)=0d0
+			CC%F%F34(ia)=0d0
+			CC%F%F44(ia)=0d0
 			do ii=1,ngrains
 			do iopac=1,Grain(ii)%nopac
-				C(i,j)%F%F11(ia)=C(i,j)%F%F11(ia)+ML(ii,iopac)%F11(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-				C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)+ML(ii,iopac)%F12(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+				CC%F%F11(ia)=CC%F%F11(ia)+ML(ii,iopac)%F11(ia)*CC%w(ii)*CC%wopac(ii,iopac)
+				CC%F%F12(ia)=CC%F%F12(ia)+ML(ii,iopac)%F12(ia)*CC%w(ii)*CC%wopac(ii,iopac)
      			if(useobspol) then
-					C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)+ML(ii,iopac)%F22(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)+ML(ii,iopac)%F33(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)+ML(ii,iopac)%F34(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
-					C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)+ML(ii,iopac)%F44(ia)*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
+					CC%F%F22(ia)=CC%F%F22(ia)+ML(ii,iopac)%F22(ia)*CC%w(ii)*CC%wopac(ii,iopac)
+					CC%F%F33(ia)=CC%F%F33(ia)+ML(ii,iopac)%F33(ia)*CC%w(ii)*CC%wopac(ii,iopac)
+					CC%F%F34(ia)=CC%F%F34(ia)+ML(ii,iopac)%F34(ia)*CC%w(ii)*CC%wopac(ii,iopac)
+					CC%F%F44(ia)=CC%F%F44(ia)+ML(ii,iopac)%F44(ia)*CC%w(ii)*CC%wopac(ii,iopac)
 				endif
 			enddo
 			enddo
-			C(i,j)%F%F11(ia)=C(i,j)%F%F11(ia)/C(i,j)%Ksca
-			C(i,j)%F%F12(ia)=C(i,j)%F%F12(ia)/C(i,j)%Ksca
+			CC%F%F11(ia)=CC%F%F11(ia)/CC%Ksca
+			CC%F%F12(ia)=CC%F%F12(ia)/CC%Ksca
 			if(useobspol) then
-				C(i,j)%F%F22(ia)=C(i,j)%F%F22(ia)/C(i,j)%Ksca
-				C(i,j)%F%F33(ia)=C(i,j)%F%F33(ia)/C(i,j)%Ksca
-				C(i,j)%F%F34(ia)=C(i,j)%F%F34(ia)/C(i,j)%Ksca
-				C(i,j)%F%F44(ia)=C(i,j)%F%F44(ia)/C(i,j)%Ksca
+				CC%F%F22(ia)=CC%F%F22(ia)/CC%Ksca
+				CC%F%F33(ia)=CC%F%F33(ia)/CC%Ksca
+				CC%F%F34(ia)=CC%F%F34(ia)/CC%Ksca
+				CC%F%F44(ia)=CC%F%F44(ia)/CC%Ksca
 			endif
 		enddo
 		else
-			C(i,j)%F%F11(1:180)=1d0
+			CC%F%F11(1:180)=1d0
 		endif
 		endif
 	enddo

@@ -134,11 +134,11 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	
 	type(DiskZone),allocatable :: Zone(:)
 
-	type(Cell),allocatable :: C(:,:)
+	type(Cell),allocatable,target :: C(:,:)
 
 	type(Disk) D
 
-	type(Particle),allocatable :: Grain(:)
+	type(Particle),allocatable,target :: Grain(:)
 	
 	type Photon
 		real*8 x,y,z,vx,vy,vz,lam,nu,E
