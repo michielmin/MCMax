@@ -965,7 +965,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	use Parameters
 	IMPLICIT NONE
 	integer nz,i,j,ri
-	logical zo0(nzones),zo1(nzones)
+	logical zo0(nzones),zo1(nzones),anyz
 
 	if(prodimo1zone) then
 		nz=1
@@ -980,21 +980,26 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	zo0=.false.
 	nz=0
 	do ri=1,D%nR-1
+		anyz=.false.
 		do i=1,nzones
 			if(D%R_av(ri)/AU.gt.Zone(i)%Rin.and.D%R_av(ri)/AU.le.Zone(i)%Rout) then
 				zo1(i)=.true.
+				anyz=.true.
 			else
 				zo1(i)=.false.
 			endif
 		enddo
 		do i=1,nzones
-			if(zo0(i).ne.zo1(i)) then
+			if(zo0(i).ne.zo1(i).and.anyz) then
 				nz=nz+1
 				exit
 			endif
 		enddo
 		zo0=zo1
 	enddo
+
+	write(*,'("Counted ",i4," zones to export to ProDiMo")') nz
+	write(9,'("Counted ",i4," zones to export to ProDiMo")') nz
 
 	return
 	end
@@ -1030,7 +1035,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	IMPLICIT NONE
 	integer nz,i,j,ri
 	type(DiskZone) zonesProDiMo(nz)
-	logical zo0(nzones),zo1(nzones)
+	logical zo0(nzones),zo1(nzones),anyz
 	integer region_index(D%nR-1)
 
 	if(prodimo1zone) then
@@ -1063,15 +1068,17 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	zo0=.false.
 	nz=0
 	do ri=1,D%nR-1
+		anyz=.false.
 		do i=1,nzones
 			if(D%R_av(ri)/AU.gt.Zone(i)%Rin.and.D%R_av(ri)/AU.le.Zone(i)%Rout) then
 				zo1(i)=.true.
+				anyz=.true.
 			else
 				zo1(i)=.false.
 			endif
 		enddo
 		do i=1,nzones
-			if(zo0(i).ne.zo1(i)) then
+			if(zo0(i).ne.zo1(i).and.anyz) then
 				nz=nz+1
 				region_index(ri:D%nR-1)=nz
 				ZonesProDiMo(nz)%Mdust=Zone(1)%Mdust
@@ -1114,6 +1121,12 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			endif
 		enddo
 		ZonesProDiMo(i)%Mdust=ZonesProDiMo(i)%Mdust/Msun
+		write(*,'("Zone  ",i4)') i
+		write(*,'("Rin:  ",f14.3," AU")') ZonesProDiMo(i)%Rin
+		write(*,'("Rout: ",f14.3," AU")') ZonesProDiMo(i)%Rout
+		write(9,'("Zone  ",i4)') i
+		write(9,'("Rin:  ",f14.3," AU")') ZonesProDiMo(i)%Rin
+		write(9,'("Rout: ",f14.3," AU")') ZonesProDiMo(i)%Rout
 	enddo
 
 	return
