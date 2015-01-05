@@ -541,8 +541,8 @@ c emit from the interstellar radiation field
 		endif
 		if(escape) goto 2
 		ninteract=ninteract+1
-		phot_irf=.false.
 		call interact(phot)
+		if(.not.phot%scatt) phot_irf=.false.
 		if(overflow) then
 			if(ran2(idum).lt.(1d0/real(maxinteract))) goto 4
 			phot%E=phot%E*real(maxinteract)/real(maxinteract-1)
