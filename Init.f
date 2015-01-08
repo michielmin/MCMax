@@ -369,6 +369,8 @@
 	
 	fastobs=.false.
 	
+	abun_in_name=0
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -549,6 +551,7 @@ c	call system("rm -f " // trim(outdir) // "/prodimo_extra.in")
 	if(key.eq.'maxiter') read(value,*) maxiter
 	if(key.eq.'niter0') read(value,*) niter0
 	if(key.eq.'startiter') read(value,*) startiter
+	if(key.eq.'abun_in_name') read(value,*) abun_in_name
 	if(key.eq.'lamgrid') then
 		gridfile=value
 		lamtype='FILE'
@@ -658,7 +661,7 @@ c	endif
 	if(key.eq.'topac_interpol') read(value,*) topac_interpol	
 
 c keyword abundances set (maximum number is 99)
-	if(key(1:4).eq.'abun') then
+	if(key(1:4).eq.'abun'.and.key.ne.'abun_in_name') then
 		arg_abun=.true.
 		read(key(5:len_trim(key)),*) i
 		if(i.le.100) then

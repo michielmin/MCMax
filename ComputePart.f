@@ -165,10 +165,33 @@ c changed this to mass fractions (11-05-2010)
 		frac=frac/tot
 	endif
 
-	if(iopac.eq.1) then
-		write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+	if(abun_in_name.gt.0) then
+		write(partfile,'(a,"particle",i0.4)') trim(particledir),ii
+		do i=1,nm
+			select case(abun_in_name)
+				case(1)
+					write(partfile,'(a,"_f",f3.1)') trim(partfile),frac(i)
+				case(2)
+					write(partfile,'(a,"_f",f4.2)') trim(partfile),frac(i)
+				case(3)
+					write(partfile,'(a,"_f",f5.3)') trim(partfile),frac(i)
+				case(4)
+					write(partfile,'(a,"_f",f6.4)') trim(partfile),frac(i)
+				case default
+					write(partfile,'(a,"_f",f7.5)') trim(partfile),frac(i)
+			end select
+		enddo
+		if(iopac.eq.1) then
+			write(partfile,'(a,".fits")') trim(partfile)
+		else
+			write(partfile,'(a,"_",i0.2,".fits")') trim(partfile),iopac
+		endif
 	else
-		write(partfile,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+		if(iopac.eq.1) then
+			write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+		else
+			write(partfile,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+		endif
 	endif
 	inquire(file=partfile,exist=truefalse)
 	if(truefalse) then
@@ -854,6 +877,38 @@ C	 create the new empty FITS file
 	else
 		write(filename,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
 	endif
+
+
+	if(abun_in_name.gt.0) then
+		write(filename,'(a,"particle",i0.4)') trim(particledir),ii
+		do i=1,nm
+			select case(abun_in_name)
+				case(1)
+					write(filename,'(a,"_f",f3.1)') trim(filename),frac(i)
+				case(2)
+					write(filename,'(a,"_f",f4.2)') trim(filename),frac(i)
+				case(3)
+					write(filename,'(a,"_f",f5.3)') trim(filename),frac(i)
+				case(4)
+					write(filename,'(a,"_f",f6.4)') trim(filename),frac(i)
+				case default
+					write(filename,'(a,"_f",f7.5)') trim(filename),frac(i)
+			end select
+		enddo
+		if(iopac.eq.1) then
+			write(filename,'(a,".fits")') trim(filename)
+		else
+			write(filename,'(a,"_",i0.2,".fits")') trim(filename),iopac
+		endif
+	else
+		if(iopac.eq.1) then
+			write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+		else
+			write(filename,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+		endif
+	endif
+
+
 
 	inquire(file=filename,exist=truefalse)
 	if(truefalse) then

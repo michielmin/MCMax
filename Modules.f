@@ -46,7 +46,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	character*500 outdir,particledir,ProDiModir,scriptname
 	real*8,allocatable :: coolingtime(:)
 	integer,allocatable :: ncoolingtime(:)
-	integer icoolingtime,qhp_solver
+	integer icoolingtime,qhp_solver,abun_in_name
 	real*8 HotGasMinRad,HotGasMaxRad,HotGasT,gammaUVdes
 	
 	type Mueller

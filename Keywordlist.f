@@ -392,6 +392,8 @@
 	keyword(i)='scriptname'
 	i=i+1
 	keyword(i)='prodimo1zone'
+	i=i+1
+	keyword(i)='abun_in_name'
 	
 	Nnormal=i
 c from here on keywords with numbers
