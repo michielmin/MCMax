@@ -1111,6 +1111,29 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	enddo
 	zonesProDiMo(nz)%Rout=D%R(D%nR)
 
+	do j=1,nz
+		do ri=D%nR-1,1,-1
+			do i=1,nzones
+				if(D%R_av(ri)/AU.gt.Zone(i)%Rin.and.D%R_av(ri)/AU.le.Zone(i)%Rout) then
+					zo1(i)=.true.
+				else
+					zo1(i)=.false.
+				endif
+			enddo
+			if(D%R_av(ri)/AU.ge.ZonesProDiMo(j)%Rin.and.D%R_av(ri)/AU.lt.ZonesProDiMo(j)%Rout) then
+				do i=1,nzones
+					if(zo1(i)) then
+						ZonesProDiMo(j)%Rout=Zone(j)%Rout
+						goto 1
+					endif
+				enddo
+				region_index(ri)=0
+			endif
+		enddo
+1		continue
+	enddo
+
+
 	do i=1,nz
 		ZonesProDiMo(i)%Mdust=0d0
 		do ri=1,D%nR-1

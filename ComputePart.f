@@ -421,8 +421,9 @@ c changed this to mass fractions (11-05-2010)
 4		nm=nm-1
 		close(unit=30)
 	else if(standard.eq.'DIANA') then
-		ns=1
+		ns=nsubgrains
 		nf=20
+		if(maxf.eq.0e0) nf=1
 		nm=2
 		rho(1)=3.01
 		rho(2)=1.80
@@ -438,6 +439,21 @@ c changed this to mass fractions (11-05-2010)
 		call RegridDataLNK(Carbon_BE_Zubko1996,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
 		e1(2,1:nlam)=e1d(1:nlam)
 		e2(2,1:nlam)=e2d(1:nlam)
+		deallocate(e1d)
+		deallocate(e2d)
+	else if(standard.eq.'ASTROSIL') then
+		ns=nsubgrains
+		nf=20
+		if(maxf.eq.0e0) nf=1
+		nm=1
+		rho(1)=3.0
+		frac(1)=1d0/rho(1)
+		allocate(e1d(nlam))
+		allocate(e2d(nlam))
+		filename(1)='AstroSilicate'
+		call RegridDataLNK(AstroSilicate,lam(1:nlam),e1d(1:nlam),e2d(1:nlam),nlam,.true.)
+		e1(1,1:nlam)=e1d(1:nlam)
+		e2(1,1:nlam)=e2d(1:nlam)
 		deallocate(e1d)
 		deallocate(e2d)
 	endif
@@ -506,7 +522,7 @@ c-----------------------------------------------------------------------
 	integer*4, dimension(4) :: naxes
 	real x
 
-	integer i,j,ia,iopac,iread,nl_read
+	integer i,j,ia,iopac,iread,nl_read,ix
 
 	! Get an unused Logical Unit Number to use to open the FITS file.
 	status=0
@@ -539,6 +555,12 @@ c-----------------------------------------------------------------------
 	npixels=naxes(1)*naxes(2)
 
 	! Read model info
+
+	call ftgkyj(unit,'n_radii',ix,comment,status)
+	if(ix.lt.ns) then
+		checkparticlefile=.false.
+		goto 1
+	endif
 
 	call ftgkye(unit,'r_min',x,comment,status)
 	write(key1,'(e14.8)') x
