@@ -195,7 +195,7 @@ c changed this to mass fractions (11-05-2010)
 	endif
 	inquire(file=partfile,exist=truefalse)
 	if(truefalse) then
-		if(checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename)) then
+		if(checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename,(abun_in_name.le.0))) then
 			dummy=0d0
 			call ReadParticleFits(partfile,p,.false.,dummy,dummy,dummy,dummy,iopac)
 			return
@@ -528,7 +528,7 @@ c changed this to mass fractions (11-05-2010)
 c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 
-	logical function checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename)
+	logical function checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename,checkfrac)
 	IMPLICIT NONE
 	integer nm,ns
 	character*500 partfile,filename(nm),filetest
@@ -537,7 +537,7 @@ c-----------------------------------------------------------------------
 	character*6 word
 	character*14 key1,key2
 	character*80 comment,errmessage
-	logical blend
+	logical blend,checkfrac
 	integer*4 :: status,readwrite,unit,blocksize,nfound,group
 	integer*4 :: firstpix,nbuffer,npixels,hdunum,hdutype
 	real*8  :: nullval
@@ -622,16 +622,18 @@ c-----------------------------------------------------------------------
 			goto 1
 		endif
 	endif
-	do i=1,nm
-		write(word,'("frac",i0.2)') i
-		call ftgkye(unit,word,x,comment,status)
-		write(key1,'(e14.8)') x
-		write(key2,'(e14.8)') real(frac(i))
-		if(key1.ne.key2.or.status.ne.0) then
-			checkparticlefile=.false.
-			goto 1
-		endif
-	enddo
+	if(checkfrac) then
+		do i=1,nm
+			write(word,'("frac",i0.2)') i
+			call ftgkye(unit,word,x,comment,status)
+			write(key1,'(e14.8)') x
+			write(key2,'(e14.8)') real(frac(i))
+			if(key1.ne.key2.or.status.ne.0) then
+				checkparticlefile=.false.
+				goto 1
+			endif
+		enddo
+	endif
 	do i=1,nm
 		write(word,'("rho",i0.2)') i
 		call ftgkye(unit,word,x,comment,status)
