@@ -1486,6 +1486,7 @@ CU    USES ran1
       INTEGER j,k,iv(NTAB),iy
       SAVE iv,iy
       DATA iv /NTAB*0/, iy /0/
+!$OMP THREADPRIVATE(iv, iy)
       if (idum.le.0.or.iy.eq.0) then
         idum=max(-idum,1)
         do 11 j=NTAB+8,1,-1
@@ -1580,9 +1581,9 @@ C
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
 
 	real*8 ran1
-!$OMP CRITICAL
+
 	ran2=ran1(idum)
-!$OMP END CRITICAL
+
 	return
 
       if (idum.le.0) then

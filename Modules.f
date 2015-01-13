@@ -48,6 +48,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	integer,allocatable :: ncoolingtime(:)
 	integer icoolingtime,qhp_solver,abun_in_name
 	real*8 HotGasMinRad,HotGasMaxRad,HotGasT,gammaUVdes
+!$OMP THREADPRIVATE(idum)
 	
 	type Mueller
 		real*8 F11(180),F12(180),F22(180)
