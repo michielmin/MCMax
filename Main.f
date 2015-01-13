@@ -108,11 +108,11 @@ c	endif
 	nemit=0
 	nmaxinteract=0
 
-	j=omp_get_max_threads()+1
-!$OMP PARALLEL IF(multicore)
+	j=omp_get_max_threads()
+!$OMP PARALLEL IF(.true.)
 !$OMP& DEFAULT(NONE)
 !$OMP& SHARED(j)
-!$OMP DO
+!$OMP DO SCHEDULE(STATIC,1)
 	do i=1,j
 		idum=-42-omp_get_thread_num()
 	enddo

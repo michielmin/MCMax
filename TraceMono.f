@@ -791,6 +791,7 @@ c Start tracing the photons
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart)
 !$OMP DO
+!$OMP& SCHEDULE(DYNAMIC, 1)
 	do iphot=1,Nphot
 !$OMP CRITICAL
 	call tellertje(iphot+1,Nphot+2)
@@ -1373,9 +1374,7 @@ c-----------------------------------------------------------------------
 	if(.not.phot%scatt) return
 	
 	if(scat_how.eq.1.or.makeangledependence) then
-!$OMP FLUSH(C)
 		C(phot%i,phot%j)%scattfield(1,0,1)=C(phot%i,phot%j)%scattfield(1,0,1)+phot%E*v*AU/2d0
-!$OMP FLUSH(C)
 		C(phot%i,phot%j)%scattfield(1,0,2)=C(phot%i,phot%j)%scattfield(1,0,2)+phot%E*v*AU/2d0
 	else
 		x=phot%x+phot%vx*v/2d0
@@ -1420,14 +1419,10 @@ c-----------------------------------------------------------------------
 				sV=-F34*phot1(j)%U+F44*phot1(j)%V
 			endif
 
-!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(irg,i,side)=C(phot%i,phot%j)%scattfield(irg,i,side)+sI*vAU
 			if(useobspol) then
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattQ(irg,i,side)=C(phot%i,phot%j)%scattQ(irg,i,side)+sQ*vAU
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattV(irg,i,side)=C(phot%i,phot%j)%scattV(irg,i,side)+sV*vAU
 			endif
 			j=j+1
@@ -1453,14 +1448,10 @@ c-----------------------------------------------------------------------
 				sV=-F34*phot1(j)%U+F44*phot1(j)%V
 			endif
 
-!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)+sI*vAU
 			if(useobspol) then
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)+sQ*vAU
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattV(irg,NPHISCATT+1-i,side)-sV*vAU
 			endif
 			j=j+1
@@ -1542,7 +1533,7 @@ c-----------------------------------------------------------------------
 	use Parameters
 	IMPLICIT NONE
 	real*8 Estar,r,ct,inp,sin2t(NPHISCATT),cos2t(NPHISCATT)
-	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext
+	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext,omp_get_thread_num
 	real*8 v,x,y,z,phi,phi0,Qt,sQ,sU,sI,w,tau,F11,F12,vAU,P
 	type(photon) phot,phot1(NPHISCATT),phot2
 	real*8 theta,tauplanet,Emin
@@ -1561,6 +1552,7 @@ c-----------------------------------------------------------------------
 !$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,
 !$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
 !$OMP DO
+!$OMP& SCHEDULE(DYNAMIC, 1)
 	do iphot=1,Nphot
 !$OMP CRITICAL
 		call tellertje(iphot+1,Nphot+2)
@@ -1627,7 +1619,6 @@ c-----------------------------------------------------------------------
 		call Trace2edgeRG(phot,v,inext,jnext,irgnext)
 		tau=C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
 
-!$OMP FLUSH(C)
 		if(phot%E.gt.(1d-3*Estar/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
 
 		if((tau*v).gt.1d-5) then
@@ -1637,9 +1628,7 @@ c-----------------------------------------------------------------------
 		endif
 
 		if(scat_how.eq.1.or.makeangledependence) then
-!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(1,0,1)=C(phot%i,phot%j)%scattfield(1,0,1)+phot%E*w*AU/2d0
-!$OMP FLUSH(C)
 			C(phot%i,phot%j)%scattfield(1,0,2)=C(phot%i,phot%j)%scattfield(1,0,2)+phot%E*w*AU/2d0
 		else
 			x=phot%x+phot%vx*v/2d0
@@ -1647,11 +1636,9 @@ c-----------------------------------------------------------------------
 			z=phot%z+phot%vz*v/2d0
 			irg=phot%irg
 			if(phot%z.gt.0d0) then
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*w*AU
 				side=1
 			else
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,0,2)=C(phot%i,phot%j)%scattfield(irg,0,2)+phot%E*w*AU
 				side=2
 			endif
@@ -1678,12 +1665,9 @@ c-----------------------------------------------------------------------
 					sU=-Qt*sin2t(j)
 				endif
 
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,i,side)=C(phot%i,phot%j)%scattfield(irg,i,side)+sI*vAU
 				if(useobspol) then
-!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattQ(irg,i,side)=C(phot%i,phot%j)%scattQ(irg,i,side)+sQ*vAU
-!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattU(irg,i,side)=C(phot%i,phot%j)%scattU(irg,i,side)+sU*vAU
 				endif
 				j=j+1
@@ -1703,12 +1687,9 @@ c-----------------------------------------------------------------------
 					sU=-Qt*sin2t(j)
 				endif
 
-!$OMP FLUSH(C)
 				C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattfield(irg,NPHISCATT+1-i,side)+sI*vAU
 				if(useobspol) then
-!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattQ(irg,NPHISCATT+1-i,side)+sQ*vAU
-!$OMP FLUSH(C)
 					C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)=C(phot%i,phot%j)%scattU(irg,NPHISCATT+1-i,side)-sU*vAU
 				endif
 				j=j+1
