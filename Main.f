@@ -46,6 +46,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	real*8 T,kappa,KappaGas,w(MAXPART)
 	real*8 Masstot,Vtot,tot
 	real*8 ToomreQ ! function
+	integer omp_get_thread_num,omp_get_max_threads
 
 
 c ---------------------------------------------------------------------
@@ -107,7 +108,18 @@ c	endif
 	nemit=0
 	nmaxinteract=0
 
-	idum=-42
+	j=omp_get_max_threads()+1
+!$OMP PARALLEL IF(multicore)
+!$OMP& DEFAULT(NONE)
+!$OMP& SHARED(j)
+!$OMP DO
+	do i=1,j
+		idum=-42-omp_get_thread_num()
+	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
+
 	
 	call get_command_argument(1,input)
 	call get_command_argument(2,tmp)

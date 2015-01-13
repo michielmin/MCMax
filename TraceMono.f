@@ -787,7 +787,7 @@ c Start tracing the photons
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,
-!$OMP&   s1,s2,phot2,ninteract,iscat,idum)
+!$OMP&   s1,s2,phot2,ninteract,iscat)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart)
 !$OMP DO
@@ -1558,7 +1558,7 @@ c-----------------------------------------------------------------------
 !$OMP& PRIVATE(phot,x,y,z,r,tautot,tau,xsn,ysn,zsn,
 !$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
 !$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
-!$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,idum,
+!$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,
 !$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
 !$OMP DO
 	do iphot=1,Nphot
@@ -2681,7 +2681,7 @@ c	sinwi=sin(wi)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
 !$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,idum,D,nintegrate,Rmax,scat_how,IMDIM,rrr)
+!$OMP& SHARED(image,im,imQ,imU,imV,D,nintegrate,Rmax,scat_how,IMDIM,rrr)
 
 !$OMP DO
 	do i=1,image%nr-1
