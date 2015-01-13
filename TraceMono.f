@@ -1077,13 +1077,11 @@ c eliminating 'dark-zone'
 				vismass(i,j)=(1d0-dexp(-C(i,j)%tauexit))
 			endif
 
-!$OMP CRITICAL
 !$OMP FLUSH(EnergyTot)
 			EnergyTot=EnergyTot+EmisDis(i,j)
 			EmisDis(i,j)=EmisDis(i,j)*vismass(i,j)
 !$OMP FLUSH(EnergyTot2)
 			EnergyTot2=EnergyTot2+EmisDis(i,j)
-!$OMP END CRITICAL
 		enddo
 	enddo
 !$OMP END DO
