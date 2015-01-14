@@ -269,19 +269,6 @@ c changed this to mass fractions (11-05-2010)
 		wf(1)=1d0
 	endif
 
-	do ilam=1,nlam
-	call tellertje(ilam,nlam)
-	csca=0d0
-	cabs=0d0
-	cext=0d0
-	Mass=0d0
-	Vol=0d0
-
-	do i=1,na/2
-		theta=(real(i)-0.5)/real(na/2)*3.1415926536/2d0
-		mu(i)=cos(theta)
-	enddo
-
 	do l=1,nm
 		if(ns.eq.1) then
 			r(1)=10d0**((minlog+maxlog)/2d0)
@@ -298,6 +285,28 @@ c changed this to mass fractions (11-05-2010)
 				nr(l,k)=frac(l)*nr(l,k)/tot
 			enddo
 		endif
+	enddo
+
+!$OMP PARALLEL IF(multicore)
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(ilam,csca,cabs,cext,Mass,Vol,theta,mu,i,l,tot,k,Err,spheres,toolarge,
+!$OMP&         rad,wvno,m,r1,rcore,qext,qsca,qbs,gqsc,m1,m2,s21,d21,rmie,lmie,e1mie,e2mie,
+!$OMP&         csmie,cemie,MieF11,MieF12,MieF33,MieF34,Mief22,Mief44,tot2,j)
+!$OMP& SHARED(nlam,na,nm,ns,frac,minlog,maxlog,f,e1,e2,wf,min,f11,f12,f22,f33,f34,f44,
+!$OMP&        p,rho_av,iopac,pow,lam,meth,rho,nf,nr,r)
+!$OMP DO
+!$OMP& SCHEDULE(DYNAMIC, 1)
+	do ilam=1,nlam
+	call tellertje(ilam,nlam)
+	csca=0d0
+	cabs=0d0
+	cext=0d0
+	Mass=0d0
+	Vol=0d0
+
+	do i=1,na/2
+		theta=(real(i)-0.5)/real(na/2)*3.1415926536/2d0
+		mu(i)=cos(theta)
 	enddo
 
 	do l=1,nm
@@ -420,6 +429,9 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 	p%F(iopac,ilam)%F44(1:180)=f44(ilam,1:180)/csca
 
 	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
 
 	if(standard.eq.'FILE') then
 		open(unit=30,file=input,RECL=5000)
@@ -1322,6 +1334,8 @@ c     ..
 c     .. Save statement ..
 
       SAVE  PINUM, PASS1
+!$OMP THREADPRIVATE(PINUM, PASS1)
+
 c     ..
 c     .. Data statements ..
 
@@ -1707,6 +1721,7 @@ c     ..
 c     .. Save statement ..
 
       SAVE      MAXMSG, NUMMSG, MSGLIM
+!$OMP THREADPRIVATE(MAXMSG, NUMMSG, MSGLIM)
 c     ..
 c     .. Data statements ..
 
@@ -1767,6 +1782,7 @@ c     ..
 c     .. Save statement ..
 
       SAVE      NUMMSG, MAXMSG
+!$OMP THREADPRIVATE(NUMMSG, MAXMSG)
 c     ..
 c     .. Data statements ..
 
