@@ -786,7 +786,7 @@ c Start tracing the photons
 	idumstart=idum
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(phot,x,y,z,r,ignore,tautot,tau,hitstar,escape,fstop,fact,xsn,ysn,zsn,
+!$OMP& PRIVATE(phot,x,y,z,r,ignore,tau,hitstar,escape,fstop,fact,
 !$OMP&   s1,s2,phot2,ninteract,iscat)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart)
@@ -1546,7 +1546,7 @@ c-----------------------------------------------------------------------
 	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(phot,x,y,z,r,tautot,tau,xsn,ysn,zsn,
+!$OMP& PRIVATE(phot,x,y,z,r,tau,
 !$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
 !$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
 !$OMP& SHARED(scat_how,C,D,Estar,makeangledependence,xin,yin,zin,
