@@ -798,8 +798,6 @@ c Start tracing the photons
 !$OMP END CRITICAL
 	phot=photinit
 
-	idum=idumstart+iphot
-
 	phot%nr=iphot
 	call EmitPosition(phot,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,fact_IRF)
 	phot%E=phot%E/real(Nphot)
