@@ -2,7 +2,7 @@
 	use Parameters
 	IMPLICIT NONE
 
-	  integer status,unit,blocksize,bitpix,naxis,naxes(4),j0
+	  integer status,unit,blocksize,bitpix,naxis,naxes(4),j0,ir,it
 	  integer j,group,fpixel,nelements,ri,zj,l,lambda,iopac,i,jstart
 	  logical simple,extend,truefalse
 	character*500 filename,version
@@ -12,7 +12,7 @@
 	integer,allocatable :: region_index(:),is_eq(:,:,:)
 	real,allocatable :: opacite(:,:,:,:),N_grains(:,:,:),HRspec(:,:)
 	real N,N1,Mdust
-	real*8 fUV,tot,pUV,computeT_QHP,fPAHprodimo,amu
+	real*8 fUV,tot,pUV,computeT_QHP,fPAHprodimo,amu,gasM,dustM
 	parameter(amu=1.660531E-24)
 	real*8,allocatable :: spec(:)
 	character*2 s
@@ -208,7 +208,21 @@ c	call ftpkys(unit,'mcfost_model_name',trim(para),'',status)
 			else
 				write(key,'("d",i1,"ust_to_gas")') i
 			endif
-			write(value,'(e12.3)') 1d0/gas2dust
+			gasM=0d0
+			dustM=0d0
+			do ir=1,D%nR-1
+				if(D%R_av(ir)/AU.gt.ZonesProDiMo(i)%Rin.and.D%R_av(ir)/AU.lt.ZonesProDiMo(i)%Rout) then
+				do it=1,D%nTheta-1
+					gasM=gasM+C(ir,it)%gasdens*gas2dust*C(ir,it)%V
+					do l=1,ngrains
+						if(.not.Grain(l)%qhp) then
+							dustM=dustM+C(ir,it)%dens*C(ir,it)%V*C(ir,it)%w(l)
+						endif
+					enddo
+				enddo
+				endif
+			enddo
+			write(value,'(e12.3)') dustM/gasM	!1d0/gas2dust
 			call writeExtraProDiMo(key,value)
 			if(use_qhp) then
 				fPAHprodimo=ZonesProDiMo(i)%fPAH*1.4/(gas2dust*3e-7*50d0*12.35)
@@ -539,41 +553,49 @@ c	   wl = tab_lambda(lambda) * 1e-6
 		  ! Nbre total de grain : le da est deja dans densite_pouss
 			N=0d0
 		  do l=1,ngrains
+			if(.not.Grain(l)%qhp) then
 			do iopac=1,Grain(l)%nopac
 			  	N = N + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
      &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)
      &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
 			enddo
+			endif
 		  enddo
 		  N_grains(ri,zj,0) = N
 		  if (N.gt.1d-35) then
 			N1=0d0
 			do l=1,ngrains
+				if(.not.Grain(l)%qhp) then
 				do iopac=1,Grain(l)%nopac
 				  	N1 = N1 + 1d6*Grain(l)%dust_moment1*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
      &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)
      &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
 				enddo
+				endif
 			enddo
 			N_grains(ri,zj,1) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
+				if(.not.Grain(l)%qhp) then
 				do iopac=1,Grain(l)%nopac
 				  	N1 = N1 + 1d6*Grain(l)%dust_moment2*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
      &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)**2
      &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
 				enddo
+				endif
 			enddo
 			N_grains(ri,zj,2) = N1 / N
 
 			N1=0d0
 			do l=1,ngrains
+				if(.not.Grain(l)%qhp) then
 				do iopac=1,Grain(l)%nopac
 				  	N1 = N1 + 1d6*Grain(l)%dust_moment3*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
      &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)*Grain(l)%rscale(iopac)**3
      &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
 				enddo
+				endif
 			enddo
 			N_grains(ri,zj,3) = N1 / N
 		  else
