@@ -3,11 +3,13 @@
 	IMPLICIT NONE
 	integer Nphot,i,j,k,ilam,NphotStar
 	logical old_forcefirst
+	real*8 old_pfstop
 	
 	makeangledependence=.true.
 	storescatt=.false.
 	useobspol=.false.
 	old_forcefirst=forcefirst
+	old_pfstop=pfstop
 	
 	if(scattering.and.Nphot.ne.0) then
 		do i=0,D%nR
@@ -58,10 +60,12 @@
 		if(lam(ilam).lt.maxlamUV) then
 			nexits=0
 			forcefirst=.true.
+			pfstop=0.10
 			call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
 		else
 			nexits=0
 			forcefirst=.false.
+			pfstop=0.25
 			call TraceMono(lam(ilam),Nphot/10,45d0,NphotStar)
 		endif
 		do i=1,D%nR-1
@@ -69,8 +73,8 @@
 				if((C(i,j)%Ni+C(i,j)%nLRF(ilam)).gt.0) then
 					C(i,j)%scattfield(1,ilam,1)=(real(C(i,j)%Ni)*C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
      &							+real(C(i,j)%nLRF(ilam))*C(i,j)%LRF(ilam))/real(C(i,j)%Ni+C(i,j)%nLRF(ilam))
-     			else
-     				C(i,j)%scattfield(1,ilam,1)=0d0
+				else
+					C(i,j)%scattfield(1,ilam,1)=C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
      			endif
 				C(i,j)%LRF(ilam)=C(i,j)%scattfield(1,ilam,1)
 				C(i,j)%nLRF(ilam)=C(i,j)%Ni+C(i,j)%nLRF(ilam)
@@ -97,6 +101,7 @@
 	enddo
 
 	forcefirst=old_forcefirst
+	pfstop=old_pfstop
 
 	return
 	end

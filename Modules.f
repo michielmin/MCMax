@@ -47,7 +47,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	real*8,allocatable :: coolingtime(:)
 	integer,allocatable :: ncoolingtime(:)
 	integer icoolingtime,qhp_solver,abun_in_name
-	real*8 HotGasMinRad,HotGasMaxRad,HotGasT,gammaUVdes
+	real*8 HotGasMinRad,HotGasMaxRad,HotGasT,gammaUVdes,pfstop
 !$OMP THREADPRIVATE(idum,xsn,ysn,zsn,tautot)
 	
 	type Mueller

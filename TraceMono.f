@@ -774,6 +774,8 @@ c-----------------------------------------------------------------------
 
 	call MakeStarScatter(Estar,NphotStar)
 
+	if(makeangledependence) call MakeIRFScatter(Eirf,NphotStar)
+
 	call determine_fact_IRF(fact_IRF,Estar,Eirf,angle)
 
 	write(*,'("Emitting   ",i10," photon packages")') Nphot
@@ -789,7 +791,7 @@ c Start tracing the photons
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tau,hitstar,escape,fstop,fact,
 !$OMP&   s1,s2,phot2,ninteract,iscat)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
-!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart)
+!$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart,pfstop)
 !$OMP DO
 !$OMP& SCHEDULE(DYNAMIC, 1)
 	do iphot=1,Nphot
@@ -852,7 +854,8 @@ c Start tracing the photons
 	if(escape) goto 3
 
 c	fstop=((C(phot%i,phot%j)%Albedo+1d0)/2d0)
-	fstop=C(phot%i,phot%j)%Albedo**0.25d0	! fstop is the chance the photon goes trhough
+c	fstop=C(phot%i,phot%j)%Albedo**0.25d0	! fstop is the chance the photon goes trhough
+	fstop=C(phot%i,phot%j)%Albedo**pfstop	! fstop is the chance the photon goes trhough
 c	fstop=C(phot%i,phot%j)%Albedo
 	fact=C(phot%i,phot%j)%Albedo/fstop
 
@@ -882,7 +885,7 @@ c	fstop=C(phot%i,phot%j)%Albedo
 	call tellertje(100,100)
 
 
-	if(.not.storescatt.and.scat_how.eq.1) then
+	if(.not.storescatt.and.scat_how.eq.1.and..not.makeangledependence) then
 	do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%scattfield(1,1:NPHISCATT/2,1)=C(i,j)%scattfield(1,0,1)
@@ -924,7 +927,14 @@ c-----------------------------------------------------------------------
 
 	fact_IRF=1d0+(1d0-f)*(Estar/Eirf-1d0)
 
-	if(fact_IRF.lt.(0.1d0*(Estar+Eirf)/Eirf)) fact_IRF=0.1d0*(Estar+Eirf)/Eirf
+	if(fact_IRF.lt.(0.05d0*(Estar+fact_IRF*Eirf)/Eirf)) fact_IRF=0.05d0*Estar/(0.95d0*Eirf)
+	if(fact_IRF.gt.(0.95d0*(Estar+fact_IRF*Eirf)/Eirf)) fact_IRF=0.95d0*Estar/(0.05d0*Eirf)
+
+	if(fact_IRF.lt.10d0) fact_IRF=10d0
+	if(fact_IRF.gt.1d4) fact_IRF=1d4
+
+	if(fact_IRF.lt.(0.05d0*(Estar+fact_IRF*Eirf)/Eirf)) fact_IRF=0.05d0*Estar/(0.95d0*Eirf)
+	if(fact_IRF.gt.(0.95d0*(Estar+fact_IRF*Eirf)/Eirf)) fact_IRF=0.95d0*Estar/(0.05d0*Eirf)
 
 	if(fact_IRF.lt.10d0) fact_IRF=10d0
 	if(fact_IRF.gt.1d4) fact_IRF=1d4
@@ -1145,6 +1155,7 @@ c-----------------------------------------------------------------------
 	else if(Er.lt.(Estar+Eirf*fact_IRF)) then
 		phot%E=Etot/fact_IRF
 		phot%scatt=.true.
+		if(makeangledependence) phot%scatt=.false.
 		call randomdirection(phot%x,phot%y,phot%z)
 		phot%x=D%R(D%nR)*phot%x
 		phot%y=D%R(D%nR)*phot%y
@@ -1617,7 +1628,7 @@ c-----------------------------------------------------------------------
 		call Trace2edgeRG(phot,v,inext,jnext,irgnext)
 		tau=C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
 
-		if(phot%E.gt.(1d-3*Estar/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
+		if(phot%E.gt.(1d-15*Estar/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
 
 		if((tau*v).gt.1d-5) then
 			w=(1d0-exp(-tau*v))/tau
@@ -1704,7 +1715,6 @@ c-----------------------------------------------------------------------
 		phot%onEdge=.true.
 
 		if(inext.ge.D%nR.or.inext.lt.0) goto 2
-c		if(phot%E.lt.Emin) goto 2
 		phot%i=inext
 		phot%j=jnext
 		phot%irg=irgnext
@@ -1861,6 +1871,112 @@ c		phot%E=Estar*(D%thet(iphot+1)-D%thet(iphot))/(pi/2d0)
 	enddo
 	enddo
 	endif
+
+	return
+	end
+	
+
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+
+	subroutine MakeIRFScatter(Eirf,Nphot)
+	use Parameters
+	IMPLICIT NONE
+	real*8 Eirf,r,ct,inp,sin2t(NPHISCATT),cos2t(NPHISCATT)
+	integer Nphot,i,j,iphot,iangle(NPHISCATT),ia,inext,jnext,side,jj,irg,irgnext,omp_get_thread_num
+	real*8 v,x,y,z,phi,phi0,Qt,sQ,sU,sI,w,tau,F11,F12,vAU,P
+	type(photon) phot,phot1(NPHISCATT),phot2
+	real*8 theta,tauplanet,Emin,ran2
+
+	write(*,'("Single scattered IRF:",i8," photon packages")') Nphot
+	write(9,'("Single scattered IRF:",i8," photon packages")') Nphot
+
+	Emin=1d-10*Eirf/real(Nphot)
+
+	call tellertje(1,100)
+!$OMP PARALLEL IF(multicore)
+!$OMP& DEFAULT(NONE)
+!$OMP& PRIVATE(phot,x,y,z,r,tau,
+!$OMP&   inp,ct,theta,iangle,v,w,side,irg,phi0,phi,j,vAU,F11,F12,sI,Qt,sQ,sU,ia,
+!$OMP&   phot1,inext,jnext,irgnext,cos2t,sin2t)
+!$OMP& SHARED(scat_how,C,D,Eirf,makeangledependence,xin,yin,zin,
+!$OMP&   ninteract,useobspol,xsf,ysf,zsf,Nphot)
+!$OMP DO
+!$OMP& SCHEDULE(DYNAMIC, 1)
+	do iphot=1,Nphot
+!$OMP CRITICAL
+		call tellertje(iphot+1,Nphot+2)
+!$OMP END CRITICAL
+		phot%E=Eirf/real(Nphot)
+		phot%scatt=.false.
+
+		call randomdirection(phot%x,phot%y,phot%z)
+		phot%x=D%R(D%nR)*phot%x
+		phot%y=D%R(D%nR)*phot%y
+		phot%z=D%R(D%nR)*phot%z
+7		call randomdirection(phot%vx,phot%vy,phot%vz)
+		inp=(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)
+		if(inp.gt.0d0) then
+			phot%vx=-phot%vx
+			phot%vy=-phot%vy
+			phot%vz=-phot%vz
+		endif
+		if(abs(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)/D%R(D%nR).lt.ran2(idum)) goto 7
+
+		phot%edgeNr=2
+		phot%onEdge=.true.
+		ct=abs(phot%z)/D%R(D%nR)
+		do j=1,D%nTheta-1
+			if(ct.lt.D%Theta(j).and.ct.gt.D%Theta(j+1)) then
+				phot%i=D%nR-1
+				phot%j=j
+			endif
+		enddo
+		if(C(phot%i,phot%j)%nrg.gt.1) then
+			theta=acos(ct)
+			phot%irg=int(real(C(phot%i,phot%j)%nrg)*(theta-D%thet(phot%j))/(D%thet(phot%j+1)-D%thet(phot%j)))+1
+			if(phot%irg.gt.C(phot%i,phot%j)%nrg) phot%irg=C(phot%i,phot%j)%nrg
+			if(phot%irg.lt.1) phot%irg=1
+		else
+			phot%irg=1
+		endif
+
+1		continue
+		call Trace2edgeRG(phot,v,inext,jnext,irgnext)
+		tau=C(phot%i,phot%j)%dens*C(phot%i,phot%j)%Kext*AU
+
+		if(phot%E.gt.(1d-15*Eirf/real(Nphot))) C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
+
+		if((tau*v).gt.1d-5) then
+			w=(1d0-exp(-tau*v))/tau
+		else
+			w=v
+		endif
+
+		C(phot%i,phot%j)%scattfield(1,0,1)=C(phot%i,phot%j)%scattfield(1,0,1)+phot%E*w*AU/2d0
+		C(phot%i,phot%j)%scattfield(1,0,2)=C(phot%i,phot%j)%scattfield(1,0,2)+phot%E*w*AU/2d0
+
+		w=exp(-tau*v)
+		phot%E=phot%E*w
+		phot%x=phot%x+phot%vx*v
+		phot%y=phot%y+phot%vy*v
+		phot%z=phot%z+phot%vz*v
+
+		phot%onEdge=.true.
+
+		if(inext.ge.D%nR.or.inext.lt.0) goto 2
+		phot%i=inext
+		phot%j=jnext
+		phot%irg=irgnext
+		goto 1
+
+2		continue
+	enddo
+!$OMP END DO
+!$OMP FLUSH
+!$OMP END PARALLEL
+	call tellertje(100,100)
+
 
 	return
 	end

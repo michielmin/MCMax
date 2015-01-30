@@ -371,6 +371,8 @@
 	
 	abun_in_name=0
 	
+	pfstop=0.25d0
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
