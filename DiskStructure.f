@@ -2974,7 +2974,7 @@ c		enddo
 	enddo
 	enddo
 	
-	if(cnan) stop
+	if(cnan) stop 'I found a NaN'
 	
 	return
 	end

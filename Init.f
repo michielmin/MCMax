@@ -27,7 +27,7 @@
 	real*8 asym(MAXPART),asym2(MAXPART),wasym2(MAXPART),Pmax(MAXPART),tdes_fast(MAXPART),powinner(MAXPART)
 	integer npow,powclose(MAXPART),powfar(MAXPART),ilam1,ilam2,ngap,nzlam,nr,nt
 	character*500 particlefile,gridfile,input,partarg(MAXPART),thetagridfile
-	character*500 densfile,opacityfile,surfdensfile,output,compositionfile
+	character*500 densfile,opacityfile,surfdensfile,output,compositionfile,gasdensfile
 	character*500 scalesh,shscalefile,starfile,radfile,settlefile(MAXPART)
 	character*20 denstype,abuntype,lamtype,scattype,startype,material(MAXPART),startiter
 	character*20 shtype(MAXPART)
@@ -229,6 +229,7 @@
 	psettphi0=1d0
 
 	compositionfile=' '
+	gasdensfile=' '
 	radfile=' '
 
 	forcediff=.false.
@@ -404,6 +405,7 @@ c	Initialize the 10 temp zones with defaults
 		ZoneTemp(i)%Mconnect=0
 		ZoneTemp(i)%Sconnect=0
 		ZoneTemp(i)%Rconnect=-1d0
+		ZoneTemp(i)%alphaturb=-1d0
 	enddo
 	nzones=0
 	
@@ -520,6 +522,9 @@ c	call system("rm -f " // trim(outdir) // "/prodimo_extra.in")
 	endif
 	if(key.eq.'densfile') then
 		densfile=value
+	endif
+	if(key.eq.'gasdensfile') then
+		gasdensfile=value
 	endif
 	if(key.eq.'denspow') read(value,*) D%denspow
 	if(key.eq.'denspow2') read(value,*) D%denspow2
@@ -1281,6 +1286,8 @@ C       Gijsexp, read in parameters for s.c. settling
 			read(value,*) ZoneTemp(i)%Sconnect
 		else if(keyzone.eq.'rconnect') then
 			read(value,*) ZoneTemp(i)%Rconnect
+		else if(keyzone.eq.'alphaturb') then
+			read(value,*) ZoneTemp(i)%alphaturb
 		else
 			write(*,'("Zone keyword not understood:",a)') trim(keyzone)
 			write(9,'("Zone keyword not understood:",a)') trim(keyzone)
@@ -1484,6 +1491,7 @@ C       End
 			if(Zone(i)%a_max.le.0d0) Zone(i)%a_max=mrn_rmax*1d4
 			if(Zone(i)%a_pow.gt.100d0) Zone(i)%a_pow=mrn_index
 			if(Zone(i)%gamma_exp.lt.0d0) Zone(i)%gamma_exp=2d0-Zone(i)%denspow
+			if(Zone(i)%alphaturb.lt.0d0) Zone(i)%alphaturb=alphaturb
 			D%Mtot=D%Mtot+Zone(i)%Mdust
 			if(Zone(i)%Rin.gt.D%Rin.and.Zone(i)%Rin.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rin)).ne.0d0) then
 				nRfix=nRfix+1
@@ -1774,6 +1782,10 @@ C	End
 	else if(denstype.eq.'SURFFILE') then
 	write(*,'("Surface density file: ",a)') densfile(1:len_trim(densfile))
 	write(9,'("Surface density file: ",a)') densfile(1:len_trim(densfile))
+		if(gasdensfile.ne.' ') then
+			write(*,'("Gas surface density:  ",a)') gasdensfile(1:len_trim(gasdensfile))
+			write(9,'("Gas surface density:  ",a)') gasdensfile(1:len_trim(gasdensfile))
+		endif
 	else if(denstype.eq.'SHELLFILE') then
 	write(*,'("Shell density file:   ",a)') densfile(1:len_trim(densfile))
 	write(9,'("Shell density file:   ",a)') densfile(1:len_trim(densfile))
@@ -1890,6 +1902,8 @@ C	End
 		write(9,'("Dust mass:            ",e18.3," Msun")') Zone(i)%Mdust
 		write(*,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
 		write(9,'("Powerlaw:             ",f14.3)') Zone(i)%denspow
+		write(*,'("Alpha turbulence:     ",f14.3)') Zone(i)%alphaturb
+		write(9,'("Alpha turbulence:     ",f14.3)') Zone(i)%alphaturb
 		if(Zone(i)%Rexp.lt.1d100) then
 			write(*,'("Exponential cutoff:   ",f14.3," AU")') Zone(i)%Rexp
 			write(9,'("Exponential cutoff:   ",f14.3," AU")') Zone(i)%Rexp
@@ -2079,8 +2093,13 @@ C       Gijsexp
 	if (mpset) then
 	   write(*,'("Using isothermal dust settling")')
 	   write(9,'("Using isothermal dust settling")')
+		if(denstype.eq.'ZONES') then
+	   write(*,'("Turbulent alpha set in zones")')
+	   write(9,'("Turbulent alpha set in zones")')
+		else
 	   write(*,'("Alpha (Turbulent)         ",e14.3)') alphaturb
 	   write(9,'("Alpha (Turbulent)         ",e14.3)') alphaturb
+		endif
 	   write(*,'("q (Turbulent)             ",f8.1)') qturb
 	   write(9,'("q (Turbulent)             ",f8.1)') qturb
 	endif
@@ -2088,8 +2107,13 @@ C       Gijsexp
 	if (fixmpset) then
 	   write(*,'("Using isothermal dust settling with prescribed soundspeed")')
 	   write(9,'("Using isothermal dust settling with prescribed soundspeed")')
+		if(denstype.eq.'ZONES') then
+	   write(*,'("Turbulent alpha set in zones")')
+	   write(9,'("Turbulent alpha set in zones")')
+		else
 	   write(*,'("Alpha (Turbulent)         ",e14.3)') alphaturb
 	   write(9,'("Alpha (Turbulent)         ",e14.3)') alphaturb
+		endif
 	   write(*,'("q (Turbulent)             ",f8.1)') qturb
 	   write(9,'("q (Turbulent)             ",f8.1)') qturb
 	endif
@@ -2938,6 +2962,26 @@ c in the theta grid we actually store cos(theta) for convenience
 		enddo
 		enddo
 		deallocate(surfacedens)
+
+		if(gasdensfile.ne.' ') then
+			inquire(file=gasdensfile,exist=truefalse)
+			if(.not.truefalse) then
+				write(*,'("Gas surface density file not found")')
+				write(9,'("Gas surface density file not found")')
+				write(*,'("--------------------------------------------------------")')
+				write(9,'("--------------------------------------------------------")')
+				stop
+			endif
+			allocate(surfacedens(D%nR))
+			call regridlog(gasdensfile,D%R_av(1:D%nR)/AU,surfacedens,D%nR)
+			do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				C(i,j)%gasdens=surfacedens(i)*(D%R(i+1)**2-D%R(i)**2)/C(i,j)%V
+				C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
+			enddo
+			enddo
+			deallocate(surfacedens)
+		endif
 	endif
 
 	if(denstype.eq.'SHELLFILE') then
@@ -2994,6 +3038,7 @@ c in the theta grid we actually store cos(theta) for convenience
 				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
+					C(i,j)%alphaturb=Zone(iz)%alphaturb
 					zonedens(iz,1:ngrains,i,j)=0d0
 					if(Zone(iz)%sh.gt.0d0) then
 						njj=10
@@ -3518,6 +3563,7 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &					(D%Theta(j)-D%Theta(j+1))*AU**3
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
+					C(i,j)%alphaturb=Zone(iz)%alphaturb
 					zonedens(iz,1:ngrains,i,j)=0d0
 					if(Zone(iz)%sh.gt.0d0) then
 						njj=10
@@ -3816,7 +3862,9 @@ c	this is a wedge zone!
 	do j=0,D%nTheta-1
 		C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
 		C(i,j)%dens0=C(i,j)%dens
-		if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens
+		if(denstype.ne.'PRODIMO'.and.(denstype.ne.'SURFFILE'.or.gasdensfile.eq.' ')) then
+			C(i,j)%gasdens=C(i,j)%dens
+		endif
 		C(i,j)%gasfrac=0d0
 		MassTot=MassTot+C(i,j)%mass
 	enddo
@@ -3845,7 +3893,7 @@ c-----------------------------------------------------------------------
 	   do i=1,D%nR-1
 	      do j=1,D%nTheta-1
 		 C(i,j)%dens0=C(i,j)%dens
-		 if(denstype.ne.'PRODIMO') C(i,j)%gasdens=C(i,j)%dens0
+		 if(denstype.ne.'PRODIMO'.and.(denstype.ne.'SURFFILE'.or.gasdensfile.eq.' ')) C(i,j)%gasdens=C(i,j)%dens0
 		 C(i,j)%gasfrac=0d0
 		 C(i,j)%T=D%Tstar*sqrt(D%R_av(1)/D%R_av(i))/10d0
 		 if(.not.tcontact) then

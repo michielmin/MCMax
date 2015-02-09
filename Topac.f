@@ -14,7 +14,7 @@ c-----------------------------------------------------------------------
       real*8 checksum,lininterpol
 	character*500 filename
 
-	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) call CreateLRF(NphotUV,10000)
+	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) call CreateLRF(NphotUV,10000,.true.)
   
       ! loop over all grains
       do ii=1,ngrains 
@@ -139,9 +139,13 @@ c-----------------------------------------------------------------------
 	subroutine UVdestruction(ii,i,j)
 	use Parameters
 	IMPLICIT NONE
-	real*8 G,spec(nlam),lam1,lam2,mu,nH,dens0,A,B
+	real*8 spec(nlam),lam1,lam2,nH,dens0,A,B,T
 	integer i,j,l,ii
-	parameter(mu=1.3*1.67262158d-24) !1.3 times the proton mass in gram
+	real*8 mu,Rgas,mole,dsdt,Pv,G,Omega,GG
+	parameter(mu=2.3*1.67262158d-24) !2.3 times the proton mass in gram
+	parameter(Rgas=8.314e7) ! erg/mol/K
+	parameter(mole=6.022e23)
+	parameter(G=6.67300d-8) ! in cm^3/g/s
 
 	lam1=0.0953
 	lam2=0.206
@@ -151,21 +155,30 @@ c-----------------------------------------------------------------------
 		if(lam(l).lt.lam1) spec(l)=0d0
 		if(lam(l).gt.lam2) spec(l)=0d0
 	enddo
-	call integrate(spec,G)
+	call integrate(spec,GG)
 
-	G=4d0*pi*G/5.33d-14/3d10
-c	if(G.lt.1d-6) G=1d-6
+	GG=4d0*pi*GG/5.33d-14/3d10
+c	if(GG.lt.1d-6) GG=1d-6
 
 	nH = C(i,j)%gasdens*gas2dust / mu
 	
-	C(i,j)%G=G
+	C(i,j)%G=GG
 	C(i,j)%ne=1.5e-4*f_ne*nH
+
+	T=C(i,j)%T
+	if(T.lt.2.7d0) T=2.7d0
 
 	A=Grain(ii)%TdesA
 	B=Grain(ii)%TdesB
-	dens0=10d0**(A/B-1d4/(C(i,j)%T*B)-log10(C(i,j)%T))+gammaUVdes*G/sqrt(C(i,j)%T)
+	dens0=10d0**(A/B-1d4/(T*B)-log10(T))+gammaUVdes*GG/sqrt(T)
 
-	if(C(i,j)%dens.lt.dens0) then
+c------------- determine the time for evaporation --------------
+	Pv=(10d0**(A/B-1d4/(T*B)-log10(T))+gammaUVdes*GG/sqrt(T))*Rgas*T/(mu*mole)
+	dsdt=(Pv/Grain(ii)%rho(1))*sqrt(mu/(2d0*pi*kb*T))
+
+	Omega=2d0*pi*sqrt(D%R_av(i)**3/(G*D%Mstar))
+
+	if((Grain(ii)%rv/dsdt).lt.Omega.and.C(i,j)%dens.lt.dens0) then
 		C(i,j)%wopac(ii,1:Grain(ii)%nopac-1)=0d0
 		C(i,j)%wopac(ii,Grain(ii)%nopac)=1d0
 	endif

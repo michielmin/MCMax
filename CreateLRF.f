@@ -1,8 +1,8 @@
-	subroutine CreateLRF(Nphot,NphotStar)
+	subroutine CreateLRF(Nphot,NphotStar,justUV)
 	use Parameters
 	IMPLICIT NONE
 	integer Nphot,i,j,k,ilam,NphotStar
-	logical old_forcefirst
+	logical old_forcefirst,justUV
 	real*8 old_pfstop
 	
 	makeangledependence=.true.
@@ -62,7 +62,7 @@
 			forcefirst=.true.
 			pfstop=0.10
 			call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
-		else
+		else if(.not.justUV) then
 			nexits=0
 			forcefirst=.false.
 			pfstop=0.25
@@ -74,7 +74,7 @@
 					C(i,j)%scattfield(1,ilam,1)=(real(C(i,j)%Ni)*C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
      &							+real(C(i,j)%nLRF(ilam))*C(i,j)%LRF(ilam))/real(C(i,j)%Ni+C(i,j)%nLRF(ilam))
 				else
-					C(i,j)%scattfield(1,ilam,1)=C(i,j)%scattfield(1,0,1)*2d0/C(i,j)%V
+					C(i,j)%scattfield(1,ilam,1)=C(i,j)%LRF(ilam)
      			endif
 				C(i,j)%LRF(ilam)=C(i,j)%scattfield(1,ilam,1)
 				C(i,j)%nLRF(ilam)=C(i,j)%Ni+C(i,j)%nLRF(ilam)

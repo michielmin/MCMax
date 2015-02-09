@@ -75,12 +75,12 @@ c         write(*,'("rhograin=  ",F6.2)') Grain(ii)%rho
             !
             !  Calculate scaling factor according to Dubrulle et al 1995
             !
-            sh_dtg_d= prefac * sqrt(alphaturb / omegatau)
+            sh_dtg_d= prefac * sqrt(C(i,D%nTheta-1)%alphaturb / omegatau)
             scale_d(ii,i)=sh_dtg_d * (1+sh_dtg_d**2)**(-0.5)
             !
             !  Calculate scaling factor according to Weidenschilling 1977
             !
-c            sh_dtg_w=sqrt(alphaturb) / omegatau
+c            sh_dtg_w=sqrt(C(i,D%nTheta-1)%alphaturb) / omegatau
 c            scale_w(ii,i)=sh_dtg_w * (1+sh_dtg_w**2)**(-0.5)
             !
             !  Pass scaling factor to MCMax
@@ -159,7 +159,7 @@ c-----------------------------------------------------------------------
 		        	tauf_csrho=Grain(ii)%rho(1)*Grain(ii)%rv
 				endif			
 				Grain(ii)%settle=.true.
-				hH=((1d0/(1d0+gamma))**0.25d0)*sqrt(alphaturb*surfdens/(sqrt(2d0*pi)*tauf_csrho))
+				hH=((1d0/(1d0+gamma))**0.25d0)*sqrt(C(i,D%nTheta-1)%alphaturb*surfdens/(sqrt(2d0*pi)*tauf_csrho))
 				Grain(ii)%shscale(i)=hH/sqrt(1d0+hH**2)
 			endif
 		enddo

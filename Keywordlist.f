@@ -394,6 +394,8 @@
 	keyword(i)='prodimo1zone'
 	i=i+1
 	keyword(i)='abun_in_name'
+	i=i+1
+	keyword(i)='gasdensfile'
 	
 	Nnormal=i
 c from here on keywords with numbers

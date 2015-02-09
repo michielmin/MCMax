@@ -13,7 +13,7 @@
 	logical outputionization
 	character*500 filename
 	
-	if(niter.ne.0.and.NphotUV.gt.0.and.UV_PAH) call CreateLRF(NphotUV,10000)
+	if(niter.ne.0.and.NphotUV.gt.0.and.UV_PAH) call CreateLRF(NphotUV,10000,.false.)
 	
 	if(qhp_solver.eq.0) then
 c use the PAH module from Michiel Min

@@ -373,7 +373,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	naxes(3)=nlam
 	nelements=naxes(1)*naxes(2)*naxes(3)
 
-	call CreateLRF(NphotUV,10000)
+	call CreateLRF(NphotUV,10000,.false.)
 
 	! create new hdu
 	call ftcrhd(unit, status)

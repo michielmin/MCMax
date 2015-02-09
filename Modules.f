@@ -130,7 +130,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8,allocatable :: abun(:)
 		logical,allocatable :: inc_grain(:)
 		integer Mconnect,Sconnect
-		real*8 Rconnect
+		real*8 Rconnect,alphaturb
 	end type DiskZone
 	
 	type(DiskZone),allocatable :: Zone(:)

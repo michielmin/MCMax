@@ -148,11 +148,11 @@ c-------------------------------------------------------------------
          enddo
          
          !  Alpha: global or some gradient (deadzone)
-         if (deadzone) then
+c         if (deadzone) then
             alpha(iz)=C(ir,ith)%alphaturb
-         else
-            alpha(iz)=alphaturb ! no radial dependence on alpha, for now
-         endif
+c         else
+c            alpha(iz)=alphaturb ! no radial dependence on alpha, for now
+c         endif
       enddo
 
       !  Print disk parameters ?
