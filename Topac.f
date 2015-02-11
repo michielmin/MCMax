@@ -166,6 +166,10 @@ c	if(GG.lt.1d-6) GG=1d-6
 	C(i,j)%ne=1.5e-4*f_ne*nH
 
 	T=C(i,j)%T
+	if(.not.tcontact) then
+		T=C(i,j)%TP(ii)
+	endif
+
 	if(T.lt.2.7d0) T=2.7d0
 
 	A=Grain(ii)%TdesA
