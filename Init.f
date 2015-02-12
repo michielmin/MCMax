@@ -2976,7 +2976,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			call regridlog(gasdensfile,D%R_av(1:D%nR)/AU,surfacedens,D%nR)
 			do i=1,D%nR-1
 			do j=1,D%nTheta-1
-				C(i,j)%gasdens=surfacedens(i)*(D%R(i+1)**2-D%R(i)**2)/C(i,j)%V
+				C(i,j)%gasdens=surfacedens(i)*pi*(D%R(i+1)**2-D%R(i)**2)*AU**2/C(i,j)%V/real(D%nTheta-1)
 				C(i,j)%gasdens=C(i,j)%gasdens/gas2dust
 			enddo
 			enddo
@@ -3862,9 +3862,7 @@ c	this is a wedge zone!
 	do j=0,D%nTheta-1
 		C(i,j)%w0(1:ngrains)=C(i,j)%w(1:ngrains)
 		C(i,j)%dens0=C(i,j)%dens
-		if(denstype.ne.'PRODIMO'.and.(denstype.ne.'SURFFILE'.or.gasdensfile.eq.' ')) then
-			C(i,j)%gasdens=C(i,j)%dens
-		endif
+		if(denstype.ne.'PRODIMO'.and.(denstype.ne.'SURFFILE'.or.gasdensfile.eq.' ')) C(i,j)%gasdens=C(i,j)%dens
 		C(i,j)%gasfrac=0d0
 		MassTot=MassTot+C(i,j)%mass
 	enddo
@@ -4449,11 +4447,14 @@ c Set the spectrum and energy for the interstellar radiation field
 	Vtot=0d0
 	MassTot=0d0
 	tot=0d0
+	MassTot0=0d0
 	do j=1,D%nTheta
 		MassTot=MassTot+C(i,j)%mass
 		tot=tot+C(i,j)%dens0*C(i,j)%V
+		MassTot0=MassTot0+C(i,j)%gasdens*C(i,j)%V
 	enddo
 	write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),tot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+     &						,MassTot0*gas2dust/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 	enddo
 	close(unit=90)
 

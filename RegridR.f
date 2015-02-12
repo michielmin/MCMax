@@ -13,7 +13,7 @@ c--------------------------------------------------------------------
 	use Diskstruct
 	IMPLICIT NONE
 	real*8 Rnew(0:D%nR),R1,R2,Rav(0:D%nR),tot,tot0
-	real*8 MassTot,MassTot0
+	real*8 MassTot,MassTot0,MassTotGas
 	real*8 V,M,M0,Ni,determineT,determineTP
 	type(cell) Cold(0:D%nR)
 	type(photon) phot
@@ -764,11 +764,14 @@ c	call MakeGaps()
 	do i=1,D%nR-1
 	MassTot=0d0
 	MassTot0=0d0
+	MassTotGas=0d0
 	do j=1,D%nTheta
 		MassTot=MassTot+C(i,j)%mass
 		MassTot0=MassTot0+C(i,j)%dens0*C(i,j)%V
+		MassTotGas=MassTotGas+C(i,j)%gasdens*C(i,j)%V
 	enddo
 	write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),MassTot0/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+     &						,MassTotGas*gas2dust/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 	enddo
 	close(unit=90)
 
