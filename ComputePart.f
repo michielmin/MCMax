@@ -6,7 +6,7 @@
 	real*8 amin,amax,apow,fmax,porosity,inp_abun(*),normalize_abun
 	character*20 standard
 	logical blend
-	integer ii,MAXMAT,iopac,nsubgrains
+	integer ii,iii,MAXMAT,iopac,nsubgrains
 	parameter(MAXMAT=20)
 
 	real cext,csca,maxf
@@ -165,8 +165,9 @@ c changed this to mass fractions (11-05-2010)
 		frac=frac/tot
 	endif
 
+	do iii=1,ii
 	if(abun_in_name.gt.0) then
-		write(partfile,'(a,"particle",i0.4)') trim(particledir),ii
+		write(partfile,'(a,"particle",i0.4)') trim(particledir),iii
 		do i=1,nm
 			select case(abun_in_name)
 				case(1)
@@ -188,9 +189,9 @@ c changed this to mass fractions (11-05-2010)
 		endif
 	else
 		if(iopac.eq.1) then
-			write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+			write(partfile,'(a,"particle",i0.4,".fits")') trim(particledir),iii
 		else
-			write(partfile,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+			write(partfile,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),iii,iopac
 		endif
 	endif
 	inquire(file=partfile,exist=truefalse)
@@ -201,6 +202,16 @@ c changed this to mass fractions (11-05-2010)
 			return
 		endif
 	endif
+	write(partfile,'(a,".gz")') trim(partfile)
+	inquire(file=partfile,exist=truefalse)
+	if(truefalse) then
+		if(checkparticlefile(partfile,amin,amax,apow,ns,fmax,blend,porosity,frac,rho,nm,filename,(abun_in_name.le.0))) then
+			dummy=0d0
+			call ReadParticleFits(partfile,p,.false.,dummy,dummy,dummy,dummy,iopac)
+			return
+		endif
+	endif
+	enddo
 	
 	write(*,'("Computing particle:",i7)') ii
 	write(*,'("Size: ",f10.3," - ",f10.3," micron")') amin,amax
@@ -887,9 +898,9 @@ C	 create the new empty FITS file
 	character*500 filename
 
 	if(iopac.eq.1) then
-		write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+		write(filename,'(a,"particle",i0.4,".fits.gz")') trim(particledir),ii
 	else
-		write(filename,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+		write(filename,'(a,"particle",i0.4,"_",i0.2,".fits.gz")') trim(particledir),ii,iopac
 	endif
 
 
@@ -910,15 +921,15 @@ C	 create the new empty FITS file
 			end select
 		enddo
 		if(iopac.eq.1) then
-			write(filename,'(a,".fits")') trim(filename)
+			write(filename,'(a,".fits.gz")') trim(filename)
 		else
-			write(filename,'(a,"_",i0.2,".fits")') trim(filename),iopac
+			write(filename,'(a,"_",i0.2,".fits.gz")') trim(filename),iopac
 		endif
 	else
 		if(iopac.eq.1) then
-			write(filename,'(a,"particle",i0.4,".fits")') trim(particledir),ii
+			write(filename,'(a,"particle",i0.4,".fits.gz")') trim(particledir),ii
 		else
-			write(filename,'(a,"particle",i0.4,"_",i0.2,".fits")') trim(particledir),ii,iopac
+			write(filename,'(a,"particle",i0.4,"_",i0.2,".fits.gz")') trim(particledir),ii,iopac
 		endif
 	endif
 

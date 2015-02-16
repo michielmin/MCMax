@@ -995,7 +995,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	endif
 
 	if(nzones.le.1) then
-		nz=nzones
+		nz=1
 		return
 	endif
 	
@@ -1060,7 +1060,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 	logical zo0(nzones),zo1(nzones),anyz
 	integer region_index(D%nR-1)
 
-	if(prodimo1zone) then
+	if(prodimo1zone.or.nzones.le.1) then
 		nz=1
 		region_index=1
 		ZonesProDiMo(1)%Mdust=D%Mtot
@@ -1079,11 +1079,6 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			ZonesProDiMo(1)%denspow=D%denspow
 			ZonesProDiMo(1)%fPAH=1d-5
 		endif
-		return
-	endif
-	if(nzones.lt.1) then
-		nz=nzones
-		region_index=1
 		return
 	endif
 	
