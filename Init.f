@@ -2884,6 +2884,7 @@ c in the theta grid we actually store cos(theta) for convenience
 		C(i,j)%Ni=0
 		C(i,j)%EJv=0d0
 		C(i,j)%iTD=0
+		C(i,j)%alphaturb=alphaturb
 		C(i,j)%xedge(1)=D%R(i)
 		C(i,j)%xedge(2)=D%R(i+1)
 		C(i,j)%xedge(3)=D%Theta(j)
@@ -2898,6 +2899,7 @@ c in the theta grid we actually store cos(theta) for convenience
 	C(0,j)%Ni=0
 	C(0,j)%EJv=0d0
 	C(0,j)%iTD=0
+	C(0,j)%alphaturb=alphaturb
 	C(0,j)%xedge(1)=D%R(0)
 	C(0,j)%xedge(2)=D%R(1)
 	C(0,j)%xedge(3)=D%Theta(j)
@@ -3000,7 +3002,6 @@ c in the theta grid we actually store cos(theta) for convenience
 			C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &			(D%Theta(j)-D%Theta(j+1))*AU**3
 			C(i,j)%dens=surfacedens(i)
-			C(i,j)%alphaturb=alphaturb
 		enddo
 		enddo
 		deallocate(surfacedens)
