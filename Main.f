@@ -44,7 +44,7 @@ c	2009-04-22:	Ngrains is now output to the denstemp file
 	type(Cell),allocatable :: Cprev(:,:)
 	type(Telescope) tel(MAXOBS)
 	real*8 T,kappa,KappaGas,w(MAXPART)
-	real*8 Masstot,Vtot,tot
+	real*8 Masstot,Vtot,tot,MassTotGas
 	real*8 ToomreQ ! function
 	integer omp_get_thread_num,omp_get_max_threads
 
@@ -749,12 +749,15 @@ c Regridding now only when error larger than 2 times epsiter
 		do i=1,D%nR-1
 		   Vtot=0d0
 		   MassTot=0d0
+		   MassTotGas=0d0
 		   tot=0d0
 		   do j=1,D%nTheta
 		      MassTot=MassTot+C(i,j)%mass
 		      tot=tot+C(i,j)%dens0*C(i,j)%V
+		      MassTotGas=MassTotGas+C(i,j)%gasdens*C(i,j)%V*gas2dust
 		   enddo
 		   write(90,*) D%R_av(i)/AU,MassTot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2),tot/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
+     &								,MassTotGas/(pi*(D%R(i+1)**2-D%R(i)**2)*AU**2)
 		enddo
 		close(unit=90)
 

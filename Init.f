@@ -3000,6 +3000,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
      &			(D%Theta(j)-D%Theta(j+1))*AU**3
 			C(i,j)%dens=surfacedens(i)
+			C(i,j)%alphaturb=alphaturb
 		enddo
 		enddo
 		deallocate(surfacedens)
