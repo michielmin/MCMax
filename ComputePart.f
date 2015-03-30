@@ -165,6 +165,8 @@ c changed this to mass fractions (11-05-2010)
 		frac=frac/tot
 	endif
 
+	write(*,'("Checking particle files")')
+	write(9,'("Checking particle files")')
 	do iii=1,ii
 	if(abun_in_name.gt.0) then
 		write(partfile,'(a,"particle",i0.4)') trim(particledir),iii
@@ -587,8 +589,8 @@ c-----------------------------------------------------------------------
 	firstpix=1
 	nullval=-999
 
-	write(*,'("Checking particle file: ",a)') partfile(1:len_trim(partfile))
-	write(9,'("Checking particle file: ",a)') partfile(1:len_trim(partfile))
+c	write(*,'("Checking particle file: ",a)') partfile(1:len_trim(partfile))
+c	write(9,'("Checking particle file: ",a)') partfile(1:len_trim(partfile))
 
 	!------------------------------------------------------------------------
 	! HDU0 : opacities
