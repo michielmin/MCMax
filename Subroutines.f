@@ -1727,8 +1727,8 @@ c-----------------------------------------------------------------------
 	if(i.eq.1) write(9,'("....................")')
 	f=int(20d0*dble(i)/dble(n))
 	
-	if(20d0*real(i-1)/real(n).lt.real(f)
-     &   .and.20d0*real(i+1)/real(n).gt.real(f)) then
+	if(20d0*dble(i-1)/dble(n).lt.dble(f)
+     &   .and.20d0*dble(i+1)/dble(n).gt.dble(f)) then
 		write(*,'(".",$)')
 		call flush(6)
 		write(9,'(".",$)')
