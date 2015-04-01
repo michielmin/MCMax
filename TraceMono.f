@@ -789,7 +789,7 @@ c Start tracing the photons
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(phot,x,y,z,r,ignore,tau,hitstar,escape,fstop,fact,
-!$OMP&   s1,s2,phot2,ninteract,iscat)
+!$OMP&   s1,s2,phot2,ninteract,iscat,Emin)
 !$OMP& SHARED(scat_how,C,EmisDis,EnergyTot,EnergyTot2,Estar,Eirf,Einner,vismass,
 !$OMP&   xsf,ysf,zsf,Nphot,forcefirst,photinit,fact_IRF,idumstart,pfstop)
 !$OMP DO
@@ -853,13 +853,13 @@ c Start tracing the photons
 	if(hitstar) goto 3
 	if(escape) goto 3
 
-c	fstop=((C(phot%i,phot%j)%Albedo+1d0)/2d0)
 c	fstop=C(phot%i,phot%j)%Albedo**0.25d0	! fstop is the chance the photon goes trhough
 	fstop=C(phot%i,phot%j)%Albedo**pfstop	! fstop is the chance the photon goes trhough
 c	fstop=C(phot%i,phot%j)%Albedo
 	fact=C(phot%i,phot%j)%Albedo/fstop
 
 	phot%E=phot%E*fact
+
 	if(scat_how.eq.2) then
 		phot%Q=phot%Q*fact
 		phot%U=phot%U*fact

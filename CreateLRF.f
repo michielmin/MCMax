@@ -60,7 +60,7 @@
 		if(lam(ilam).lt.maxlamUV) then
 			nexits=0
 			forcefirst=.true.
-			pfstop=0.10
+			pfstop=0.25
 			call TraceMono(lam(ilam),Nphot,45d0,NphotStar)
 		else if(.not.justUV) then
 			nexits=0
