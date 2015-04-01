@@ -1523,7 +1523,7 @@ C       End
 		call writeExtraProDiMo('','forProDiMo.fits.gz')
 		call writeExtraProDiMo('FLiTs','.true.')
 	endif
-	if(exportProDiMo) computeLRF=.true.
+	if(exportProDiMo.or.UVdes) computeLRF=.true.
 	if(fastobs) then
 		if(Nphot.le.0) then
 			fastobs=.false.
