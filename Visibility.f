@@ -1,8 +1,9 @@
-	subroutine Visibility(image,b,angle,lam0,V,phase)
+	subroutine Visibility(image,b,angle,lam0,V,phase,Diam)
 	use Parameters
 	IMPLICIT NONE
 	type(RPhiImage) image
 	real*8 b,lam0,V,k,phi,theta,phi1,phi2,angle,phase ! Gijsexp
+	real*8 Im1,Im2,Diam,Rsigma
 	complex*16 cI,Int1,Int2,r1,r2,cV,Ftot,a1,b1,c1
 	integer i,j
 
@@ -24,11 +25,23 @@
 	cV=0d0
 	Ftot=0d0
 
+	if(Diam.gt.0d0) then
+		Rsigma=0.42*lam0*1d-6/Diam
+		Rsigma=Rsigma*180d0/pi
+		Rsigma=Rsigma*3600d0
+		Rsigma=Rsigma*D%distance/parsec
+	else
+		Rsigma=1d200
+	endif
+
 	do i=1,image%nr-1
 	call tellertje(i,image%nr-1)
 	do j=1,image%nphi
 	r1=image%R(i)
 	r2=image%R(i+1)
+
+	Im1=image%image(i,j)*exp(-r1**2/(2d0*Rsigma**2))
+	Im2=image%image(i+1,j)*exp(-r2**2/(2d0*Rsigma**2))
 
 	if(r1.eq.r2) goto 1
 
@@ -65,14 +78,14 @@
 	endif
 
 
-	cV=cV+image%image(i,j)*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	cV=cV+image%image(i+1,j)*(Int2-r1*Int1)/((r2-r1))
+	cV=cV+Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	cV=cV+Im2*(Int2-r1*Int1)/((r2-r1))
 
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
 	Int2=(r2**3-r1**3)*(a1-c1)/(3d0*b1)
 
-	Ftot=Ftot-image%image(i,j)*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	Ftot=Ftot-image%image(i+1,j)*(Int2-r1*Int1)/((r2-r1))
+	Ftot=Ftot-Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	Ftot=Ftot-Im2*(Int2-r1*Int1)/((r2-r1))
 
 c and the other half
 
@@ -109,14 +122,14 @@ c and the other half
 	endif
 
 
-	cV=cV+image%image(i,j)*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	cV=cV+image%image(i+1,j)*(Int2-r1*Int1)/((r2-r1))
+	cV=cV+Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	cV=cV+Im2*(Int2-r1*Int1)/((r2-r1))
 
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
 	Int2=(r2**3-r1**3)*(a1-c1)/(3d0*b1)
 
-	Ftot=Ftot-image%image(i,j)*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	Ftot=Ftot-image%image(i+1,j)*(Int2-r1*Int1)/((r2-r1))
+	Ftot=Ftot-Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	Ftot=Ftot-Im2*(Int2-r1*Int1)/((r2-r1))
 
 1	continue
 

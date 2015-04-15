@@ -231,7 +231,7 @@
 			ExtISM=Reddening(lam_obs(j),compute_dlam(lam_obs(j)),Av)
 			spec(j)=1d23*spec(j)*ExtISM/D%distance**2
 			do k=1,tel%nbaseline
-				call Visibility(image,tel%b(k),tel%theta(k),lam_obs(j),V(j,k),phase(j,k))
+				call Visibility(image,tel%b(k),tel%theta(k),lam_obs(j),V(j,k),phase(j,k),tel%D)
 			enddo
 			if(.not.tel%fits) then
 				write(30,*) lam_obs(j),spec(j),V(j,1:tel%nbaseline),phase(j,1:tel%nbaseline)
@@ -280,7 +280,7 @@ c		Call TraceFlux(image,tel%lam1,flux,scatflux,fluxQ,tel%Nphot,tel%NphotAngle,te
 		   do k=1,nbase
 c		   basegrid(k)=tel%b(1)*(tel%b(2)/tel%b(1))**((k-1d0)/(nbase-1d0))  ! log grid
 		      basegrid(k)=tel%b(1)+(tel%b(2)-tel%b(1))*((k-1d0)/(nbase-1d0)) ! linear grid
-		      call Visibility(image,basegrid(k),tel%theta(j),tel%lam(j),V(j,k),phase(j,k))
+		      call Visibility(image,basegrid(k),tel%theta(j),tel%lam(j),V(j,k),phase(j,k),tel%D)
 		   enddo
 		enddo
 		do k=1,nbase
@@ -773,6 +773,10 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%b(1)=def%b(1)
 			tel(nobs)%theta(1)=def%theta(1)
 			tel(nobs)%theta(1)=pi*tel(nobs)%theta(1)/180d0
+			tel(nobs)%width=def%width
+			tel(nobs)%D=def%D
+			tel(nobs)%D2=def%D2
+			tel(nobs)%spider=def%spider
 		else if(tel(nobs)%kind(1:7).eq.'BASEVIS') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=deflam
@@ -784,6 +788,10 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%b(1)=100d0
 			tel(nobs)%theta(1)=0d0
 			tel(nobs)%theta(1)=pi*tel(nobs)%theta(1)/180d0
+			tel(nobs)%width=def%width
+			tel(nobs)%D=def%D
+			tel(nobs)%D2=def%D2
+			tel(nobs)%spider=def%spider
 		else if(tel(nobs)%kind.eq.'FWHM') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=def%lam1
