@@ -894,6 +894,56 @@ c	write(file,'(a,i4)') filename(1:len_trim(filename)),it+1000
 	end
 	
 
+c-----------------------------------------------------------------------
+c-----------------------------------------------------------------------
+	subroutine determine_inc_tau()
+	use Parameters
+	IMPLICIT NONE
+	real*8 tautheta(D%nTheta)
+	real*8 lam0,wl1,wl2,Kext
+	integer i,j,l,n,ii,iopac,il1,il2
+
+	tautheta=0d0
+	lam0=0.55
+	do j=1,nlam-1
+		if(lam0.ge.lam(j).and.lam0.le.lam(j+1)) then
+			il1=j
+			il2=j+1
+			wl1=(lam(j+1)-lam0)/(lam(j+1)-lam(j))
+			wl2=(lam0-lam(j))/(lam(j+1)-lam(j))
+		endif
+	enddo
+	do j=1,D%nTheta
+		do i=1,D%nR-1
+		Kext=0d0
+		do ii=1,ngrains
+			do iopac=1,Grain(ii)%nopac
+				Kext=Kext+C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)*
+     &					(Grain(ii)%Kext(iopac,il1)*wl1+Grain(ii)%Kext(iopac,il2)*wl2)
+			enddo
+		enddo
+		tautheta(j)=tautheta(j)+Kext*(D%R(i+1)-D%R(i))*AU*C(i,j)%dens
+		enddo
+	enddo
+
+	D%IA=0.9999d0*pi/2d0
+	do j=1,D%nTheta-2
+		if(tau_inc.gt.tautheta(j).and.tau_inc.le.tautheta(j+1)) then
+			D%IA=D%thet(j)+(tau_inc-tautheta(j))*(D%thet(j+1)-D%thet(j))/(tautheta(j+1)-tautheta(j))
+		endif
+	enddo
+	D%IA=D%IA*180d0/pi
+	write(*,'("Sightline optical depth:       ",f6.2)') tau_inc
+	write(9,'("Sightline optical depth:       ",f6.2)') tau_inc
+	write(*,'("Adjusted inclination angle to: ",f6.2)') D%IA
+	write(9,'("Adjusted inclination angle to: ",f6.2)') D%IA
+	
+	return
+	end
+	
+
+
+
 
 
 c-----------------------------------------------------------------------

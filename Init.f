@@ -374,6 +374,8 @@
 	
 	pfstop=0.25d0
 	
+	tau_inc=-1d0
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -539,6 +541,7 @@ c	call system("rm -f " // trim(outdir) // "/prodimo_extra.in")
 		mdustscale=.true.
 	endif
 	if(key.eq.'tau550') read(value,*) tau550
+	if(key.eq.'inctau') read(value,*) tau_inc
 	if(key.eq.'reprocess') read(value,*) reprocess
 	if(key.eq.'mdot') read(value,*) D%Mdot
 	if(key.eq.'minfall') read(value,*) D%Minfall
@@ -4468,6 +4471,10 @@ c Set the spectrum and energy for the interstellar radiation field
 
 	deallocate(computepart_T)
 	deallocate(computepart_Tfile)
+
+	if(tau_inc.gt.0d0) then
+		call determine_inc_tau()
+	endif
 
 	return
 	end

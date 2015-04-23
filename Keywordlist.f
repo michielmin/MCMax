@@ -396,6 +396,8 @@
 	keyword(i)='abun_in_name'
 	i=i+1
 	keyword(i)='gasdensfile'
+	i=i+1
+	keyword(i)='inctau'
 	
 	Nnormal=i
 c from here on keywords with numbers
