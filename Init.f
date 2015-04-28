@@ -1494,6 +1494,7 @@ C       End
 			if(Zone(i)%a_max.le.0d0) Zone(i)%a_max=mrn_rmax*1d4
 			if(Zone(i)%a_pow.gt.100d0) Zone(i)%a_pow=mrn_index
 			if(Zone(i)%gamma_exp.lt.0d0) Zone(i)%gamma_exp=2d0-Zone(i)%denspow
+			if(Zone(i)%gamma_exp.lt.0d0) Zone(i)%gamma_exp=0d0
 			if(Zone(i)%alphaturb.lt.0d0) Zone(i)%alphaturb=alphaturb
 			D%Mtot=D%Mtot+Zone(i)%Mdust
 			if(Zone(i)%Rin.gt.D%Rin.and.Zone(i)%Rin.lt.D%Rout.and.minval(abs(Rfix(1:nRfix)-Zone(i)%Rin)).ne.0d0) then
@@ -2944,7 +2945,6 @@ c in the theta grid we actually store cos(theta) for convenience
 	do i=0,D%nR-1
 		shscale(i)=shscale(i)*(1d0+rimscale*exp(-((D%R(1)-D%R(i))/rimwidth)**2))
 	enddo
-
 	MassTot=0d0
 	D%Vtot=0d0
 
