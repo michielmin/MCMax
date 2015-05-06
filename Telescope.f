@@ -1500,7 +1500,7 @@ C		write the required header keywords
 
 	do i=1,nbase
 		tb(i,1)=base(i)
-		tb(i,2)=theta(2)
+		tb(i,2)=theta(i)
 	enddo
 
 C		Write the array to the FITS file.
