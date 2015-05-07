@@ -33,7 +33,7 @@
 	character*20 shtype(MAXPART)
 	character*20 gaproundtype(MAXPART),roundtype(MAXPART)
 	character*1000 line
-	character*500 key,value,file,keyzone
+	character*500 key,value,file,keyzone,alphafile
 	logical truefalse,opacity_set,arg_abun,force_vert_gf(MAXPART)
 	logical mdustscale,settle(MAXPART),trace(MAXPART),denscomposition
 	integer coupledabun(MAXPART),coupledfrac(MAXPART),info,nrhs,nl,parttype(MAXPART),nRfix,iopac
@@ -41,7 +41,7 @@
 	real*8 RoundOff,roundwidth(MAXPART),roundpow(MAXPART),roundpeak(MAXPART) !Gijsexp
 	real*8 powmix(MAXPART),radmix(MAXPART),DiffCoeff,Tmix(MAXPART),Rfix(100),rimscale,rimwidth
 	real*8 rgrain(MAXPART),rgrain_edges(101),rhograin(MAXPART) ! Gijsexp
-	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:)
+	real*8,allocatable :: abunA(:,:),abunB(:),surfacedens(:),F11(:,:),alphaR(:)
 	real*8,allocatable :: wfunc(:),g(:),waver(:),DiffC(:),zonedens(:,:,:,:)
 	integer,allocatable :: IPIV(:)
 	real*8 psettR0,psettpow,psettphi0,KappaGas,shaperad(MAXPART),mu,mu0,rho,minR2,maxR2
@@ -375,6 +375,8 @@
 	pfstop=0.25d0
 	
 	tau_inc=-1d0
+	
+	alphafile=' '
 	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
@@ -1124,6 +1126,7 @@ C       Gijsexp, read in parameters for s.c. settling
 	if(key.eq.'scsetsave') read(value,*) scsetsave
 	if(key.eq.'lifetime') read(value,*) lifetime
 	if(key.eq.'alphaturb') read(value,*) alphaturb
+	if(key.eq.'alphafile') read(value,*) alphafile
 	if(key.eq.'gas2dust') read(value,*) gas2dust
 	if(key.eq.'qturb') read(value,*) qturb
 	if(key.eq.'thinparticle') read(value,*) thinparticle
@@ -2931,7 +2934,7 @@ c in the theta grid we actually store cos(theta) for convenience
 
 	shscale(0:D%nR)=1d0
 	if(scalesh.eq.'FILE') then
-		call regrid(shscalefile,D%R_av/AU,shscale,D%nR)
+		call regrid(shscalefile,D%R_av/AU,shscale,D%nR-1)
 	else if(scalesh.eq.'VALUE') then
 		shscale(0:D%nR)=shscalevalue
 	else if(scalesh.eq.'RADIALPOW') then
@@ -2958,7 +2961,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			stop
 		endif
 		allocate(surfacedens(D%nR))
-		call regridlog(densfile,D%R_av(1:D%nR)/AU,surfacedens,D%nR)
+		call regridlog(densfile,D%R_av(1:D%nR-1)/AU,surfacedens,D%nR-1)
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
@@ -2978,7 +2981,7 @@ c in the theta grid we actually store cos(theta) for convenience
 				stop
 			endif
 			allocate(surfacedens(D%nR))
-			call regridlog(gasdensfile,D%R_av(1:D%nR)/AU,surfacedens,D%nR)
+			call regridlog(gasdensfile,D%R_av(1:D%nR-1)/AU,surfacedens,D%nR-1)
 			do i=1,D%nR-1
 			do j=1,D%nTheta-1
 				C(i,j)%gasdens=surfacedens(i)*pi*(D%R(i+1)**2-D%R(i)**2)*AU**2/C(i,j)%V/real(D%nTheta-1)
@@ -2999,7 +3002,7 @@ c in the theta grid we actually store cos(theta) for convenience
 			stop
 		endif
 		allocate(surfacedens(D%nR))
-		call regridlog(densfile,D%R_av(1:D%nR)/AU,surfacedens,D%nR)
+		call regridlog(densfile,D%R_av(1:D%nR-1)/AU,surfacedens,D%nR-1)
 		do i=1,D%nR-1
 		do j=1,D%nTheta-1
 			C(i,j)%V=(4d0*pi/3d0)*(D%R(i+1)**3-D%R(i)**3)*
@@ -3023,6 +3026,18 @@ c in the theta grid we actually store cos(theta) for convenience
 		call ImportProdimo(densfile)
 		mdustscale=.false.
 	endif
+
+	if(alphafile.ne.' ') then
+		allocate(alphaR(D%nR))
+		call regridlog(alphafile,D%R_av(1:D%nR-1)/AU,alphaR,D%nR-1)
+		do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				C(i,j)%alphaturb=alphaR(i)
+			enddo
+		enddo
+		deallocate(alphaR)
+	endif
+
 
 	if(denstype.eq.'ZONES') then
 		allocate(zonedens(nzones,ngrains,D%nR-1,D%nTheta-1)) ! first occurence (of 2)
