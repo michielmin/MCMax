@@ -398,6 +398,8 @@
 	keyword(i)='gasdensfile'
 	i=i+1
 	keyword(i)='inctau'
+	i=i+1
+	keyword(i)='alphafile'
 	
 	Nnormal=i
 c from here on keywords with numbers
