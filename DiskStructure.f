@@ -2977,6 +2977,9 @@ c Make sure density of condensable stuff is larger than dust density
 		tot(ii)=C(i,j)%dens*C(i,j)%w(ii)
 	enddo
 	do ii=1,ngrains
+		if(tot(ii).lt.1d-50) then
+			tot(ii)=1d-50
+		endif
 		if(tot(ii).gt.C(i,j)%dens0*C(i,j)%w0(ii)) then
 			tot(ii)=C(i,j)%dens0*C(i,j)%w0(ii)
 		endif
