@@ -2792,8 +2792,8 @@ c	sinwi=sin(wi)
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
 		do k=1,nintegrate
-			ranR=rrr(1,k)		!ran2(idum)
-			ranPhi=rrr(2,k)		!ran2(idum)
+			ranR=ran2(idum)		!rrr(1,k)		!ran2(idum)
+			ranPhi=ran2(idum)	!rrr(2,k)		!ran2(idum)
 
 			R=image%R(i)+(image%R(i+1)-image%R(i))*ranR
 			phi=pi*(real(j-1)+ranPhi)/real(image%nphi)
