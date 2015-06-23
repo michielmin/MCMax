@@ -300,12 +300,17 @@ c changed this to mass fractions (11-05-2010)
 		endif
 	enddo
 
+	do i=1,na/2
+		theta=(real(i)-0.5)/real(na/2)*3.1415926536/2d0
+		mu(i)=cos(theta)
+	enddo
+
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(ilam,csca,cabs,cext,Mass,Vol,theta,mu,i,l,tot,k,Err,spheres,toolarge,
+!$OMP& PRIVATE(ilam,csca,cabs,cext,Mass,Vol,theta,i,l,tot,k,Err,spheres,toolarge,
 !$OMP&         rad,wvno,m,r1,rcore,qext,qsca,qbs,gqsc,m1,m2,s21,d21,rmie,lmie,e1mie,e2mie,
 !$OMP&         csmie,cemie,MieF11,MieF12,MieF33,MieF34,Mief22,Mief44,tot2,j)
-!$OMP& SHARED(nlam,na,nm,ns,frac,minlog,maxlog,f,e1,e2,wf,min,f11,f12,f22,f33,f34,f44,
+!$OMP& SHARED(nlam,na,nm,ns,frac,minlog,maxlog,f,mu,e1,e2,wf,min,f11,f12,f22,f33,f34,f44,
 !$OMP&        p,rho_av,iopac,pow,lam,meth,rho,nf,nr,r)
 !$OMP DO
 !$OMP& SCHEDULE(DYNAMIC, 1)
@@ -316,11 +321,6 @@ c changed this to mass fractions (11-05-2010)
 	cext=0d0
 	Mass=0d0
 	Vol=0d0
-
-	do i=1,na/2
-		theta=(real(i)-0.5)/real(na/2)*3.1415926536/2d0
-		mu(i)=cos(theta)
-	enddo
 
 	do l=1,nm
 	if(frac(l).eq.0d0) goto 10
