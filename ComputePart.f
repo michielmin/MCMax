@@ -306,7 +306,7 @@ c changed this to mass fractions (11-05-2010)
 	enddo
 
 !$OMP PARALLEL IF(multicore)
-!$OMP& DEFAULT(NONE)
+!$OMP& DEFAULT(NONE) copyin(Mief11,Mief12,Mief22,Mief33,Mief34,Mief44,M1,M2,S21,D21)
 !$OMP& PRIVATE(ilam,csca,cabs,cext,Mass,Vol,theta,i,l,tot,k,Err,spheres,toolarge,
 !$OMP&         rad,wvno,m,r1,rcore,qext,qsca,qbs,gqsc,m1,m2,s21,d21,rmie,lmie,e1mie,e2mie,
 !$OMP&         csmie,cemie,MieF11,MieF12,MieF33,MieF34,Mief22,Mief44,tot2,j)
