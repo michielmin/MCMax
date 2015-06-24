@@ -43,17 +43,7 @@
 	allocate(e1(MAXMAT,nlam))
 	allocate(e2(MAXMAT,nlam))
 
-	allocate(Mief11(na))
-	allocate(Mief12(na))
-	allocate(Mief22(na))
-	allocate(Mief33(na))
-	allocate(Mief34(na))
-	allocate(Mief44(na))
 	allocate(mu(na))
-	allocate(M1(na,2))
-	allocate(M2(na,2))
-	allocate(S21(na,2))
-	allocate(D21(na,2))
 
 	allocate(frac(MAXMAT))
 	allocate(rho(MAXMAT))
@@ -312,6 +302,16 @@ c changed this to mass fractions (11-05-2010)
 !$OMP&         csmie,cemie,MieF11,MieF12,MieF33,MieF34,Mief22,Mief44,tot2,j)
 !$OMP& SHARED(nlam,na,nm,ns,frac,minlog,maxlog,f,mu,e1,e2,wf,min,f11,f12,f22,f33,f34,f44,
 !$OMP&        p,rho_av,iopac,pow,lam,meth,rho,nf,nr,r)
+	allocate(Mief11(na))
+	allocate(Mief12(na))
+	allocate(Mief22(na))
+	allocate(Mief33(na))
+	allocate(Mief34(na))
+	allocate(Mief44(na))
+	allocate(M1(na,2))
+	allocate(M2(na,2))
+	allocate(S21(na,2))
+	allocate(D21(na,2))
 !$OMP DO
 !$OMP& SCHEDULE(DYNAMIC, 1)
 	do ilam=1,nlam
@@ -444,6 +444,16 @@ c	make sure the scattering matrix is properly normalized by adjusting the forwar
 	enddo
 !$OMP END DO
 !$OMP FLUSH
+	deallocate(Mief11)
+	deallocate(Mief12)
+	deallocate(Mief22)
+	deallocate(Mief33)
+	deallocate(Mief34)
+	deallocate(Mief44)
+	deallocate(M1)
+	deallocate(M2)
+	deallocate(S21)
+	deallocate(D21)
 !$OMP END PARALLEL
 
 	if(standard.eq.'FILE') then
@@ -518,17 +528,7 @@ c changed this to mass fractions (11-05-2010)
 	deallocate(e1)
 	deallocate(e2)
 	
-	deallocate(Mief11)
-	deallocate(Mief12)
-	deallocate(Mief22)
-	deallocate(Mief33)
-	deallocate(Mief34)
-	deallocate(Mief44)
 	deallocate(mu)
-	deallocate(M1)
-	deallocate(M2)
-	deallocate(S21)
-	deallocate(D21)
 
 	deallocate(frac)
 	deallocate(rho)
