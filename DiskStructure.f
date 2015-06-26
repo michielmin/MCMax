@@ -2237,6 +2237,10 @@ c in the theta grid we actually store cos(theta) for convenience
 	D%thet(D%nTheta)=pi/2d0
 	D%SinTheta(D%nTheta)=sin(D%thet(D%nTheta))
 
+	do i=1,D%nTheta-1
+		D%theta_av(i)=acos((D%Theta(i)+D%Theta(i+1))/2d0)
+	enddo
+
 	write(thetagridfile,'(a,"thetagrid.dat")') outdir(1:len_trim(outdir))
 	open(unit=60,file=thetagridfile,RECL=100)
 	do i=1,D%nTheta
