@@ -2930,6 +2930,7 @@ c			wy=gasdev(idum)*widthx
 			y=R*sin(-phi+D%PA*pi/180d0)!+wy*coswi+wx*sinwi
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
+!$OMP CRITICAL
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
 				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
@@ -2938,6 +2939,7 @@ c			wy=gasdev(idum)*widthx
 					imV(ix,iy)=imV(ix,iy)-fluxV/real(2*nintegrate)
 				endif
 			endif
+!$OMP END CRITICAL
 		enddo
 	enddo
 	enddo
