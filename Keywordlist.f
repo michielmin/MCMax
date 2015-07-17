@@ -400,6 +400,8 @@
 	keyword(i)='inctau'
 	i=i+1
 	keyword(i)='alphafile'
+	i=i+1
+	keyword(i)='npahrecompute'
 	
 	Nnormal=i
 c from here on keywords with numbers

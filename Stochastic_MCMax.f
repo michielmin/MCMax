@@ -12,7 +12,9 @@
 	real*8 determineTP
 	logical outputionization
 	character*500 filename
-	
+
+	if(niter.ne.0.and.niter.ne.(nPAHrecompute*(niter/nPAHrecompute))) return
+
 	if(niter.ne.0.and.NphotUV.gt.0.and.UV_PAH) call CreateLRF(NphotUV,10000,.false.)
 	
 	if(qhp_solver.eq.0) then

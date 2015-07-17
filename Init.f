@@ -378,6 +378,8 @@
 	
 	alphafile=' '
 	
+	nPAHrecompute=1
+	
 c	Initialize the 10 temp zones with defaults
 	do i=1,10
 		ZoneTemp(i)%fix_struct=.false.
@@ -647,7 +649,7 @@ c	endif
 	if(key.eq.'maxlamuv') read(value,*) maxlamUV
 	if(key.eq.'uv_pah') read(value,*) UV_PAH
 	if(key.eq.'pahion') read(value,*) PAHion
-
+	if(key.eq.'npahrecompute') read(value,*) nPAHrecompute
 	if(key.eq.'idum') read(value,*) idum
 
 	if(key.eq.'innergas') read(value,*) inner_gas
