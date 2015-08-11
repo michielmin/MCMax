@@ -13,7 +13,33 @@
 	logical outputionization
 	character*500 filename
 
-	if(niter.ne.0.and.niter.ne.(nPAHrecompute*(niter/nPAHrecompute))) return
+	if(niter.ne.0.and.niter.ne.(nPAHrecompute*(niter/nPAHrecompute))) then
+		do i=1,D%nR-1
+			do j=1,D%nTheta-1
+				do ii=1,ngrains
+					if(Grain(ii)%qhp) then
+						phot%i=i
+						phot%j=j
+						if(niter.eq.0) then
+							phot%E=0d0
+							do iopac=1,Grain(ii)%nopac
+								phot%E=phot%E+Grain(ii)%Kpabsstar(iopac)*C(i,j)%wopac(ii,iopac)
+							enddo
+							phot%E=0.5d0*(1d0-sqrt(1d0-(D%Rstar/D%R_av(i))**2))*phot%E*D%Lstar/(pi*D%Rstar**2)
+						else
+							phot%E=C(i,j)%EJvQHP(Grain(ii)%qhpnr)/C(i,j)%w(ii)
+						endif
+						C(i,j)%Tqhp(Grain(ii)%qhpnr)=determineTP(phot,ii)
+						if(C(i,j)%Tqhp(Grain(ii)%qhpnr).lt.2.8) C(i,j)%Tqhp(Grain(ii)%qhpnr)=2.8
+					endif
+				enddo
+			enddo
+		enddo
+		do j=1,D%nTheta-1
+			C(0,j)%Tqhp(1:nqhp)=C(1,j)%Tqhp(1:nqhp)
+		enddo
+		return
+	endif
 
 	if(niter.ne.0.and.NphotUV.gt.0.and.UV_PAH) call CreateLRF(NphotUV,10000,.false.)
 	
