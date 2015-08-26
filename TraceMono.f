@@ -1094,7 +1094,7 @@ c eliminating 'dark-zone'
 				vismass(i,j)=(1d0-dexp(-C(i,j)%tauexit))
 			endif
 
-			ithread=omp_get_thread_num()
+			ithread=omp_get_thread_num()+1
 			EnergyTot_omp(ithread)=EnergyTot_omp(ithread)+EmisDis(i,j)
 			EmisDis(i,j)=EmisDis(i,j)*vismass(i,j)
 			EnergyTot2_omp(ithread)=EnergyTot2_omp(ithread)+EmisDis(i,j)
@@ -2804,7 +2804,7 @@ c	sinwi=sin(wi)
 !$OMP DO
 	do i=1,image%nr-1
 
-	ithread=omp_get_thread_num()
+	ithread=omp_get_thread_num()+1
 	if(checktellertje(i+1,image%nr+1)) then
 		write(*,'(".",$)')
 		call flush(6)
