@@ -953,8 +953,9 @@ c-----------------------------------------------------------------------
 	real*8 EmisDis(0:D%nR+1,0:D%nTheta+1),EnergyTot,Estar,EnergyTot2
 	real*8 Planck,vismass(0:D%nR+1,0:D%nTheta+1),Eirf,Einner
 	real*8 tau,taumin,ran2,Rad,Theta,phi
-	integer i,j,ii,k,iopac
+	integer i,j,ii,k,iopac,ithread,nthreads,omp_get_max_threads,omp_get_thread_num
 	type(Photon) phot,phot2
+	real*8,allocatable :: EnergyTot_omp(:),EnergyTot2_omp(:)
 
 	integer iT
 	real*8 wT1,wT2
@@ -977,11 +978,18 @@ c	Estar=pi*Planck(D%Tstar,phot%lam)*D%Rstar**2
 	endif
 	EnergyTot=0d0
 	EnergyTot2=0d0
+
+	nthreads=omp_get_max_threads()
+	allocate(EnergyTot_omp(nthreads))
+	allocate(EnergyTot2_omp(nthreads))
+	EnergyTot_omp=0d0
+	EnergyTot2_omp=0d0
+
 	if(nexits.ne.0) call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin)
-!$OMP& SHARED(nexits,D,C,Grain,EmisDis,EnergyTot,EnergyTot2,Tcontact,ngrains,
+!$OMP& PRIVATE(j,ii,iopac,iT,wT1,wT2,phot2,Rad,Theta,phi,tau,k,taumin,ithread)
+!$OMP& SHARED(nexits,D,C,Grain,EmisDis,EnergyTot_omp,EnergyTot2_omp,Tcontact,ngrains,
 !$OMP&    phot,useTgas,tracegas,gas2dust,vismass,BB)
 
 !$OMP DO
@@ -1086,17 +1094,19 @@ c eliminating 'dark-zone'
 				vismass(i,j)=(1d0-dexp(-C(i,j)%tauexit))
 			endif
 
-!$OMP FLUSH(EnergyTot)
-			EnergyTot=EnergyTot+EmisDis(i,j)
+			ithread=omp_get_thread_num()
+			EnergyTot_omp(ithread)=EnergyTot_omp(ithread)+EmisDis(i,j)
 			EmisDis(i,j)=EmisDis(i,j)*vismass(i,j)
-!$OMP FLUSH(EnergyTot2)
-			EnergyTot2=EnergyTot2+EmisDis(i,j)
+			EnergyTot2_omp(ithread)=EnergyTot2_omp(ithread)+EmisDis(i,j)
 		enddo
 	enddo
 !$OMP END DO
 !$OMP FLUSH
 !$OMP END PARALLEL
 	if(nexits.ne.0) call tellertje(100,100)
+
+	EnergyTot=sum(EnergyTot_omp(1:nthreads))
+	EnergyTot2=sum(EnergyTot2_omp(1:nthreads))
 
 	return
 	end
@@ -2713,13 +2723,14 @@ c	Rmax,IMDIM,nintegrate,width,SNR,Diam)
 	IMPLICIT NONE
 	type(Telescope) tel
 	type(RPhiImage) image
-	integer IMDIM
+	integer IMDIM,ithread,nthreads,omp_get_max_threads,omp_get_thread_num
 c	parameter(IMDIM=500)
 	real*8 w1,w2,dx,dy,gasdev,SNR
 	real*8 wx,wy,wi,coswi,sinwi,cos2pa,sin2pa,Q,U
 	real*8 Eu,Ex,Ey,EE
 	
 	real*8,allocatable :: im(:,:),imQ(:,:),imU(:,:),imV(:,:),imP(:,:)
+	real*8,allocatable :: im_omp(:,:,:),imQ_omp(:,:,:),imU_omp(:,:,:),imV_omp(:,:,:)
 	real*8 lam0,Rmax,i1,tot,ran2,max,psfdev,nphot,err
 	integer ix,iy,i,j,k,i10,nintegrate,inphot
 	integer il10000,il1000,il100,il10,jj,number_invalid
@@ -2770,24 +2781,35 @@ c	sinwi=sin(wi)
 		rrr(2,k)=ran2(idum)
 	enddo
 
+	nthreads=omp_get_max_threads()
+	allocate(im_omp(nthreads,IMDIM,IMDIM))
+	im_omp=0d0
+	if(scat_how.eq.2.or.nplanets.gt.0) then
+		allocate(imQ_omp(nthreads,IMDIM,IMDIM))
+		allocate(imU_omp(nthreads,IMDIM,IMDIM))
+		allocate(imV_omp(nthreads,IMDIM,IMDIM))
+		imQ_omp=0d0
+		imU_omp=0d0
+		imV_omp=0d0
+	endif
+
 	call tellertje(1,100)
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(j,k,w2,ranR,ranPhi,R,phi,wp1,jp1,wp2,jp2,wr1,ir1,wr2,ir2,
 !$OMP&  i11,i12,i21,i22,p11,p12,p21,p22,al11,al12,al21,al22,ar11,ar12,ar21,ar22,
-!$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy)
-!$OMP& SHARED(image,im,imQ,imU,imV,D,nintegrate,Rmax,scat_how,IMDIM,rrr)
+!$OMP&  c11,c12,c21,c22,s11,s12,s21,s22,flux,fluxQ,fluxU,fluxV,x,ix,y,iy,ithread)
+!$OMP& SHARED(image,im_omp,imQ_omp,imU_omp,imV_omp,D,nintegrate,Rmax,scat_how,IMDIM,rrr)
 
 !$OMP DO
 	do i=1,image%nr-1
 
+	ithread=omp_get_thread_num()
 	if(checktellertje(i+1,image%nr+1)) then
-!$OMP CRITICAL
 		write(*,'(".",$)')
 		call flush(6)
 		write(9,'(".",$)')
 		call flush(9)
-!$OMP END CRITICAL
 	endif
 	do j=1,image%nphi
 		w2=2d0*pi*AU**2*(image%R(i+1)-image%R(i))/real(image%nphi)
@@ -2913,11 +2935,11 @@ c			wy=gasdev(idum)*widthx
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
-				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
+				im_omp(ithread,ix,iy)=im_omp(ithread,ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
-					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
-					imU(ix,iy)=imU(ix,iy)+fluxU/real(2*nintegrate)
-					imV(ix,iy)=imV(ix,iy)+fluxV/real(2*nintegrate)
+					imQ_omp(ithread,ix,iy)=imQ_omp(ithread,ix,iy)+fluxQ/real(2*nintegrate)
+					imU_omp(ithread,ix,iy)=imU_omp(ithread,ix,iy)+fluxU/real(2*nintegrate)
+					imV_omp(ithread,ix,iy)=imV_omp(ithread,ix,iy)+fluxV/real(2*nintegrate)
 				endif
 			endif
 
@@ -2930,16 +2952,14 @@ c			wy=gasdev(idum)*widthx
 			y=R*sin(-phi+D%PA*pi/180d0)!+wy*coswi+wx*sinwi
 			y=(real(IMDIM)*(y+Rmax)/(2d0*Rmax))+1d0
 			iy=y
-!$OMP CRITICAL
 			if(ix.le.IMDIM.and.iy.le.IMDIM.and.ix.gt.0.and.iy.gt.0) then
-				im(ix,iy)=im(ix,iy)+flux/real(2*nintegrate)
+				im_omp(ithread,ix,iy)=im_omp(ithread,ix,iy)+flux/real(2*nintegrate)
 				if(scat_how.eq.2) then
-					imQ(ix,iy)=imQ(ix,iy)+fluxQ/real(2*nintegrate)
-					imU(ix,iy)=imU(ix,iy)-fluxU/real(2*nintegrate)
-					imV(ix,iy)=imV(ix,iy)-fluxV/real(2*nintegrate)
+					imQ_omp(ithread,ix,iy)=imQ_omp(ithread,ix,iy)+fluxQ/real(2*nintegrate)
+					imU_omp(ithread,ix,iy)=imU_omp(ithread,ix,iy)-fluxU/real(2*nintegrate)
+					imV_omp(ithread,ix,iy)=imV_omp(ithread,ix,iy)-fluxV/real(2*nintegrate)
 				endif
 			endif
-!$OMP END CRITICAL
 		enddo
 	enddo
 	enddo
@@ -2947,6 +2967,15 @@ c			wy=gasdev(idum)*widthx
 !$OMP FLUSH
 !$OMP END PARALLEL
 	call tellertje(100,100)
+
+	do ithread=1,nthreads
+		im(1:IMDIM,1:IMDIM)=im(1:IMDIM,1:IMDIM)+im_omp(ithread,1:IMDIM,1:IMDIM)
+		if(scat_how.eq.2) then
+			imQ(1:IMDIM,1:IMDIM)=imQ(1:IMDIM,1:IMDIM)+imQ_omp(ithread,1:IMDIM,1:IMDIM)
+			imU(1:IMDIM,1:IMDIM)=imU(1:IMDIM,1:IMDIM)+imU_omp(ithread,1:IMDIM,1:IMDIM)
+			imV(1:IMDIM,1:IMDIM)=imV(1:IMDIM,1:IMDIM)+imV_omp(ithread,1:IMDIM,1:IMDIM)
+		endif
+	enddo
 	
 	deallocate(rrr)
 
