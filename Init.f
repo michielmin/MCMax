@@ -3545,13 +3545,20 @@ c				if(Grain(ii)%shscale(i).lt.0.2d0) Grain(ii)%shscale(i)=0.2d0
 				deallocate(w)
 				deallocate(rtemp)
 			else
+				Zone(iz)%fPAH=0d0
+				tot=0d0
 				do ii=1,ngrains
 					if(Zone(iz)%inc_grain(ii)) then
 						Zone(iz)%abun(ii)=ZoneTemp(iz)%abun(ii)
 					else
 						Zone(iz)%abun(ii)=0d0
 					endif
+					tot=tot+Zone(iz)%abun(ii)
+					if(Grain(ii)%qhp) then
+						Zone(iz)%fPAH=Zone(iz)%fPAH+Zone(iz)%abun(ii)
+					endif
 				enddo
+				Zone(iz)%fPAH=Zone(iz)%fPAH/tot
 			endif
 			do i=1,D%nR-1
 				if(D%R_av(i).ge.(Zone(iz)%Rin*AU).and.D%R_av(i).le.(Zone(iz)%Rout*AU)) then
