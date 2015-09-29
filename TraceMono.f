@@ -1289,7 +1289,7 @@ c-----------------------------------------------------------------------
 	integer inext,jnext,ntrace,i,iangle(NPHISCATT),irgnext
 	integer ncells_visit,maxcells_visit
 	
-	maxcells_visit=(D%nR+D%nTheta+90)*2
+	maxcells_visit=(D%nR+D%nTheta+360)*2
 
 	escape=.false.
 	hitstar=.false.
