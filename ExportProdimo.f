@@ -562,6 +562,14 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			endif
 		  enddo
 		  N_grains(ri,zj,0) = N
+		  N_grains(ri,zj,0)=0d0
+		  do l=1,ngrains
+			do iopac=1,Grain(l)%nopac
+			  	N_grains(ri,zj,0) = N_grains(ri,zj,0) + 1d6*C(ri,D%nTheta-zj)%dens*C(ri,D%nTheta-zj)%w(l)
+     &						*C(ri,D%nTheta-zj)%wopac(l,iopac)*Grain(l)%mscale(iopac)
+     &						/(4d0*pi*(Grain(l)%dust_moment3*1d-12)*Grain(l)%rscale(iopac)**3*Grain(l)%rho(iopac)/3d0)
+			enddo
+		  enddo
 		  if (N.gt.1d-35) then
 			N1=0d0
 			do l=1,ngrains
@@ -600,7 +608,7 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			N_grains(ri,zj,3) = N1 / N
 		  else
 			N=1d-35
-		  	N_grains(ri,zj,0) = N
+			if(N_grains(ri,zj,0).lt.1d-35) N_grains(ri,zj,0)=1d-35
 			N_grains(ri,zj,1) = Grain(1)%dust_moment1
 			N_grains(ri,zj,2) = Grain(1)%dust_moment2
 			N_grains(ri,zj,3) = Grain(1)%dust_moment3
