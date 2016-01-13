@@ -36,7 +36,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 	logical tracestar,traceemis,tracescat,tracegas,radpress,haloswitch,raditer,viscous,computeTgas,getalpha
 	logical fastviscous,convection,outfluxcontr,forcefirst,use_IRF,useTgas,g2d_heat,Tsmooth,emptylower
 	logical scset,scsetsave,scseteq,mpset,mpstr ! Gijsexp
-	logical fixmpset,inner_gas,multicore,adjustAV
+	logical fixmpset,inner_gas,multicore,adjustAV,vis_norm_fov
 	logical gsd,gsd_full,gsd_plot		!Gijsexp
 	logical mrn		!Gijsexp
 	logical deadzone,gravstable,reducemdot,fastobs,lnkloglog,UV_PAH,PAHion
@@ -175,7 +175,7 @@ c	parameter(gas2dust=100d0) ! Gijsexp, need it to be variable
 		real*8 angle1,angle2,width,opening,mask,wmask,iwa,owa,strehl
 		real*8 Ptelescope,APtelescope,snoise,RON,iprad
 		real*8,allocatable :: b(:),theta(:),fov(:),lam(:) ! Gijsexp
-		logical usepol,readmcscat,traceinverse,fluxcontr,fits
+		logical usepol,readmcscat,traceinverse,fluxcontr,fits,vis_norm_fov
 		logical,allocatable :: trace(:)
 		logical tracestar,traceemis,tracescat,tracegas,fastobs,noangle
 		character*500 psffile,linefile,popfile,lamfile

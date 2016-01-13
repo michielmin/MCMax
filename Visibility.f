@@ -3,7 +3,7 @@
 	IMPLICIT NONE
 	type(RPhiImage) image
 	real*8 b,lam0,V,k,phi,theta,phi1,phi2,angle,phase ! Gijsexp
-	real*8 Im1,Im2,Diam,Rsigma
+	real*8 Im1,Im2,Diam,Rsigma,Im1_norm,Im2_norm
 	complex*16 cI,Int1,Int2,r1,r2,cV,Ftot,a1,b1,c1
 	integer i,j
 
@@ -42,6 +42,14 @@
 
 	Im1=image%image(i,j)*exp(-r1**2/(2d0*Rsigma**2))
 	Im2=image%image(i+1,j)*exp(-r2**2/(2d0*Rsigma**2))
+
+	if(vis_norm_fov) then
+		Im1_norm=Im1
+		Im2_norm=Im2
+	else
+		Im1_norm=image%image(i,j)
+		Im2_norm=image%image(i+1,j)
+	endif
 
 	if(r1.eq.r2) goto 1
 
@@ -84,8 +92,8 @@
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
 	Int2=(r2**3-r1**3)*(a1-c1)/(3d0*b1)
 
-	Ftot=Ftot-Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	Ftot=Ftot-Im2*(Int2-r1*Int1)/((r2-r1))
+	Ftot=Ftot-Im1_norm*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	Ftot=Ftot-Im2_norm*(Int2-r1*Int1)/((r2-r1))
 
 c and the other half
 
@@ -128,8 +136,8 @@ c and the other half
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
 	Int2=(r2**3-r1**3)*(a1-c1)/(3d0*b1)
 
-	Ftot=Ftot-Im1*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
-	Ftot=Ftot-Im2*(Int2-r1*Int1)/((r2-r1))
+	Ftot=Ftot-Im1_norm*((1d0+r1/(r2-r1))*Int1-Int2/((r2-r1)))
+	Ftot=Ftot-Im2_norm*(Int2-r1*Int1)/((r2-r1))
 
 1	continue
 

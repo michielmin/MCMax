@@ -25,6 +25,7 @@
 	call cpu_time(starttime)
 
 	angle=pi*tel%angle/180d0
+	vis_norm_fov=tel%vis_norm_fov
 
 	if(.not.tracescat) then
 		tel%Nphot=0
@@ -651,6 +652,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%lamfile=' '
 	def%fits=.false.
 	def%noangle=.false.
+	def%vis_norm_fov=vis_norm_fov
 	
 1	call ignorestar(20)
 	read(20,'(a500)',end=2) line
@@ -777,6 +779,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%D=def%D
 			tel(nobs)%D2=def%D2
 			tel(nobs)%spider=def%spider
+			tel(nobs)%vis_norm_fov=def%vis_norm_fov
 		else if(tel(nobs)%kind(1:7).eq.'BASEVIS') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=deflam
@@ -792,6 +795,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 			tel(nobs)%D=def%D
 			tel(nobs)%D2=def%D2
 			tel(nobs)%spider=def%spider
+			tel(nobs)%vis_norm_fov=def%vis_norm_fov
 		else if(tel(nobs)%kind.eq.'FWHM') then
 			tel(nobs)%angle=def%angle
 			tel(nobs)%lam1=def%lam1
@@ -1009,6 +1013,7 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 		if(key.eq.'abun') read(value,*) def%abun
 		if(key.eq.'fastobs') read(value,*) def%fastobs
 		if(key.eq.'noangle') read(value,*) def%noangle
+		if(key.eq.'vis_norm_fov') read(value,*) def%vis_norm_fov
 	else
 		if(key.eq.'nphi') read(value,*) tel(nobs)%nphi
 		if(key.eq.'nrad') read(value,*) tel(nobs)%nr
@@ -1161,6 +1166,7 @@ c       Gijsexp: allow more than two wavelength/angle combo's for basevis
 		if(key.eq.'abun') read(value,*) tel(nobs)%abun
 		if(key.eq.'fastobs') read(value,*) tel(nobs)%fastobs
 		if(key.eq.'noangle') read(value,*) tel(nobs)%noangle
+		if(key.eq.'vis_norm_fov') read(value,*) tel(nobs)%vis_norm_fov
 	endif
 	
 	goto 1
