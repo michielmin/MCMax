@@ -1352,6 +1352,7 @@ c-----------------------------------------------------------------------
 	IMPLICIT NONE
 	type(RPhiImage) image
 	real*8 lam0,vmass,tau_e,wl1,wl2,w1,w2,tau0,Kext,dens(0:D%nR,0:D%nTheta)
+	real*8 ww(ngrains,image%nr,image%nphi),www(ngrains),ww0(ngrains)
 	integer i,j,k,ip,jp,ilam1,ilam2,iopac,ii
 
 	write(*,*) lam0
@@ -1392,9 +1393,9 @@ c-----------------------------------------------------------------------
 				C(i,j)%Kext=C(i,j)%Kext+(wl1*Grain(ii)%Kext(iopac,ilam1)
      &			+wl2*Grain(ii)%Kext(iopac,ilam2))*C(i,j)%w(ii)*C(i,j)%wopac(ii,iopac)
 			enddo
-c			if(Grain(ii)%rv.lt.20d-4.and.C(i,j)%T.gt.60d0) then
+			if(Grain(ii)%rv.lt.20d-4.and.C(i,j)%T.gt.30d0) then
 				dens(i,j)=dens(i,j)+C(i,j)%dens*C(i,j)%w(ii)
-c			endif
+			endif
 		enddo
 	enddo
 	enddo
@@ -1403,10 +1404,11 @@ c			endif
 !$OMP END PARALLEL
 
 
+	ww=0d0
 !$OMP PARALLEL IF(multicore)
 !$OMP& DEFAULT(NONE)
-!$OMP& PRIVATE(i,j,tau0,ip,jp,Kext,tau_e)
-!$OMP& SHARED(image,dens,C)
+!$OMP& PRIVATE(i,j,tau0,ip,jp,Kext,tau_e,ii)
+!$OMP& SHARED(image,dens,C,ww,ngrains)
 !$OMP DO
 	do i=1,image%nr
 	do j=1,image%nphi
@@ -1422,9 +1424,15 @@ c			endif
 			tau_e=image%p(i,j)%v(k)*C(ip,jp)%dens*Kext*AU
 			if((tau0+tau_e).gt.1d0) then
 				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*dens(ip,jp)*AU*(1d0-tau0)/tau_e
+				do ii=1,ngrains
+					ww(ii,i,j)=ww(ii,i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*C(ip,jp)%w(ii)*AU*(1d0-tau0)/tau_e
+				enddo
 				goto 1
 			else
 				image%image(i,j)=image%image(i,j)+image%p(i,j)%v(k)*dens(ip,jp)*AU
+				do ii=1,ngrains
+					ww(ii,i,j)=ww(ii,i,j)+image%p(i,j)%v(k)*C(ip,jp)%dens*C(ip,jp)%w(ii)*AU
+				enddo
 			endif
 			tau0=tau0+tau_e
 		enddo
@@ -1435,14 +1443,29 @@ c			endif
 !$OMP FLUSH
 !$OMP END PARALLEL
 
+	vmass=0d0
+	www=0d0
 	do i=1,image%nr-1
 	do k=1,image%nPhi
 		w1=2d0*pi*abs(image%R(i))*AU**2/real(image%nPhi)
 		w2=2d0*pi*abs(image%R(i+1))*AU**2/real(image%nPhi)
 		vmass=vmass+(image%R(i+1)-image%R(i))*
      &		(w1*image%image(i,k)+w2*image%image(i+1,k))/2d0
+		do ii=1,ngrains
+			www(ii)=www(ii)+(image%R(i+1)-image%R(i))*
+     &		(w1*ww(ii,i,k)+w2*ww(ii,i+1,k))/2d0
+		enddo
 	enddo
 	enddo
+
+	ww0=0d0
+	do i=1,D%nR-1
+		do j=1,D%nTheta-1
+			ww0=ww0+C(i,j)%dens*C(i,j)%V*C(i,j)%w
+		enddo
+	enddo
+
+	write(85,*) lam0,www(1:ngrains)/ww0(1:ngrains)
 
 	vmass=vmass/Msun
 	
