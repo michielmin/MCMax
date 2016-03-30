@@ -301,6 +301,8 @@
 	
 	nRWinter=0
 	
+	vis_norm_fov=.true.
+	
 	computeTgas=.false.
 	useTgas=.false.
 	inner_gas=.false.
@@ -1231,6 +1233,8 @@ C       Gijsexp, read in parameters for s.c. settling
 
 	if(key.eq.'outputfits') read(value,*) outputfits
 	if(key.eq.'multicore') read(value,*) multicore
+
+	if(key.eq.'vis_norm_fov') read(value,*) vis_norm_fov
 
 	if(key(1:4).eq.'zone') then
 		read(key(5:index(key,":")-1),*) i

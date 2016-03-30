@@ -402,6 +402,8 @@
 	keyword(i)='alphafile'
 	i=i+1
 	keyword(i)='npahrecompute'
+	i=i+1
+	keyword(i)='vis_norm_fov'
 	
 	Nnormal=i
 c from here on keywords with numbers
