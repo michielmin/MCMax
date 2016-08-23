@@ -249,13 +249,14 @@ c the nspike parameter removes the n degree spike in the forward direction.
 
 	if(nspike.gt.0.and.nspike.lt.180.and.scat_how.gt.1) then
 c the nspike parameter removes the n degree spike in the forward direction.
+		tot=minval(p%F(iopac,j)%F11(1:nspike+1))
 		do i=1,nspike
-			p%F(iopac,j)%F12(i)=p%F(iopac,j)%F12(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
-			p%F(iopac,j)%F22(i)=p%F(iopac,j)%F22(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
-			p%F(iopac,j)%F33(i)=p%F(iopac,j)%F33(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
-			p%F(iopac,j)%F34(i)=p%F(iopac,j)%F34(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
-			p%F(iopac,j)%F44(i)=p%F(iopac,j)%F44(i)*p%F(iopac,j)%F11(nspike+1)/p%F(iopac,j)%F11(i)
-			p%F(iopac,j)%F11(i)=p%F(iopac,j)%F11(nspike+1)
+			p%F(iopac,j)%F12(i)=p%F(iopac,j)%F12(i)*tot/p%F(iopac,j)%F11(i)
+			p%F(iopac,j)%F22(i)=p%F(iopac,j)%F22(i)*tot/p%F(iopac,j)%F11(i)
+			p%F(iopac,j)%F33(i)=p%F(iopac,j)%F33(i)*tot/p%F(iopac,j)%F11(i)
+			p%F(iopac,j)%F34(i)=p%F(iopac,j)%F34(i)*tot/p%F(iopac,j)%F11(i)
+			p%F(iopac,j)%F44(i)=p%F(iopac,j)%F44(i)*tot/p%F(iopac,j)%F11(i)
+			p%F(iopac,j)%F11(i)=tot
 		enddo
 
 		tot=0d0

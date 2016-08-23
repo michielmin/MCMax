@@ -209,6 +209,12 @@ c		20071126 MM: Added the (Z)impol output mode which is Q-U
 			enddo
 			enddo
 			C(i,j)%Albedo=C(i,j)%Ksca/C(i,j)%Kext
+			C(i,j)%scattfield=0d0
+			if(scat_how.eq.2) then
+				C(i,j)%scattQ=0d0
+				C(i,j)%scattU=0d0
+				C(i,j)%scattV=0d0
+			endif
 		enddo
 		enddo
 	endif
@@ -685,6 +691,7 @@ c-----------------------------------------------------------------------
 	do i=0,D%nR-1
 	do j=1,D%nTheta-1
 		CC => C(i,j)
+		CC%lock=.false.
 		CC%Kabs=0d0
 		CC%Kext=0d0
 		CC%Ksca=0d0
@@ -1326,10 +1333,20 @@ c-----------------------------------------------------------------------
 
 	ncells_visit=0
 1	continue
+
+!$OMP FLUSH
+	do while(C(phot%i,phot%j)%lock)
+!$OMP FLUSH
+	enddo
+	C(phot%i,phot%j)%lock=.true.
+!$OMP FLUSH
+
 	ncells_visit=ncells_visit+1
 	if(ncells_visit.gt.maxcells_visit) then
 		print*,'something went wrong here...'
 		escape=.true.
+		C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 		return
 	endif
 	C(phot%i,phot%j)%Ni=C(phot%i,phot%j)%Ni+1
@@ -1344,6 +1361,8 @@ c-----------------------------------------------------------------------
 		phot%z=phot%z+phot%vz*v
 		tautot=tautot+(tau0-tau)
 		phot%onEdge=.false.
+		C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 		return
 	endif
 	call makescattfield(phot,v,iangle,phot1,sin2t,cos2t)
@@ -1356,20 +1375,29 @@ c-----------------------------------------------------------------------
 	tautot=tautot+tau1
 	if(inext.ge.D%nR) then
 		escape=.true.
+		C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 		return
 	endif
 	if(inext.lt.0) then
 		escape=.true.
 		hitstar=.true.
+		C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 		return
 	endif
 	
 	if(emptylower) then
 		if(jnext.eq.D%nTheta-1..and.phot%j.eq.D%nTheta-1.and.inext.eq.phot%i.and.phot%irg.eq.phot%irg) then
 			escape=.true.
+			C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 			return
 		endif
 	endif
+
+	C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 	
 	phot%i=inext
 	phot%j=jnext
@@ -1518,6 +1546,8 @@ c-----------------------------------------------------------------------
 			endif
 		enddo
 	endif
+	C(phot%i,phot%j)%lock=.false.
+!$OMP FLUSH
 	return
 	end		
 
@@ -2480,7 +2510,6 @@ c	else
 c		T1=C(phot%i,phot%j)%xedge2(3)
 c		T2=C(phot%i,phot%j)%xedge2(4)
 c	endif
-
 	b=2d0*(phot%x*phot%vx+phot%y*phot%vy+phot%z*phot%vz)
 
 	if(.not.phot%onEdge) then
