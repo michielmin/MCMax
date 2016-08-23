@@ -27,6 +27,11 @@
 	angle=pi*tel%angle/180d0
 	vis_norm_fov=tel%vis_norm_fov
 
+	tracestar=tel%tracestar
+	traceemis=tel%traceemis
+	tracescat=tel%tracescat
+	tracegas=tel%tracegas
+
 	if(.not.tracescat) then
 		tel%Nphot=0
 		tel%NphotAngle=0
@@ -74,10 +79,6 @@
 	do i=1,ngrains
 		Grain(i)%trace=tel%trace(i)
 	enddo
-	tracestar=tel%tracestar
-	traceemis=tel%traceemis
-	tracescat=tel%tracescat
-	tracegas=tel%tracegas
 
 	makeangledependence=.false.
 

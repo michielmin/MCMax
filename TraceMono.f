@@ -3385,8 +3385,8 @@ c	enddo
 	il100=(image%lam-1000d0*il1000-10000d0*il10000)/100d0
 	il10=(image%lam-100d0*il100-1000d0*il1000-10000d0*il10000)/10d0
 	il1=image%lam-10d0*il10-100d0*il100-1000d0*il1000-10000d0*il10000
-	write(filename,'(a,"RImage_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,".dat")')
-     & outdir(1:len_trim(outdir)),i10,i1,il10000,il1000,il100,il10,il1
+	write(filename,'(a,"RImage_i",i1,f3.1,"_l",i1,i1,i1,i1,f4.2,a,".dat")')
+     & outdir(1:len_trim(outdir)),i10,i1,il10000,il1000,il100,il10,il1,trim(tel%flag)
 	open(unit=50,file=filename,RECL=1000)
 
 
