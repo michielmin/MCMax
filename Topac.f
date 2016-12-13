@@ -14,7 +14,15 @@ c-----------------------------------------------------------------------
       real*8 checksum,lininterpol
 	character*500 filename
 
-	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) call CreateLRF(NphotUV,10000,.true.)
+	if(niter.ne.0.and.NphotUV.gt.0.and.UVdes) then
+		do i=0,D%nR-1 
+			do j=1,D%nTheta-1
+				C(i,j)%nLRF=0
+				C(i,j)%LRF=0d0
+			enddo
+		enddo
+		call CreateLRF(NphotUV,10000,.true.)
+	endif
   
       ! loop over all grains
       do ii=1,ngrains 
