@@ -1,102 +1,106 @@
 **** general setup ****
 
+** stellar type Kurucz model
 startype='KURUCZ'
 
-Tstar=10000
-Lstar=20.0
-Mstar=2.0
+Tstar=10000			! Effective temperature
+Lstar=20.0			! Luminosity of the star
+Mstar=2.0			! mass of the star
 
-Av=0.3
+Av=0.3				! reddening
 
-Distance=150
+Distance=150		! distance in parsec
 
-IncAngle=35
+IncAngle=35			! inclination angle of the disk
 
 **** density setup ****
 
 denstype='ZONES'
 
-Nrad=160
-Ntheta=70
+Nrad=160			! number of radial points
+Ntheta=70			! number of theta points
 
+** DIANA standard opacity setup (see Woitke et al. 2015)
 computepart01:standard='DIANA'
-computepart01:amin=0.05
-computepart01:amax=3000.0
-computepart01:apow=3.5
-computepart01:fmax=0.8
-computepart01:ngrains=20
-computepart01:blend=.true.
-computepart01:fcarbon=0.2
-computepart01:porosity=0.25d0
+computepart01:amin=0.05			! minimum grain size
+computepart01:amax=3000.0		! maximum grain size
+computepart01:apow=3.5			! powerlaw
+computepart01:fmax=0.8			! irregularity parameter
+computepart01:ngrains=20		! number of sizes
+computepart01:blend=.true.		! use effective medium theory
+computepart01:fcarbon=0.2		! carbon fraction
+computepart01:porosity=0.25d0	! porosity
 
-computePAH02:amin=0.0005
-computePAH02:amax=0.0010
-computePAH02:apow=3.5
-computePAH02:ngrains=5
+computePAH02:amin=0.0005		! minimum size for the PAHs
+computePAH02:amax=0.0010		! maximum size for the PAHs
+computePAH02:apow=3.5			! powerlaw
+computePAH02:ngrains=5			! number of PAH sizes
 
+** store the particle files in this folder for easy reuse in different models
 dirparticle='Particles'
 
-zone1:rin=0.55
-zone1:rout=500d0
-zone1:rexp=150d0
-zone1:denspow=1d0
-zone1:Mdust=1d-4
-zone1:amin=0.05
-zone1:amax=3000.0
-zone1:apow=3.5
-zone1:gamma_exp=1d0
-zone1:fix=.true.
-zone1:sizedis=.true.
-zone1:sh=10d0
-zone1:rsh=100d0
-zone1:shpow=1.10
-zone1:fPAH=0.05
+zone1:rin=0.55					! inner radius (AU)
+zone1:rout=500d0				! outer radius
+zone1:rexp=150d0				! exponential cutof radius
+zone1:denspow=1d0				! powerlaw of the surfacedensity
+zone1:Mdust=1d-4				! dust mass in solar masses
+zone1:amin=0.05					! minimum grain size in this zone
+zone1:amax=3000.0				! maximum grain size in this zone
+zone1:apow=3.5					! powerlaw of the size distribution
+zone1:gamma_exp=1d0				! gamma in the surfacedensity distribution (see Woitke et al. 2015)
+zone1:fix=.true.				! fixed setup (set to .false. for hydrostatic)
+zone1:sizedis=.true.			! use sizedistribution as defined above
+zone1:sh=10d0					! scaleheight at rsh
+zone1:rsh=100d0					! reference radius for the scaleheight in AU
+zone1:shpow=1.10				! powerlaw of the scaleheight
+zone1:fPAH=0.05					! PAH mass fraction
 
 **** wavelength grid ****
 
-lam1=0.05
-lam2=3000
-nlam=300
+lam1=0.05						! minimum wavelength (micron)
+lam2=3000						! maximum wavelength (micron)
+nlam=300						! number of wavelength points
 
-zlam1=5
-zlam2=40
-nzlam=150
+zlam1=5							! min wav for increased resolution
+zlam2=40						! max wav for increased resolution
+nzlam=150						! number of wavelength points for increased resolution part
 
+** use full scattering
 scattype='FULL'
-storescatt=.false.
-nspike=2
+storescatt=.false.				! technical stuff, just don't change
+nspike=2						! cut off first two degrees of scattering for noise decrease
 
 **** ISM field ****
 
-irf=.true.
-f_irf=1.0
+irf=.true.						! use interstellar radiation field (IRF)
+f_irf=1.0						! standard IRF strength
 
 **** disc structure ****
 
-iter=.false.
-maxiter=3
-epsiter=3.0
-fweight=1d0
+iter=.false.					! don't use hydrostatic structure
+maxiter=3						! maximum number of iterations
+epsiter=3.0						! convergence criterium
+fweight=1d0						! technical stuff
 
-fixmpset=.true.
-alphaturb=1d-3
+fixmpset=.true.					! use non iterative settling prescription (Woitke et al. 2015)
+alphaturb=1d-3					! turbulence parameter for settling
 
 **** output characteristics ****
 
-outputfits=.true.
+outputfits=.true.				! fits files as output
 
-fastobs=.false.
+fastobs=.false.					! technical
 
+** only important when you use prodimo as well
 exportprodimo=.false.
 runprodimo=.false.
 dirprodimo='filesProDiMo'
 
 **** diffusion and interaction limits ****
 
-nphotdiffuse=30
-randomwalk=.true.
+nphotdiffuse=30					! use diffusion in high noise regions (see Min et al. 2009)
+randomwalk=.true.				! use random walk procedure (see Min et al. 2009)
+factRW=4.0						! factor for random walk (see Min et al. 2009)
 
-factRW=4.0
-
-multiwav=.true.
+multiwav=.true.					! smooth Monte Carlo spectra
 
