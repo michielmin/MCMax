@@ -4,7 +4,7 @@
 	type(RPhiImage) image
 	real*8 b,lam0,V,k,phi,theta,phi1,phi2,angle,phase ! Gijsexp
 	real*8 Im1,Im2,Diam,Rsigma,Im1_norm,Im2_norm
-	complex*16 cI,Int1,Int2,r1,r2,cV,Ftot,a1,b1,c1
+	complex*32 cI,Int1,Int2,r1,r2,cV,Ftot,a1,b1,c1,expa1r1,expc1r1,expa1r2,expc1r2
 	integer i,j
 
 	if(abs(angle).lt.(pi/360d0)) then
@@ -61,13 +61,17 @@
 	a1=c1+2d0*sin((phi1-phi2)/2d0)*b1
 
 	if(abs(k*r2).gt.0.1d0.or.abs(k*r1).gt.0.1d0) then
-	Int1=(-1d0/(k**2*b1)) * ((exp(-cI*k*r2*a1)-exp(-cI*k*r1*a1))/a1-
-     &						 (exp(-cI*k*r2*c1)-exp(-cI*k*r1*c1))/c1)
+	expa1r1=cqexp(-cI*k*r1*a1)
+	expa1r2=cqexp(-cI*k*r2*a1)
+	expc1r1=cqexp(-cI*k*r1*c1)
+	expc1r2=cqexp(-cI*k*r2*c1)
+	Int1=(-1d0/(k**2*b1)) * ((expa1r2-expa1r1)/a1-
+     &						 (expc1r2-expc1r1)/c1)
 	Int2=(-1d0/(cI*k**3*b1)) * 
-     &	((1d0+cI*k*a1*r2)*exp(-cI*k*a1*r2)/a1**2-
-     &	 (1d0+cI*k*c1*r2)*exp(-cI*k*c1*r2)/c1**2-
-     &	 (1d0+cI*k*a1*r1)*exp(-cI*k*a1*r1)/a1**2+
-     &	 (1d0+cI*k*c1*r1)*exp(-cI*k*c1*r1)/c1**2)
+     &	((1d0+cI*k*a1*r2)*expa1r2/a1**2-
+     &	 (1d0+cI*k*c1*r2)*expc1r2/c1**2-
+     &	 (1d0+cI*k*a1*r1)*expa1r1/a1**2+
+     &	 (1d0+cI*k*c1*r1)*expc1r1/c1**2)
 	else
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
      & -(cI*(r2**3-r1**3)*(a1**2-c1**2)/(6d0*b1))*k
@@ -105,13 +109,17 @@ c and the other half
 	a1=c1+2d0*sin((phi1-phi2)/2d0)*b1
 
 	if(abs(k*r2).gt.0.1d0.or.abs(k*r1).gt.0.1d0) then
-	Int1=(-1d0/(k**2*b1)) * ((exp(-cI*k*r2*a1)-exp(-cI*k*r1*a1))/a1-
-     &						 (exp(-cI*k*r2*c1)-exp(-cI*k*r1*c1))/c1)
+	expa1r1=cqexp(-cI*k*r1*a1)
+	expa1r2=cqexp(-cI*k*r2*a1)
+	expc1r1=cqexp(-cI*k*r1*c1)
+	expc1r2=cqexp(-cI*k*r2*c1)
+	Int1=(-1d0/(k**2*b1)) * ((expa1r2-expa1r1)/a1-
+     &						 (expc1r2-expc1r1)/c1)
 	Int2=(-1d0/(cI*k**3*b1)) * 
-     &	((1d0+cI*k*a1*r2)*exp(-cI*k*a1*r2)/a1**2-
-     &	 (1d0+cI*k*c1*r2)*exp(-cI*k*c1*r2)/c1**2-
-     &	 (1d0+cI*k*a1*r1)*exp(-cI*k*a1*r1)/a1**2+
-     &	 (1d0+cI*k*c1*r1)*exp(-cI*k*c1*r1)/c1**2)
+     &	((1d0+cI*k*a1*r2)*expa1r2/a1**2-
+     &	 (1d0+cI*k*c1*r2)*expc1r2/c1**2-
+     &	 (1d0+cI*k*a1*r1)*expa1r1/a1**2+
+     &	 (1d0+cI*k*c1*r1)*expc1r1/c1**2)
 	else
 	Int1=(r2**2-r1**2)*(a1-c1)/(2d0*b1)
      & -(cI*(r2**3-r1**3)*(a1**2-c1**2)/(6d0*b1))*k
@@ -144,7 +152,7 @@ c and the other half
 	enddo
 	enddo
 
-	V=cdabs(cV/Ftot)
+	V=cqabs(cV/Ftot)
 	phase = ATAN2 ( AIMAG(cV/Ftot), REAL(cV/Ftot) ) ! Gijsexp: complex phase
 	
 	return
