@@ -325,7 +325,7 @@ c changed this to mass fractions (11-05-2010)
 	do l=1,nm
 	if(frac(l).eq.0d0) goto 10
 	do k=1,ns
-	r1=r(k)
+	r1=r(k)*p%rscale(iopac)
 	Err=0
 	spheres=0
 	toolarge=0
