@@ -241,6 +241,7 @@ c changed this to mass fractions (11-05-2010)
 			rho_av=rho_av+frac(i)*rho(i)
 		enddo
 		rho(1)=rho_av
+		frac(1)=1d0
 		nm=1
 		write(lnkfile,'(a,a,".lnk")') trim(particledir),trim(input)
 		open(unit=30,file=lnkfile,RECL=200)

@@ -191,8 +191,8 @@ c------------- determine the time for evaporation --------------
 	Omega=2d0*pi*sqrt(D%R_av(i)**3/(G*D%Mstar))
 
 	if((Grain(ii)%rv/dsdt).lt.Omega.and.C(i,j)%dens.lt.dens0) then
-		C(i,j)%wopac(ii,1:Grain(ii)%nopac-1)=0d0
-		C(i,j)%wopac(ii,Grain(ii)%nopac)=1d0
+		C(i,j)%wopac(ii,2)=C(i,j)%wopac(ii,1)+C(i,j)%wopac(ii,2)
+		C(i,j)%wopac(ii,1)=0d0
 	endif
 
 	return

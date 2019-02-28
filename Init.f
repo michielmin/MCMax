@@ -2652,6 +2652,10 @@ c	lmax  = 4000.0
 		call integrate(D%Fstar,tot)
 		D%Fstar=D%Lstar*D%Fstar/tot
 		D%Rstar=sqrt(D%Lstar/Luminosity(D%Tstar,1d0))
+		write(*,'("Stellar radius: ",e," Rsun")') D%Rstar/Rsun
+		write(9,'("Stellar radius: ",e," Rsun")') D%Rstar/Rsun
+		write(*,'("Stellar radius: ",e," AU")') D%Rstar/AU
+		write(9,'("Stellar radius: ",e," AU")') D%Rstar/AU
 		nlamHR=nlam+9
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
