@@ -745,7 +745,8 @@ c Regridding now only when error larger than 2 times epsiter
 		if (use_topac) call Topac(niter)
 
 	        ! Write surface density file at end of each iteration
-		open(unit=90,file=surfdensfile,RECL=100)
+c	GFORTRAN RECL 100 to 1000 otherwise there is a runtime error
+		open(unit=90,file=surfdensfile,RECL=1000)
 		do i=1,D%nR-1
 		   Vtot=0d0
 		   MassTot=0d0

@@ -61,10 +61,11 @@
 	a1=c1+2d0*sin((phi1-phi2)/2d0)*b1
 
 	if(abs(k*r2).gt.0.1d0.or.abs(k*r1).gt.0.1d0) then
-	expa1r1=cqexp(-cI*k*r1*a1)
-	expa1r2=cqexp(-cI*k*r2*a1)
-	expc1r1=cqexp(-cI*k*r1*c1)
-	expc1r2=cqexp(-cI*k*r2*c1)
+c	GFORTRAN cqexp to exp ... should work with modern compilers
+	expa1r1=exp(-cI*k*r1*a1)
+	expa1r2=exp(-cI*k*r2*a1)
+	expc1r1=exp(-cI*k*r1*c1)
+	expc1r2=exp(-cI*k*r2*c1)
 	Int1=(-1d0/(k**2*b1)) * ((expa1r2-expa1r1)/a1-
      &						 (expc1r2-expc1r1)/c1)
 	Int2=(-1d0/(cI*k**3*b1)) * 
@@ -109,10 +110,11 @@ c and the other half
 	a1=c1+2d0*sin((phi1-phi2)/2d0)*b1
 
 	if(abs(k*r2).gt.0.1d0.or.abs(k*r1).gt.0.1d0) then
-	expa1r1=cqexp(-cI*k*r1*a1)
-	expa1r2=cqexp(-cI*k*r2*a1)
-	expc1r1=cqexp(-cI*k*r1*c1)
-	expc1r2=cqexp(-cI*k*r2*c1)
+c	GFORTRAN cqexp to exp ... should work with modern compilers
+	expa1r1=exp(-cI*k*r1*a1)
+	expa1r2=exp(-cI*k*r2*a1)
+	expc1r1=exp(-cI*k*r1*c1)
+	expc1r2=exp(-cI*k*r2*c1)
 	Int1=(-1d0/(k**2*b1)) * ((expa1r2-expa1r1)/a1-
      &						 (expc1r2-expc1r1)/c1)
 	Int2=(-1d0/(cI*k**3*b1)) * 
@@ -152,7 +154,8 @@ c and the other half
 	enddo
 	enddo
 
-	V=cqabs(cV/Ftot)
+c	GFORTRAN cqabs to abs ... should work with modern compilers
+	V=abs(cV/Ftot)
 	phase = ATAN2 ( AIMAG(cV/Ftot), REAL(cV/Ftot) ) ! Gijsexp: complex phase
 	
 	return

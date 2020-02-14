@@ -1020,7 +1020,8 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			endif
 		enddo
 		do i=1,nzones
-			if(zo0(i).ne.zo1(i).and.anyz) then
+c	GFORTRAN ne to neqv
+			if(zo0(i).neqv.zo1(i).and.anyz) then
 				nz=nz+1
 				exit
 			endif
@@ -1103,7 +1104,8 @@ c	   wl = tab_lambda(lambda) * 1e-6
 			endif
 		enddo
 		do i=1,nzones
-			if(zo0(i).ne.zo1(i).and.anyz) then
+c	GFORTRAN ne to neqv
+			if(zo0(i).neqv.zo1(i).and.anyz) then
 				nz=nz+1
 				region_index(ri:D%nR-1)=nz
 				ZonesProDiMo(nz)%Mdust=Zone(1)%Mdust

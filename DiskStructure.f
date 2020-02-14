@@ -328,8 +328,10 @@ c				rho(j,ii)=log(1d0+Grain(ii)%shscale(i)*exp(-((90d0-180d0*D%theta_av(j)/pi)/
 c			enddo
 		else
 			if(i.eq.1) then
-				write(*,'("Scale height type unknown!!",i)') ii
-				write(9,'("Scale height type unknown!!",i)') ii
+c 			GFORTRAN changed i to i5 otherwise get \
+c                Nonnegative width required in format string at with gfortran
+				write(*,'("Scale height type unknown!!",i2)') ii
+				write(9,'("Scale height type unknown!!",i2)') ii
 				write(*,'("Leaving it as it is")')
 				write(9,'("Leaving it as it is")')
 			endif
@@ -591,7 +593,10 @@ c     &      ((C1(i,j)%mass*C1(i,j)%dEJv)**2+(C2(i,j)%mass*C2(i,j)%dEJv)**2)
 	integer i,j,l,n,ii,nl,iopac
 	real*8 mintau(D%nR,D%nTheta)
 
-	if(Grain(ii).maxtau.lt.0d0) return
+c GFORTRAN syntax error (should also happen in ifort I guess)
+c but that seems to be dead code anyway!
+c	if(Grain(ii).maxtau.lt.0d0) return
+	if(Grain(ii)%maxtau.lt.0d0) return
 
 c	wav=0.55
 c	phot%nr=1
@@ -3019,11 +3024,11 @@ c Set minimum dust density
 	do j=1,D%nTheta-1
 		if(IsNaN(C(i,j)%dens)) then
 			cnan=.true.
-			write(*,'(a,a,i,i)') trim(string),' dens ',i,j
+			write(*,'(a,a,i0,i0)') trim(string),' dens ',i,j
 		endif
 		if(IsNaN(C(i,j)%dens0)) then
 			cnan=.true.
-			write(*,'(a,a,i,i)') trim(string),' dens0',i,j
+			write(*,'(a,a,i0,i0)') trim(string),' dens0',i,j
 		endif
 c		do ii=1,ngrains
 c			if(IsNaN(C(i,j)%w(ii))) write(*,'(a,a,i4,i,i)') trim(string),' w',ii,i,j

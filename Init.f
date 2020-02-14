@@ -2652,10 +2652,10 @@ c	lmax  = 4000.0
 		call integrate(D%Fstar,tot)
 		D%Fstar=D%Lstar*D%Fstar/tot
 		D%Rstar=sqrt(D%Lstar/Luminosity(D%Tstar,1d0))
-		write(*,'("Stellar radius: ",e," Rsun")') D%Rstar/Rsun
-		write(9,'("Stellar radius: ",e," Rsun")') D%Rstar/Rsun
-		write(*,'("Stellar radius: ",e," AU")') D%Rstar/AU
-		write(9,'("Stellar radius: ",e," AU")') D%Rstar/AU
+		write(*,'("Stellar radius: ",e8.3," Rsun")') D%Rstar/Rsun
+		write(9,'("Stellar radius: ",e8.3," Rsun")') D%Rstar/Rsun
+		write(*,'("Stellar radius: ",e8.3," AU")') D%Rstar/AU
+		write(9,'("Stellar radius: ",e8.3," AU")') D%Rstar/AU
 		nlamHR=nlam+9
 		allocate(lamHR(nlamHR))
 		allocate(FstarHR(nlamHR))
@@ -4479,7 +4479,8 @@ c Set the spectrum and energy for the interstellar radiation field
 	endif
 
 	write(surfdensfile,'(a,"surfacedens.dat")') outdir(1:len_trim(outdir))
-	open(unit=90,file=surfdensfile,RECL=100)
+c	GFORTRAN RECL 100 to 1000 otherwise there is a runtime error
+	open(unit=90,file=surfdensfile,RECL=1000)
 	do i=1,D%nR-1
 	Vtot=0d0
 	MassTot=0d0

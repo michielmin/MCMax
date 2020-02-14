@@ -3,48 +3,87 @@
 # Tested on MacOSX 10.6 with ifort 11.1.080 (20/12/2012)
 # Tested on MacOSX 10.8 with ifort 14.0.1 (30/12/2013)
 # Tested on MacOSX 10.9 with ifort 12.0.0 (20/12/2013)
+# Tested on Scientific Linux 7.7 with with GNU Fortran (GCC) 6.3.1 (14/02/2020)
 	
 #GITVERSION = $(echo "#define gitversion = \"$(shell git rev-parse HEAD)\"" > gitversion.h)
 GITVERSION = $(ls -l)
 
+
 # compiler= FC, flags = FFlags
 # linker= LINKER, flags= LDFLAGS, libraries=LIBS
-FC	      = ifort
-LINKER	      = ifort
+#################################################################
+# Default compiler path (ifort)
+ifneq ($(compiler),gfortran)
+	# compiler= FC, flags = FFlags
+	# linker= LINKER, flags= LDFLAGS, libraries=LIBS
+	FC	      = ifort
+	LINKER	      = ifort
 
-# enforce single core compilation with:
-# cl> make multi=false
-ifneq ($(multi),false)
-  ifeq ($(shell uname),Linux)
-    MULTICORE = -qopenmp -fp-model strict
-  else
-    MULTICORE = -openmp -fp-model strict  
-  endif
-endif
+	# enforce single core compilation with:
+	# cl> make multi=false
+	ifneq ($(multi),false)
+	  ifeq ($(shell uname),Linux)
+	    MULTICORE = -qopenmp -fp-model strict
+	  else
+	    MULTICORE = -openmp -fp-model strict  
+	  endif
+	endif
 
-# array boundary check
-ifeq ($(debug),true)
-  DEBUGGING = -debug -check bounds -ftrapuv -fpe0 -O0 -check all -fp-stack-check -CB -C
-  #DEBUGGING = -debug -ftrapuv -g -check all -fp-stack-check
-  #DEBUGGING = -heap-arrays
-  #DEBUGGING = -gen-interfaces -warn interfaces
-endif
+	# array boundary check
+	ifeq ($(debug),true)
+	  DEBUGGING = -debug -check bounds -ftrapuv -fpe0 -O0 -check all -fp-stack-check -CB -C
+	  #DEBUGGING = -debug -ftrapuv -g -check all -fp-stack-check
+	  #DEBUGGING = -heap-arrays
+	  #DEBUGGING = -gen-interfaces -warn interfaces
+	endif
 
-# Platform specific compilation options
-FLAG_ALL      = -O3 -extend-source -zero -prec-div $(MULTICORE) $(DEBUGGING)
-FLAG_LINUX    = -msse3 #-prefetch
-FLAG_MAC      = -xHOST -static-intel #-opt-prefetch 
+	# Platform specific compilation options
+	FLAG_ALL      = -O3 -extend-source -zero -prec-div $(MULTICORE) $(DEBUGGING)
+	FLAG_LINUX    = -msse3 #-prefetch
+	FLAG_MAC      = -xHOST -static-intel #-opt-prefetch 
 
 
-ifeq ($(shell uname),Linux)
-  FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec
-  LDFLAGS  = $(FLAG_ALL) $(FLAG_LINUX) -fpp Version.f
-  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib -L$(HOME)/lib
+	ifeq ($(shell uname),Linux)
+	  FFLAGS   = $(FLAG_ALL) $(FLAG_LINUX) -diag-disable vec
+	  LDFLAGS  = $(FLAG_ALL) $(FLAG_LINUX) -fpp Version.f
+	  LIBS     = -lm -lfftw3 -lcfitsio -I/sw/include -L/home/sw-astro/cfitsio/lib -L$(HOME)/lib
+	else
+	  FFLAGS  = $(FLAG_ALL) $(FLAG_MAC) -diag-disable 8290,8291
+	  LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f
+	  #LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
+	  LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib -L$(HOME)/lib
+	endif
+
+#################################################################
+# GFOTRAN path 
 else
-  FFLAGS  = $(FLAG_ALL) $(FLAG_MAC) -diag-disable 8290,8291
-  LDFLAGS = $(FLAG_ALL) $(FLAG_MAC) -fpp Version.f
-  #LIBS	  =  -L/sw/lib -lm -lfftw3 -lcfitsio -I/sw/include
-  LIBS	  =  -L/sw/lib -lm -lfftw3 -L/usr/local/lib -lcfitsio -L/opt/local/lib -L$(HOME)/lib
+	FC	      = gfortran
+	LINKER	  = gfortran
+	
+  	# cl> make multi=false
+  # maybe remove this as it does  not compile without openmp anyway
+  ifneq ($(multi),false)
+  	MULTICORE = -fopenmp
+  endif
+  
+  # array boundary check
+  ifeq ($(debug),true)
+    DEBUGGING =  -fcheck=all
+  endif
+  
+  # -fno-whole-file deactivates some checks (e.g. explicit interface required for optional arguments)
+  #FLAG_ALL = -O1 -g -fbacktrace -fcheck=all -finit-local-zero -ffixed-line-length-none $(MULTICORE) $(DEBUGGING)
+  FLAG_ALL = -O3 -g -fbacktrace -finit-local-zero -ffixed-line-length-none $(MULTICORE) $(DEBUGGING)
+    
+  FFLAGS   = $(FLAG_ALL)
+  LDFLAGS  = $(FLAG_ALL) -cpp Version.f
+
+# add here library paths if required  
+	ifeq ($(shell uname),Linux)
+		LIBS   = -lm -lfftw3 -lcfitsio
+	else
+		LIBS   = -lm -lfftw3 -lcfitsio -L/opt/local/lib
+	endif
 endif
 
 # use a suffix in file name (i.e. static, test etc.)

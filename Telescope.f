@@ -427,8 +427,9 @@ c is still without interstellar extinction
      &								tel%abun,poptype,i_up,i_low)
 			write(*,'("Writing transition number: ",i5," (",i3,"-",i3,")")') j,i_up,i_low
 			write(9,'("Writing transition number: ",i5," (",i3,"-",i3,")")') j,i_up,i_low
-			write(30,'("# transition nr ",i)') j
-			write(30,'("# up, low       ",i,i)') i_up,i_low
+c     GFORTRAN i to i0
+			write(30,'("# transition nr ",i0)') j
+			write(30,'("# up, low       ",i0,i0)') i_up,i_low
 			write(30,'("# population    ",a)') trim(poptype)
 			ExtISM=Reddening(image%lam,compute_dlam(image%lam),Av)
 c			Resolution=3000
@@ -656,7 +657,10 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 	def%vis_norm_fov=vis_norm_fov
 	
 1	call ignorestar(20)
-	read(20,'(a500)',end=2) line
+c	GFORTRAN removed the format string, otherwise ther are problems with gfortran and EOF
+c   I dont't think the format string is needed here
+c	read(20,'(a500)',end=2) line
+	read(20,*,end=2) line
 
 	key=line(1:index(line,'=')-1)
 	value=line(index(line,'=')+1:len_trim(line))

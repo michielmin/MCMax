@@ -295,9 +295,11 @@ c changed this to mass fractions (11-05-2010)
 		theta=(real(i)-0.5)/real(na/2)*3.1415926536/2d0
 		mu(i)=cos(theta)
 	enddo
-
+c     GFORTRAN complaint about multiple clause for variables
+c     those are allocated within the parallel clause do copyin does not make
+c     sense, so removed them from copyin (at least I think that is how it works
 !$OMP PARALLEL IF(multicore)
-!$OMP& DEFAULT(NONE) copyin(Mief11,Mief12,Mief22,Mief33,Mief34,Mief44,M1,M2,S21,D21)
+!$OMP& DEFAULT(NONE)
 !$OMP& PRIVATE(ilam,csca,cabs,cext,Mass,Vol,theta,i,l,tot,k,Err,spheres,toolarge,
 !$OMP&         rad,wvno,m,r1,rcore,qext,qsca,qbs,gqsc,m1,m2,s21,d21,rmie,lmie,e1mie,e2mie,
 !$OMP&         csmie,cemie,MieF11,MieF12,MieF33,MieF34,Mief22,Mief44,tot2,j)
@@ -1149,7 +1151,8 @@ c use loglog extrapolation
 			m0=dcmplx(e1(i-2),e2(i-2))
 			m1=dcmplx(e1(i-1),e2(i-1))
 			do j=i,n
-				m=10d0**(log10(m0)+log10(m1/m0)*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))
+c GFORTRAN intrinsic function log10 does not like complex numbers, so do it by "hand"
+				m=10d0**(log(m0)/log(10.d0)+log(m1/m0)/log(10.d0)*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))
 				e1(j)=real(m)
 				e2(j)=dimag(m)
 				e1(j)=10d0**(log10(e1(i-2))+log10(e1(i-1)/e1(i-2))*log10(grid(i-2)/grid(j))/log10(grid(i-2)/grid(i-1)))

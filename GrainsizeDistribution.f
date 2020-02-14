@@ -127,12 +127,14 @@ c     gsd_plot=.true.           ! make plots of detailed gsd?
 
       !  check if grids comply (within 1d-6). If not, issue a warning
       if (Grain(1)%rvmin.gt.a_grid(1)*(1d0+1d-6)) then
-         write(*,'("Grid smaller than smallest particle",f,f)') Grain(1)%rvmin,a_grid(1)
-         write(9,'("Grid smaller than smallest particle",f,f)') Grain(1)%rvmin,a_grid(1)
+c	GFOTRAN f to expoential
+         write(*,'("Grid smaller than smallest particle",2e9.3)') Grain(1)%rvmin,a_grid(1)
+         write(9,'("Grid smaller than smallest particle",2e9.3)') Grain(1)%rvmin,a_grid(1)
       endif
       if (Grain(ngrains)%rvmax.lt.a_grid(nm)*(1d0-1d-6)) then
-         write(*,'("Grid bigger than largest particle",f,f)') Grain(ngrains)%rvmax,a_grid(nm)
-         write(9,'("Grid bigger than largest particle",f,f)') Grain(ngrains)%rvmax,a_grid(nm)
+c	GFOTRAN f to f0
+         write(*,'("Grid bigger than largest particle",2e9.3)') Grain(ngrains)%rvmax,a_grid(nm)
+         write(9,'("Grid bigger than largest particle",2e9.3)') Grain(ngrains)%rvmax,a_grid(nm)
       endif
 
       ! print grid (debugging only)
