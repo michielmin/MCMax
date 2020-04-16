@@ -1,0 +1,38 @@
+This README file provides an overview of the the examples in this
+directory, to make it easear to find the right one.
+
+
+* Michiel Min
+  Contains 2 examples:
+  1. The standard DIANA disk model
+  2. An example where the vertical structure of the disk is bein
+     iterated.
+
+* Lucia Klarmann
+
+** contineous_evaporation_dust_composition
+These are models that compute the structure of the inner rim, taking
+into account selfconsistently the evaporation and recondensation of
+material.
+
+Klarmann et al, in prep.  Inquire for a draft of the paper with Lucia
+Klarmann or Carsten Dominik.
+
+** fixed_gap_models
+Modes with fixed gap size, so no self-consistent evaporation
+
+** hydro_equ_with_external_surfdens
+Run disk vertical structure with settling aand rediative transfer,
+using input from Til Birnstiels dust evolution code.
+
+Paper: Pinilla, Klarmann et al 
+https://ui.adsabs.harvard.edu/abs/2016A%26A...585A..35P/abstract
+
+** QHPs
+Quantum-heated particles (PAH and larger (but still very small)
+grains. 
+
+https://ui.adsabs.harvard.edu/abs/2017A%26A...599A..80K/abstract
+
+** extra_scripts
+Plotting and other postprocessing from Lucia
