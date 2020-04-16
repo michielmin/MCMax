@@ -1,0 +1,26 @@
+lam=0.656
+nphi=60
+nrad=3
+Nphot=1000000
+NphotStar=100000
+nspike=2
+
+
+*** technical stuff, don't touch ***
+nint=1000
+nexits=5
+scaletype=2
+**************************************************************************
+inc=0.001
+
+**************************************************************************
+type='IMAGE'
+flag='_mas'
+lam=1.67
+fov01=0.4d0 !PIONIER field of view
+npix=1200 ! Very high resolution is necessary when the images used further to get visibilities/phases from an external tool like aspro.
+*resolution should be 10 times better than the resolution of the instrument
+*************************************************************************
+
+
+

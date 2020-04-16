@@ -1,0 +1,125 @@
+**** general setup ****
+
+Tstar=7500
+Distance=148
+Lstar=9
+Mstar=1.6
+
+startype='KURUCZ'
+
+
+**** density setup ****
+denstype=ZONE            ! self consistent
+
+
+Mdust=1.6d-4
+*AV=0.33 ! not set since this is a theoretic studu
+
+**** grid refinement ****
+
+Nrad=700            ! number of gridpoints rad
+Ntheta=90           ! number of gridpoints theta
+
+Nspan=5
+Nlev=10
+
+**** wavelength grid ****
+**** wavelength grid ****
+lam1=0.1
+lam2=3000
+nlam=500
+
+tau1_lam1=1.67
+tau1_lam2=2.2
+tau1_lam3=3.5
+tau1_lam4=4.5
+tau1_lam5=10.7
+tau1_lam6=850
+
+zlam1=1.5
+zlam2=14
+nzlam=300
+**** opacities ****
+dirparticle='Particles'
+
+computepart01:standard='DIANA'
+computepart01:amin=0.05
+computepart01:amax=3000.0
+computepart01:apow=3.5
+computepart01:fmax=0.8
+computepart01:ngrains=20
+computepart01:blend=.true.
+computepart01:fcarbon=0.2
+computepart01:porosity=0.25d0
+
+
+** zone 1: inner disk **
+zone1:rin=0.2
+zone1:rout=1.2d0
+zone1:Mdust=1d-9
+zone1:denspow=1.0
+zone1:fix=.true.
+zone1:sh=0.06d0 !1.41                 scaleheight scaled bey 1.41
+zone1:shpow=1.15
+zone1:Rsh=1.0d0
+zone1:mconnect=3
+zone1:rconnect=1.2
+zone1:sizedis=.true.    ! This needs to be set for each zone, or the mass will be equally distributed between all particle sizes
+
+** zone 2: outer disk **
+**run MCMAx in a mass connected 3 zone setup, zone2 is the gap. The logfile will provide the dust mass in each zone for a contineous disk**
+**reduce mass in zone2 by required factore, and provide by hand in the gap zone2**
+**run MCMax connecting the mass only for zone 1 and 3**
+**yes, this is abusing MCMax as a fancy calculator**
+zone2:rin=1.2d0
+zone2:rout=5.2d0
+zone2:Mdust=0.641E-06  ! dust mass reduced by factor 10. 
+zone2:denspow=1.0
+zone2:fix=.true.                     ! needs to be set in each zone. Allows putting selcted zones into hydrosat. equ. if required
+zone2:sh=0.06d0 !1.41                ! scaleheight scaled bey 1.42
+zone2:shpow=1.15
+zone2:Rsh=1.0d0
+zone2:sizedis=.true.         ! This needs to be set for each zone, or the mass will be equally distributed between all particle sizes
+
+** zone 3: outer disk **
+zone3:rin=5.2d0
+zone3:rout=200.0d0
+zone3:Mdust=1.6d-4
+zone3:denspow=1.0
+zone3:fix=.true.                     ! needs to be set in each zone. Allows putting selcted zones into hydrosat. equ. if required
+zone3:sh=0.06d0 !1.41                 scaleheight scaled bey 1.41
+zone3:shpow=1.15
+zone3:Rsh=1.0d0                 
+zone3:mconnect=1
+zone3:sizedis=.true.    ! This needs to be set for each zone, or the mass will be equally distributed between all particle sizes
+
+
+**** settling turned off****
+
+
+** scset=.true. **
+** scseteq=.true. **
+** alphaturb=1d-3 **
+
+**** scattering ****
+
+scattype='FULL' ! use full scattering as a standard if there is no good reason to do otherwise
+
+**** disc structure, no iteration ****
+
+iter=.false.
+maxiter=1
+epsiter=3.0
+
+
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=30
+randomwalk=.true.
+
+multiwav=.true. ! use multiwavelength RT for better MCSpec results
+outputfits=.true.
+
+scattype='FULL'                 ! always use full scattering as long as there is no good reason not to
+

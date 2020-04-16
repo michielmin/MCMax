@@ -1,0 +1,17 @@
+sample setup
+
+the subgroup folder contineous_evaporation_dust_composition is the only subfolder
+it contains the models  a1e-1_la1e2_r0.0001_L40 and f_1e0_r0.01_L8
+each model has all necessaray files to run MCMax inside
+the MCMax output is in the Output folder inside the model folder
+in the output folder, there is a plot folder collecting all plots for this model
+in the subfolder, there is a common plots folder, collecting the plots for all models
+
+The .run file can be used as a shell script to start the RT
+The .ray folder can be used as a shell script to start the observations
+
+they are created with write_simestart_files2.py
+
+You can also use them as input for another bash script, running many RT models at the same time, since they only use 1 core
+
+You can run subgroup_multiplot_CD.py to create a standard set of plots for each model

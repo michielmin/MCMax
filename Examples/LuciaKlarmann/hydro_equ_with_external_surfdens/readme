@@ -1,0 +1,15 @@
+hydrostatic equilibrium model with gap, using external input from Til Birnstiel's full disk code (tunnel and traffic jam model) for the dust composition and surface density. Also the opacities are not calculated with MCMax, but provided from file (MakeMix). The gas is included as a gas particle, and the gas opacities are set to 0 using an opacity file for that particle.
+
+ 
+Run just the RT model with:
+my1_mjup5> MCMax my1_mjup5.in 5e5 -o Output 
+ 
+Run the model, + spectrum and normal resolution images
+my1_mjup5> MCMax my1_mjup5.in 5e5 -o Output Spectrum.out Image.out
+
+Only the observations, when the RT model is already there
+my1_mjup5> MCMax 1e5 my1_mjup5.in 0 -o Output  Spectrum.out Image.out
+
+The RT for these modesl are resonably fast. The image calculation takes long, especially in HR
+
+The image files demonstrate how images at multiple wavelength can all be created using one .out file

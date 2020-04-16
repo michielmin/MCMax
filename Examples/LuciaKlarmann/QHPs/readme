@@ -1,0 +1,17 @@
+hydrostatic equilibrium model with quantum heated particles and external radiation field. Internal UV field calculation is turned off for speed-up. QHPs are not destructed. The puff up of the inner rim is not realistic, and would vanish if evaporation and condensation were included. The stellar spectrum is provided as a file, hd100453_mcmax.kur
+
+
+ 
+Run just the RT model with:
+C100Ksh0.25> MCMax C100Ksh0.25.in 5e5 -o Output 
+ 
+Run the model, + spectrum  and interferometry 
+C100Ksh0.25> MCMax C100Ksh0.25.in 5e5 -o Output Spectrum.out Interferometry4.out
+
+Only the observations, when the RT model is already there
+C100Ksh0.25> MCMax 1e5 C100Ksh0.25.in 0 -o Output  Spectrum.out  Interferometry4.out
+
+The RT for these modesl are resonably fast, so are spectrum and interferometric observation
+
+The interferometric observations use the BASEVIS setup, calculating the visibility and phase for a range of baseline lengths for a defined baseline angle and wavelength, here only the H-band at 1.67 micron.
+When setting up a QHP model, tests with internal radiation field calculation and QHP destruction should be done to make sure the fast setup without these processes is "realistic".

@@ -1,0 +1,22 @@
+fixed disk model (no hydrostatic equilibrium), with standard DIANA dust, and a gap where the dust is reduced by 90%. The setup of the Particles files can be find on the opacity tool page of the DIANA hompage.
+
+the RT calculation is done on one core, part of the observations are done with multiple cores. For large grids, it can be usefule to split the calculations into all RT calculations first, running #cores simulations in paralles. Then the observatons (images, spectra, interferometry) are calculated afterwards, one by one.
+ 
+Run just the RT model with:
+large_10ingap> MCMax large_10ingap.in 5e5 -o Output 
+ 
+Run the model, + Interferometric observation with the UTs in the H band and N band
+large_10ingap> MCMax large_10ingap.in 5e5 -o Output Interferometry_gaps_H_-60_45_UT Interferometry_gaps_N_-60_45_UT
+
+Only the observations, when the RT model is already there
+large_10ingap> MCMax 1e5 large_10ingap.in 0 -o Output  Interferometry_gaps_H_-60_45_UT Interferometry_gaps_N_-60_45_UT
+
+The RT for these modesl is very fast. Calculating the interferometric observation will take longer
+
+Each observation files calculates the visibility and phase against wavelength (VISIBILITY file)
+This is done for a set of baselines, taken directly from the Paranal setup, for a target at -60 dec, using a 15 min sampling ('optimal uv coverage')
+The UT files include all UT baselines
+The other files all AT baselines (small, medium, large, astrometric)
+The letter indicates the band
+For each band, 6 wavlength are sampled, but 15 for the N band (low resolution)
+The Interferometry_gaps.out file provides a quick overview of the K- and N-band interferometry results (BASEVIS)

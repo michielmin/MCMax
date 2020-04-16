@@ -1,0 +1,102 @@
+**** general setup ****
+startype='KURUCZ' 
+Tstar=10000
+Mstar=2.5
+Lstar=47.0
+
+
+Distance=114 !in pc, will be used for all observations if not set differently in the observation file
+
+**** density setup ****
+
+denstype='DOUBLEPOW' !flat surface density out to 4 au, then a power law index of 1.5
+denspow=0.00
+denspow2=1.5
+Rpow2=4.0
+
+Mdust=3.2d-4 !total initial disk mass
+Rin=0.03 !initial inner radius, better to choose smaller than expected inner radius
+Rout=200 
+Nrad=700 ! radial grid points, 
+Ntheta=90 ! angle grid points
+** do not go lower for evaporation/condensation models, or for models that will be used to generate interferometric or other very high resolution observations **
+** if the model segfaults, the heap space of the computer is probably too small for the gridcells. On linux -> ulimit -s unlimited **
+**** grid refinement ****
+
+Nspan=40
+Nlev=15
+
+**** wavelength grid ****
+
+lam1=0.1
+lam2=5000
+nlam=300
+
+**** opacities ****
+
+
+** here, the internal size distribution calculation is used for one grain. That is not necessary, but leads to the creation of an mrn file, useful for automatic labelling **
+computepart01:file='olivine.dat' ! give full path to file if necessary
+computepart01:amin=0.1
+computepart01:amax=0.1
+computepart01:apow=3.5
+computepart01:fmax=0.8
+computepart01:ngrains=1
+computepart01:blend=.true.
+computepart01:porosity=0.25d0
+abun01=0.9999! mass fraction
+
+TdesA01=4.4492 ! careful, this is not A and B as in the table of Kama09, but for this equation
+TdesB01=0.3568 ! determinegasfrac=10d0**(A/B-1d4/(T*B)-log10(T))/dens
+mat01='A_FeMg_Olivine' ! just for labelling, no influence on calculation
+* particles must be ordered by size, smallest to largest **
+
+computepart02:file='olivine.dat'
+computepart02:amin=100.0
+computepart02:amax=100.0
+computepart02:apow=3.5
+computepart02:fmax=0.8
+computepart02:ngrains=1
+computepart02:blend=.true.
+computepart02:porosity=0.25d0
+abun02=0.0001 ! mass fraction
+
+TdesA02=4.4492
+TdesB02=0.3568
+mat02='A_FeMg_Olivine' ! just for labelling, no influence on calculation
+
+scattype='FULL'
+tcontact=.false. ! thermal contact between particles is turned off
+
+tau1_lam1=1.67 ! additional wavelength for vertical and radial tau=1 calculation
+tau1_lam2=3.5  ! add any wavelength you might need, it takes no extra time
+tau1_lam3=4.7
+tau1_lam4=10.5
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=15
+
+maxiter=300   ! in practise, 100 iterations are often enough
+epsiter=0.001
+iter=.true.
+
+tdesiter=.true. ! iterate the evaporation and condensation of dust
+scset=.false. ! settling is turned off
+
+***radial accretion is turned off***
+*turn this on to add accretion heating***
+*raditer=.true.  !iterate radial structure
+*alphaviscous=0.01d0  !value of radial viscous alpha, can differ from vertical alpha
+*viscous=.true.
+*Mdot=1d-8  !accretion reate in solar masses/year
+nbw = 10
+
+gas2dust=100d0
+
+factRW=2
+randomwalk=.true.
+
+multiwav=.true.
+
+outputfits=.true.

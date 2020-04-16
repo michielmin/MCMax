@@ -1,0 +1,21 @@
+lam1=0.1 !wavelength range, with a 'zoom' into the PAH feature region
+lam2=3000.0 !all this can also be set in the input file, but keywords in this file will be used if they are set
+nlam=600
+zlam1=3
+zlam2=21
+zlam=300
+
+
+Nphot=100000
+
+nphi=35
+nrad=1
+nexits=0
+
+**************************************************************************
+type='SPECTRUM'
+inc=45.0 ! this will be used instead if the inc values from the input file
+**************************************************************************
+
+*** particles, the star, scattered light etc. can be included and excluded as in the image file ***
+

@@ -1,0 +1,58 @@
+*** set the defaults  ****************************************************
+nphi=45
+nrad=1
+nphotstar=50000
+nphot=500000 ! this is on the higher end, for tests, 1e5 photons also work well
+nexits=0
+usepol=.false.
+
+
+**************************************************************************
+****  visibilities as function of wavelength (MIDI)
+*type='VISIBILITY'
+*flag='MIDI'
+*
+*lam1=7.8
+*lam2=13.8
+*
+*base01=102
+*angle01=11d0
+*
+**************************************************************************
+****  visibilities as function of baseline (PIONIER)
+type='BASEVIS'
+flag='PIONIER_fov'
+D=1.8 !set the diameter of the telescope, otherwise the field of view of the interferometer is ignored
+inc=45.0
+
+lam1=1.67	! wavelength [micron]
+lam2=1.67
+lam3=1.67
+lam4=1.67
+lam5=1.67
+lam6=1.67
+lam7=1.67
+lam8=1.67	! wavelength [micron]
+lam9=1.67
+lam10=1.67
+lam11=1.67
+lam12=1.67
+
+
+
+base1=2.	! smallest baseline
+base2=140.	! largest baseline
+
+#Each angle will be used with all baselines
+angle1=0	! position angle of the interferometer, angle in the u,v coordinate system
+angle2=30	! position angle of the interferometer
+angle3=60	! position angle of the interferometer
+angle4=90   ! position angle of the interferometer
+angle5=120	! position angle of the interferometer
+angle6=150	! position angle of the interferometer
+angle7=180  ! position angle of the interferometer
+angle8=210	! position angle of the interferometer
+angle9=240	! position angle of the interferometer
+angle10=270	! position angle of the interferometer
+angle11=300   ! position angle of the interferometer
+angle12=330	! position angle of the interferometer

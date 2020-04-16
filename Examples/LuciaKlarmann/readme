@@ -1,0 +1,35 @@
+This is a set of example MCMax setup.
+
+# comments on my personal workflow
+In my setups, input files always have a .in ending, observation files always a .out ending. Files ending in .dat describe particle compositions or anything else. This is a convention I find useful, but it is not required by the code.
+Similarly, I place all files necessary to run a model in a folder with the model name. The input file has the same name as the folder. Also all observation files will be in the folder. All results calculated by MCMax will be saved in a folder called Output, located inside the model folder. In this folder, I create a "plots" folder, where I save plots belonging to this model. This is my workflow. It is also possible to have a central input file and make changes using the -s flag, and to use observation files from any location, e.g. by providing the full path to the file.
+If I have a grid of models that all use the same particles, I save them in a folder called particles, and copy it into every model folder. Again, this particle folder can be stored at a central place for the entire grid of models.
+My approach is a bit more heavy on disk space, but makes each model "independent".
+I do store lnk files in a central folder called MCMax, and provide the path to them in the .dat files describing particle compositions.
+
+# RT and observations: all in one go or separatly?
+I like to do RT calculations and observations separatly. The RT will be done on one core, so several models can be started at once. Part of the calculations during the observatons are done on multiple cores, so running more than one model at once can overheat the computer and will overall slow down the calculations. It is possible to turn of multi-core use when compiling MCMax. 
+
+# general remark on photon numbers:
+1e5 photons for testing, 5e5 to 1e6 photons for models to be published. In rare cases or for testing purposes, 1e7 photons can also be useful just to make sure a setup with less photons is working well. This holds for the RT and for observations. 
+
+# MCMax is not working/segfault. Possible causes that can be solved quickly:
+- check if the order of photon_numbers and input_file.in is correct, and if the -o flag is set before the name of the output folder
+- # or % accidentely used for comments in the input file. Use * or !
+- the stack size of the computer is set too small for the grid. Raise the stack size. On linux bash > ulimit -s unlimited
+- check if the particles are numbered by size, smallest to largest
+
+# remark on interferometry
+When using MCMax images for external visibility/phase calculation, use an image resolution that is 10 times higher than the resolution of the longest baseline in your setup
+
+# other remarks
+- The input and output scaleheight differ by a factor squarroot of 2.
+- If MCMax exports data to and calls prodimo and some numbers are not set correctly, prodimo uses a default setup model without informing the user. This behaviour might have changed. Do not couple MCMax and prodimo without expert support.
+- grep is very useful to identify bits of code. To see e.g. how the Rimage files are calculated, use >grep -nR 'RImage' on the src folder
+- the star in MCMax does have a size, photons are not emitted from a point source
+- for models with only 1 or 2 particles sizes, make sure to use fluffy particles (e.g., standard DIANA values). 
+- inclination and position angles, distances, Av, etc. can be set in the input and in the observation file. If they are not set in the observation file, they are taken from the input file. If they are set, the values in teh observation file will be used, if they are different from the values in the input file
+- long comments after ! or comments behind file names in '' can lead to problems. So for most models, I have provided a working input file and an annoted file notes_input.in
+
+# there is a folder with python plotting tools and usefull shell scripts. I tried to generalise them, but they probably will need a bit more adapting for a different folder setup.  Also, these are old python scripts, using pyton 2. Currently, the plotting setup should work for the contineous_evaporation_dust_composition folder, given that the path is updated in the subgroup_multiplot_CD.py file.
+

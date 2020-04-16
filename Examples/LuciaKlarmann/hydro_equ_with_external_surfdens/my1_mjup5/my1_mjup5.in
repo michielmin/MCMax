@@ -1,0 +1,84 @@
+**** general setup ****
+
+Tstar=4730		! effective temperature (Herbig star) [K]
+Rstar=1.7		! radius of the star [solar radii]
+Mstar=1.0		! mass of the star [solar masses]
+Distance=140		! distance to the star [parsec]
+IncAngle=20     ! works like inc
+
+**** density setup ****
+
+denstype='SURFFILE'
+** provide (surface)density for each particle, will be normlised using the densfile**
+compositionfile='surfdens_1Myr_5Mjup.dat' 
+densfile='raddens_1Myr_5Mjup.dat'
+gas2dust=1d0 ! this setup includes a 'gas' particle
+
+iter=.true. !calculate hydrostatic equilibrium
+
+Mdust=5.25d-2		! dust mass in small grains of the disk in solar masses (5.25d-2*4.5d-3)
+Rin=0.01			! inner radius [AU]
+Rout=200		! outer radius [AU]
+
+Nrad=300			! number of radial points
+Ntheta=150			! number of theta points
+
+**** grid refinement ****
+
+Nspan=6
+Nlev=6
+
+**** wavelength grid ****
+
+lam1=0.1			! first wavelength point [micron]
+lam2=5000			! last wavelength point [micron]
+nlam=100			! number of points
+
+**** settling ON ****
+
+scset=.true.        ! self consistent settling is on
+alphaturb=1d-3      ! alpha for settling
+
+**** opacities ****
+
+*calculate dust pacities
+*this uses diskev input (Til's code), so there are 180 particles
+*provide external opacities, using MakeMix.dat and .lnk file
+computepart01:file='MakeMix.dat' 
+computepart01:amin=1.1d0
+computepart01:amax=200.0d4
+computepart01:blend=.true.
+computepart01:porosity=0.625
+computepart01:fmax=0.8
+computepart01:ngrains=180
+
+*opacity for the 'gas' particle
+opac02='Gasopacity.opac'
+
+*if the folder does not exist, MCMax calculates the opacities etc. and stores them in this folder
+* if the folder does exist, the data is read form there, no calcultion necessary
+* since the opacity calculation takes a long time for so many particles, especially at large size
+* it saves a lot of time to calculate them only once
+dirparticle='Particles_SET'
+
+scattype='FULL'
+* options: 'NONE','ISOTROPIC','FULL'
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=25		! diffusion approximation in the midplane
+dtdiffuse=0.05		! diffusion approximation in the midplane
+
+randomwalk=.true.	! random walk procedure to speed up the radiative transfer
+factrw=2d0		! how fast: 2=fast, 10=more accurate
+
+obstMC=.true.		! don't use the diffusion approximation for the observables
+
+multiwav=.true.		! get nice smooth spectra!
+
+maxiter=7 !no more than 7 iterations, this is fine
+
+outputfits=.true. !use .fits output files
+tau1_lam01=0.55   !calculate additional tau=1 surfaces
+tau1_lam02=1.6    !calculate additional tau=1 surfaces
+tau1_lam03=850    !calculate additional tau=1 surfaces

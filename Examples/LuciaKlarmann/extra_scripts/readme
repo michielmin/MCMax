@@ -1,0 +1,12 @@
+Plotting:
+ml_read_model.py module containing read in functions for MCMax output files
+ml_plot_model_CD.py module containing one function that creats 8 plots, SED, opacities, density, temperature, surface density, scalheight, visibilities etc.
+subgroup_multiplot2_CD.py use this to creat the plots. provide model names and pathes, provide observations, timestep etc., calls the plot function.
+
+Starting girds of models
+Use write_simstart_files2.py Create the shell command that calls MCMax for a grid of models. Creates a .run file for the RT and a .ray file for observations
+Make .run and .ray file executable and call directly to start running the models
+Use the startsims.sh script: Provide path to .run and .ray file and run RT and observations in a more organized way. 
+
+Cleaning up the VISIBILITY output
+If more than 246 baselines are used, the VISIBILITY output file has some additinal linebrakes. Use correct_visfile_all.sh to clean them up. Will probably require some adaptiation to the specific setup.

@@ -1,0 +1,15 @@
+continous disk model following a double power law, with two olivine particles, evaporation and condensation on, hydrostatic equilibrium, settling off
+
+the RT calculation is done on one core, part of the observations are done with multiple cores. For large grids, it can be usefule to split the calculations into all RT calculations first, running #cores simulations in paralles. Then the observatons (images, spectra, interferometry) are calculated afterwards, one by one.
+ 
+Run just the RT model with:
+a1e-1_la1e2_r0.0001_L40> MCMax17 a1e-1_la1e2_r0.0001_L40.in 5e5 -o Output 
+ 
+Run the model, + four interferometric observations and one image: 
+a1e-1_la1e2_r0.0001_L40> MCMax17 a1e-1_la1e2_r0.0001_L40.in 5e5 -o Output Interferometry4.out InterferometryL.out InterferometryM.out InterferometryN.out Image_flux.out 
+
+Only the observations, when the RT model is already there
+a1e-1_la1e2_r0.0001_L40> MCMax17 1e5 a1e-1_la1e2_r0.0001_L40.in 0 -o Output Interferometry4.out InterferometryL.out InterferometryM.out InterferometryN.out Image_flux.out 
+
+the RT for models with evaporation and condensation can take long to run, several hours to days, depending on the number of particles. If (radial) accretion is turned on, it might take up to a week. 
+1e5 photons are ok to get correct results, but one should consider 5e5 or 1e6 photons to have less noise in the temperature

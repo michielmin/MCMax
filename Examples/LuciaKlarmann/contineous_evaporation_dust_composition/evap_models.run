@@ -1,0 +1,2 @@
+MCMax17 /home/klarmann/Desktop/MCMax_examples/contineous_evaporation_dust_composition/a1e-1_la1e2_r0.0001_L40/a1e-1_la1e2_r0.0001_L40.in 5e5 -o /home/klarmann/Desktop/MCMax_examples/contineous_evaporation_dust_composition/a1e-1_la1e2_r0.0001_L40/Output
+MCMax17 /home/klarmann/Desktop/MCMax_examples/contineous_evaporation_dust_composition/f_1e0_r0.01_L8/f_1e0_r0.01_L8.in 5e5 -o /home/klarmann/Desktop/MCMax_examples/contineous_evaporation_dust_composition/f_1e0_r0.01_L8/Output

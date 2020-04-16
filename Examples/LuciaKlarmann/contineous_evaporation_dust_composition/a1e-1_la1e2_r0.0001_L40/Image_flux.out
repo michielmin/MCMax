@@ -1,0 +1,25 @@
+lam=0.656
+nphi=60
+nrad=3
+Nphot=100000
+NphotStar=10000
+nspike=2
+
+
+*** technical stuff, don't touch ***
+nint=1000
+nexits=5
+scaletype=2
+**************************************************************************
+inc=0.001 ! face on image. Usefule to get the 'true' radial flux distribution from RImage file, without inclination effects
+
+**************************************************************************
+type='IMAGE'
+flag='_flux'
+lam=1.67
+fov01=0.4d0 !PIONIER field of view
+npix=800
+*************************************************************************
+
+
+

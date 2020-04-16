@@ -1,0 +1,48 @@
+lam=0.656
+nphi=60
+nrad=3
+Nphot=100000 !on the lower end, for fast test images. 
+NphotStar=10000
+nspike=2
+
+*** technical stuff, don't touch ***
+nint=1000
+nexits=5
+scaletype=1
+**************************************************************************
+inc=45.0 !if not set, the inclination from the input file is used
+
+**************************************************************************
+type='IMAGE'
+flag='_asy_noscat' #make sure to set a new flag for a new image, othewise the previous image will be overwritten
+lam=1.67
+fov01=30d0 #field of view, unit depends on scaletype
+npix=1500d0 #number of pixels
+*************************************************************************
+
+tracescat=.false. !scattered light is not included in the image, we want to check the asymmetry of the thermal emission
+traceemis=.true.  !include thermal emission
+tracestar=.true.  !include the direct emission from the star
+*trace21=.false.  !the emission of each particle type/size can be turned on and off individually
+
+*trace01=.false.
+*trace02=.false.
+*trace03=.false.
+*trace04=.false.
+*trace05=.false.
+*trace06=.false.
+*trace07=.false.
+*trace08=.false.
+*trace09=.false.
+*trace10=.false.
+*trace11=.false.
+*trace12=.false.
+*trace13=.false.
+*trace14=.false.
+*trace15=.false.
+*trace16=.false.
+*trace17=.false.
+*trace18=.false.
+*trace19=.false.
+*trace20=.false.
+

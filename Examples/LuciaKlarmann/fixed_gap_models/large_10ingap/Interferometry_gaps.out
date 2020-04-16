@@ -1,0 +1,39 @@
+*** set the defaults  ****************************************************
+nphi=45
+nrad=1
+nphotstar=50000
+nphot=500000
+nexits=0
+usepol=.false.
+
+
+**************************************************************************
+****  visibilities as function of wavelength (MIDI)
+*type='VISIBILITY'
+*flag='MIDI'
+*
+*lam1=7.8
+*lam2=13.8
+*
+*base01=102
+*angle01=11d0
+*
+**************************************************************************
+****  visibilities as function of baseline (PIONIER)
+type='BASEVIS'
+flag='K_N_fov'
+D=1.8
+inc=45.0
+
+lam1=1.67	! wavelength [micron]
+lam2=10.7
+
+
+
+
+base1=10.	! smallest baseline
+base2=130.	! largest baseline
+
+angle1=0	! position angle of the interferometer
+
+

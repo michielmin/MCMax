@@ -1,0 +1,57 @@
+*** set the defaults  ****************************************************
+nphi=45
+nrad=1
+nphotstar=50000
+nphot=500000
+nexits=0
+usepol=.false.
+
+
+**************************************************************************
+****  visibilities as function of wavelength (MIDI)
+*type='VISIBILITY'
+*flag='MIDI'
+*
+*lam1=7.8
+*lam2=13.8
+*
+*base01=102
+*angle01=11d0
+*
+**************************************************************************
+****  visibilities as function of baseline (MATISSE_L)
+type='BASEVIS'
+flag='MATISSE_M'
+D=1.8
+inc=45.0
+
+lam1=4.7	! wavelength [micron]
+lam2=4.7
+lam3=4.7
+lam4=4.7
+lam5=4.7
+lam6=4.7
+lam7=4.7
+lam8=4.7	! wavelength [micron]
+lam9=4.7
+lam10=4.7
+lam11=4.7
+lam12=4.7
+
+
+
+base1=2.	! smallest baseline
+base2=200.	! largest baseline
+
+angle1=0	! position angle of the interferometer
+angle2=30	! position angle of the interferometer
+angle3=60	! position angle of the interferometer
+angle4=90   ! position angle of the interferometer
+angle5=120	! position angle of the interferometer
+angle6=150	! position angle of the interferometer
+angle7=180  ! position angle of the interferometer
+angle8=210	! position angle of the interferometer
+angle9=240	! position angle of the interferometer
+angle10=270	! position angle of the interferometer
+angle11=300   ! position angle of the interferometer
+angle12=330	! position angle of the interferometer
