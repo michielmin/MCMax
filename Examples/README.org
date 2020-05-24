@@ -36,3 +36,14 @@ https://ui.adsabs.harvard.edu/abs/2017A%26A...599A..80K/abstract
 
 ** extra_scripts
 Plotting and other postprocessing from Lucia
+
+* Gijs Mulders
+** BrownDwarf
+** ForwardScattering
+https://ui.adsabs.harvard.edu/abs/2013A%26A...549A.112M/abstract
+** GappedDisk
+** HD163296
+** Snowline
+I think this is the paper:
+https://ui.adsabs.harvard.edu/abs/2015ApJ...807....9M/abstract
+

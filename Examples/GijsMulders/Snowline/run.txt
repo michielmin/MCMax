@@ -1,0 +1,3 @@
+This calculates the snow line location as described in Min et al. 2011.
+
+MCMax SolarCarbon0.5.in 200000 -s outputfits=.true. -o test

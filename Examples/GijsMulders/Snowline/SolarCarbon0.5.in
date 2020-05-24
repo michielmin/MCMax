@@ -1,0 +1,76 @@
+**** general setup ****
+
+Tstar=5777d0
+Rstar=1.0
+Mstar=1.0
+Distance=3
+
+Mdot=1d-8
+
+**** density setup ****
+
+denstype='POW'
+denspow=1.5
+
+Mdust=3d-4
+Rin=0.05
+Rout=100
+Nrad=150
+Ntheta=60
+
+**** grid refinement ****
+
+Nspan=7
+Nlev=7
+
+**** wavelength grid ****
+
+lam1=0.1
+lam2=10000
+nlam=300
+
+**** opacities ****
+
+part01='SilicateCarbon0.5FeS.particle'
+abun01=0.828689
+mat01='SILICATE'
+TdesA01=4.449
+TdesB01=0.357
+ForceGF01=.true.
+TdesFast01=0d0
+
+part02='Ice.particle'
+abun02=0.6953985
+mat02='ICE'
+TdesA02=27.303
+TdesB02=3.536
+ForceGF02=.false.
+TdesFast02=0.1d0
+
+scattype='ISOTROPIC'
+storescatt=.true.
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=15
+
+maxiter=99
+epsiter=0.1
+iter=.true.
+
+tdesiter=.true.
+nBW=2
+
+raditer=.true.
+alphaviscous=0.01d0
+viscous=.true.
+Mdot=1d-8
+Rexp=1d6
+
+gas2dust=65.613
+
+factRW=2
+randomwalk=.true.
+
+multiwav=.true.
+

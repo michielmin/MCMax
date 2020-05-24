@@ -1,0 +1,127 @@
+**** general setup ****
+
+Distance=140
+
+Tstar=4500.
+Rstar=1.46
+Mstar=0.86
+*Lstar=33d0  *** Calculated from Rstar, unless using a spectrum
+
+*incangle=42
+*posangle=55
+
+**** density setup ****
+
+*Rin=0.25  
+*Rout=400
+
+**** grid  ****
+
+Nrad=150
+Ntheta=60
+
+Nspan=5
+Nlev=10
+
+**** wavelength grid ****
+
+nlam= 200.
+lam1= 0.1
+lam2= 1000.
+
+nzlam= 100.
+zlam1= 2.
+zlam2= 50.
+
+**** particles / opacities ****
+
+computepart01:file='dustparticle.in'
+computepart01:amin=0.1
+computepart01:amax=1.5
+computepart01:apow=3.5
+computepart01:fmax=0.8
+computepart01:ngrains=1
+computepart01:blend=.true.
+computepart01:porosity=0.25d0
+
+computepart02:file='dustparticle.in'
+computepart02:amin=300.
+computepart02:amax=3000.
+computepart02:apow=3.5
+computepart02:fmax=0.8
+computepart02:ngrains=1
+computepart02:blend=.true.
+computepart02:porosity=0.25d0
+
+**** zone1: inner disk ****
+
+zone1:rin=0.1
+zone1:rout=10.0
+zone1:mdust=1d-8
+zone1:denspow=1d0
+*zone1:gamma_exp=1d0
+
+zone1:incl1=.true.
+zone1:incl2=.false.
+
+zone1:fix=.false.
+zone1:sizedis=.true.
+
+**** zone2: outer disk ****
+
+zone2:rin=20.0
+zone2:rout=200.0
+zone2:mdust=1d-3
+zone2:denspow=1d0
+
+zone2:incl1=.true.
+zone2:incl2=.true.
+zone2:abun1=1.
+zone2:abun2=1d-3
+
+zone2:fix=.false.
+zone2:sizedis=.true.
+
+*zone2:roundtype='hydro'
+*zone2:roundwidth=29.0
+*zone2:roundindex=0.36
+*zone2:roundscalemin=1d-10
+
+**** vertical structure ****
+
+scset=.true.
+alphaturb=1d-3
+
+**** viscous heating ****
+
+viscous=.true.
+Mdot=1d-8
+
+**** scattering, tau=1 ****
+
+scattype='ISOTROPIC'
+storescatt=.false.
+
+*scattype='FULL'
+*storescatt=.true.
+
+
+**** iterations ****
+
+iter=.true.
+maxiter=5
+epsiter=3.0
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=30
+randomwalk=.true.
+factRW=2
+
+multiwav=.true.
+
+FLD=.true.
+
+outputfits=.true.
+
+

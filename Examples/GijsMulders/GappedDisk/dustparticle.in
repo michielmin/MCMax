@@ -1,0 +1,14 @@
+20		# nr
+10		# nf
+'opticalconstants/mgfe_03.71_0000_001_HR.lnk'
+15.0	3.71	0.1	1.5	-3.5	0.8d0
+'opticalconstants/olmg100_HR.lnk'
+15.0	3.33	0.1	1.5	-3.5	0.8d0
+'opticalconstants/mg0.5fe0.5_03.20_0000_001.lnk'
+15.0	3.20	0.1	1.5	-3.5	0.8d0
+'opticalconstants/mg_02.71_0000_001.lnk'
+15.0	2.71	0.1	1.5	-3.5	0.8d0
+'opticalconstants/c_01.80_0000_001.lnk'
+40.0	1.8	0.1	1.5	-3.5	0.8d0
+'opticalconstants/h2o_01.00_0100_002.lnk'
+0.0	1.0	0.1	1.5	-3.5	0.99d0

@@ -1,0 +1,6 @@
+This example is for a Brown Dwarf disk.
+It uses the self-consistent dust settling.
+Scattering is ignored.
+
+run with:
+MCMax BD.in 200000 -o outdir

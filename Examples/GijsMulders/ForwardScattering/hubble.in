@@ -1,0 +1,67 @@
+**** general setup ****
+
+Tstar=11000d0
+Rstar=1.6555d0
+Mstar=2.5
+Distance=103
+Lstar=36d0
+
+incangle=42
+posangle=55  ** (PA=145, posangle=PA-90=55)
+
+startype='FILE'
+starfile='kurucz/M_02.50_T_11000_R_001.65.smooth.dat'
+
+**** density setup ****
+
+denstype='PARAMETERIZED'
+denspow=1.0
+shpow=1.3
+sh1AU=0.04
+
+Mdust=1d-4
+
+Rin=0.25  *** Benisty et al
+Rout=350
+
+Nrad=150
+Ntheta=60
+
+**** grid refinement ****
+
+Nspan=5
+Nlev=10
+
+**** wavelength grid ****
+
+lamgrid=grid_colors.dat
+
+**** opacities ****
+
+part01='Michiel_ff_0.500_r_1.78um-3.16um.aggregate'
+part02='ISM_C0.08_r0.1-1.5.particle'
+
+abun01=1.0
+abun02=1.0
+
+scattype='FULL'
+storescatt=.true.
+
+**** disc structure ****
+
+startgap01=0.1d0
+endgap01=4d0
+gap01=5d-2
+
+minrad01=13d0
+maxrad02=0.3d0
+
+iter=.false.
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=30
+randomwalk=.true.
+
+multiwav=.true.
+
