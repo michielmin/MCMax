@@ -1,0 +1,1 @@
+MCMax example.in 200000 image.obs -o test_run

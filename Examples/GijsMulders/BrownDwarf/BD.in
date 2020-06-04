@@ -1,0 +1,91 @@
+**** general setup ****
+
+Tstar=3000
+Rstar=0.64
+Mstar=0.08
+Distance=165 
+
+**** stellar spectrum ****
+
+Lstar=0.025  
+
+*startype=FILE
+*starfile=somefile
+
+**** density setup ****
+
+denstype='POW'
+denspow=1.0
+Mdust=1d-5
+
+**** Disk inner/outer radius ***
+
+Rin=0.01
+Rout=300
+
+**** grid ****     
+
+Nrad=150
+Ntheta=80
+
+**** grid refinement ****
+
+Nspan=7
+Nlev=7
+
+**** wavelength grid and refinement ****
+
+nlam=200
+lam1=0.1
+lam2=3000
+
+nzlam= 100
+zlam1=2.
+zlam2=50.
+
+**** opacities ****
+
+computepart01:file='inSiC'
+computepart01:amin=0.1
+computepart01:amax=1000.
+computepart01:apow=3.5
+computepart01:fmax=0.7
+computepart01:ngrains=12
+computepart01:blend=.false.
+computepart01:porosity=0.0d0
+
+**** abundances ****
+
+mrn=.true.
+mrn_rmin=0.1
+mrn_rmax=1d3
+mrn_index=3.5
+
+**** scattering ****
+
+scattype='ISOTROPIC'
+storescatt=.true.
+
+**** dust settling ****
+
+scset=.true.
+alphaturb=1d-4
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=30
+dtdiffuse=1.00
+
+iter=.true.
+maxiter=5
+epsiter=3
+ 
+**** Random walk ****
+randomwalk='TRUE'
+factRW=10
+
+**** Monte Carlo Spectra ****
+multiwav=.true.
+
+
+outputfits=.true.

@@ -1,0 +1,126 @@
+**** Using new setup (2 zones, making particles) ****
+
+**** general setup ****
+
+Tstar=9250
+Rstar=2.4
+Mstar=2.5
+Distance=119
+
+**** stellar spectrum ****
+
+Lstar=37.8
+
+**** grid ****     
+
+Nrad=150
+Ntheta=80
+
+**** grid refinement ****
+
+Nspan=6
+Nlev=10
+
+**** wavelength grid ****
+
+lam1=0.1
+lam2=10000
+nlam=400
+
+*lamgrid='grid_colors.dat'
+
+**** opacities ****
+
+dirparticle='particle_files'
+
+computepart01:file='inISM_Carbon.dat'
+computepart01:ngrains=1
+computepart01:amin=0.32
+computepart01:amax=1.0
+computepart01:apow=3.5
+computepart01:fmax=0.8 ** vacuum fraction for DHS
+computepart01:blend=.true. ** use effective medium theory
+computepart01:porosity=0.25d0
+
+computepart02:file='inISM_Carbon.dat'
+computepart02:ngrains=10
+computepart02:amin=0.01
+computepart02:amax=1d3
+computepart02:apow=3.5
+computepart02:fmax=0.8 ** vacuum fraction for DHS
+computepart02:blend=.true. ** use effective medium theory
+computepart02:porosity=0.25d0
+
+**** zone1: halo ****
+
+zone1:rin=0.30
+zone1:rout=0.56
+zone1:denspow=1d0
+zone1:mdust=1d-12
+
+zone1:incl01=.true.
+zone1:incl02=.false.
+zone1:incl03=.false.
+zone1:incl04=.false.
+zone1:incl05=.false.
+zone1:incl06=.false.
+zone1:incl07=.false.
+zone1:incl08=.false.
+zone1:incl09=.false.
+zone1:incl10=.false.
+zone1:incl11=.false.
+
+zone1:fix=.false.
+zone1:sizedis=.false.
+
+**** zone2: disk ****
+
+zone2:rin=0.3
+zone2:rout=300.0
+zone2:denspow=1d0
+zone2:mdust=1d-3
+zone2:amin=0.01
+zone2:amax=1d3
+zone2:apow=3.5
+zone2:gamma_exp=1d0
+
+zone2:incl01=.false.
+zone2:incl02=.true.
+zone2:incl03=.true.
+zone2:incl04=.true.
+zone2:incl05=.true.
+zone2:incl06=.true.
+zone2:incl07=.true.
+zone2:incl08=.true.
+zone2:incl09=.true.
+zone2:incl10=.true.
+zone2:incl11=.true.
+
+zone2:fix=.false.
+zone2:sizedis=.true.
+
+**** scattering ****
+
+scattype='NONE'
+storescatt=.false.
+
+**** settling ****
+
+scset=.true.
+alphaturb=1d-6
+
+**** diffusion and interaction limits ****
+
+nphotdiffuse=30
+dtdiffuse=1.00
+
+iter=.true.
+maxiter=5
+epsiter=3
+ 
+**** Random walk ****
+randomwalk='TRUE'
+factRW=2	* faster than 10 
+
+**** MCSpectra ****
+multiwav=.true.

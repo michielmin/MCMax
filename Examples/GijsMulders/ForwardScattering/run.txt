@@ -1,0 +1,7 @@
+This is a disk model for HD 100546 fitted to the scattered light images from Hubble. 
+(Mulders et al. 2013)
+It includes forward scattering.
+
+The sphere.obs is used to generate a scatterd light image similar to what VLT/SPHERE would observe.
+
+MCMax hubble.in 200000 sphere.obs -o outdir

@@ -1,0 +1,22 @@
+nphi=30
+nrad=2
+
+Nphot=200000
+npix=81
+nint=500
+
+usepol=.false.
+*nexits=5
+
+inc=42
+
+scaletype=2  *** all units in arcseconds
+fov01= 0.99225
+
+*tracestar=.false. ** Scattered light -> also in input/command line!
+
+**************************************************************************
+type='IMAGE'
+lam=1.6
+type='IMAGE'
+lam=2.2
