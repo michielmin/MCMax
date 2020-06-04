@@ -8,3 +8,5 @@ gitversion.h
 MCMax*
 .DS_Store
 log.dat
+/.cproject
+/.project

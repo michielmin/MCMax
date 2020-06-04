@@ -13,6 +13,8 @@
 	i=i+1
 	keyword(i)='tstar'
 	i=i+1
+	keyword(i)='logg'
+	i=i+1
 	keyword(i)='rstar'
 	i=i+1
 	keyword(i)='mstar'
