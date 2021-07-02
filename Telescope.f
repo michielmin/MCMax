@@ -659,8 +659,10 @@ c     &											1d23*velo_flux_R(i)*ExtISM/D%distance**2,
 1	call ignorestar(20)
 c	GFORTRAN removed the format string, otherwise ther are problems with gfortran and EOF
 c   I dont't think the format string is needed here
-c	read(20,'(a500)',end=2) line
-	read(20,*,end=2) line
+c	Michiel: Format string is needed to avoid complications when there is a space between
+c            the '=' sign and the value
+	read(20,'(a500)',end=2) line
+c	read(20,*,end=2) line
 
 	key=line(1:index(line,'=')-1)
 	value=line(index(line,'=')+1:len_trim(line))
