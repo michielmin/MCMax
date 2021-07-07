@@ -2488,10 +2488,16 @@ c-----------------------------------------------------------------------
 	logical hitR1,hitR2,hitR,hitT1,hitT2,hitT,hitTsame
 
 	r=phot%x**2+phot%y**2+phot%z**2
+	
 	R1=C(phot%i,phot%j)%xedge2(1)
 	R2=C(phot%i,phot%j)%xedge2(2)
-	T1=C(phot%i,phot%j)%thetrg(phot%irg)
-	T2=C(phot%i,phot%j)%thetrg(phot%irg+1)
+	if(C(phot%i,phot%j)%nrg.le.1.or.phot%j.eq.0.or.phot%j.eq.D%nTheta) then
+		T1=C(phot%i,phot%j)%xedge2(3)
+		T2=C(phot%i,phot%j)%xedge2(4)
+	else
+		T1=C(phot%i,phot%j)%thetrg(phot%irg)
+		T2=C(phot%i,phot%j)%thetrg(phot%irg+1)
+	endif
 
 c	if(C(phot%i,phot%j)%nrg.gt.1) then
 c		if(phot%irg.eq.1) then
@@ -2637,7 +2643,6 @@ c	endif
 		irgnext=1
 		phot%edgeNr=3
 	endif
-
 
 	return
 	end	
