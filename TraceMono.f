@@ -1428,6 +1428,7 @@ c-----------------------------------------------------------------------
 		y=phot%y+phot%vy*v/2d0
 		z=phot%z+phot%vz*v/2d0
 		irg=phot%irg
+		if(irg.lt.1) irg=1
 		if(phot%z.gt.0d0) then
 			C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*v*AU
 		else
@@ -1684,6 +1685,7 @@ c-----------------------------------------------------------------------
 			y=phot%y+phot%vy*v/2d0
 			z=phot%z+phot%vz*v/2d0
 			irg=phot%irg
+			if(irg.lt.1) irg=1
 			if(phot%z.gt.0d0) then
 				C(phot%i,phot%j)%scattfield(irg,0,1)=C(phot%i,phot%j)%scattfield(irg,0,1)+phot%E*w*AU
 				side=1
