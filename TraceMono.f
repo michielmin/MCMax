@@ -1130,11 +1130,13 @@ c-----------------------------------------------------------------------
 	integer i,j,iter
 	type(photon) phot
 	logical ignore
+
+10	continue
 	
 	phot%pol=.false.
 
 	Etot=(EnergyTot2+Estar+Eirf*fact_IRF+Einner)
-	
+
 	Er=Etot*ran2(idum)
 	if(Er.lt.Estar) then
 		phot%E=Etot
@@ -1278,6 +1280,7 @@ c-----------------------------------------------------------------------
 		enddo
 		enddo
 	endif
+	goto 10
 	
 	return
 	end
