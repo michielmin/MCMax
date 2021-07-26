@@ -291,6 +291,18 @@ c	print*,100d0*(Er/(4d0*pi))/(D%Lstar+Er/(4d0*pi))
 		C(i,j)%KextLRF=0d0
 		C(i,j)%ILRF=0d0
 		call CheckMinimumDensity(i,j)
+
+		if(vistype.eq.2) then
+c add the viscous energy directly to the local dust
+			C(i,j)%EJv=C(i,j)%EJv+Efrac(i,j)/C(i,j)%dens
+			if(.not.tcontact.or.tdes_iter) then
+				do ii=1,ngrains
+					do iopac=1,Grain(ii)%nopac
+						C(i,j)%EJvP(ii)=C(i,j)%EJvP(ii)+Efrac(i,j)/C(i,j)%dens
+					enddo
+				enddo
+			endif
+		endif
 	enddo
 	enddo
 	ncoolingtime=0
@@ -532,6 +544,7 @@ c emit from the interstellar radiation field
 		else
 			tau=-log(ran2(idum))
 		endif
+		if(phot%viscous.and.vistype.eq.2) tau=1d-40
 1		continue
 
 		call trace2d(phot,tau,escape,hitstar,.true.)

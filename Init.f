@@ -246,6 +246,7 @@
 	viscous=.false.
 	fastviscous=.false.
 	g2d_heat=.false.	! don't compute the heating of the dust by the gas by default
+	vistype=1
 	
 	forcefirst=.false.	! do not force the first interaction in the radiative transport
 	
@@ -1101,6 +1102,7 @@ c		possibility to empty the lower half of the density space
 	if(key.eq.'getalpha') read(value,*) getalpha
 	if(key.eq.'tgas') read(value,*) computeTgas
 	if(key.eq.'g2d_heat') read(value,*) g2d_heat
+	if(key.eq.'vistype') read(value,*) vistype
 	
 	if(key.eq.'convection') read(value,*) convection
 	
