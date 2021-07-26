@@ -406,6 +406,8 @@
 	keyword(i)='npahrecompute'
 	i=i+1
 	keyword(i)='vis_norm_fov'
+	i=i+1
+	keyword(i)='vistype'
 	
 	Nnormal=i
 c from here on keywords with numbers
