@@ -131,8 +131,13 @@ c===============================================================================
 		Sig=0d0
 		WeightedAlpha=0d0
 		do j=1,D%nTheta-1
-			Sig=Sig+C(i,j)%gasdens*C(i,j)%V
-			WeightedAlpha=WeightedAlpha+C(i,j)%gasdens*C(i,j)%V*C(i,j)%alphavis
+			if(vistype.eq.1) then
+				Sig=Sig+C(i,j)%gasdens*C(i,j)%V
+				WeightedAlpha=WeightedAlpha+C(i,j)%gasdens*C(i,j)%V*C(i,j)%alphavis
+			else
+				Sig=Sig+C(i,j)%dens*C(i,j)%V
+				WeightedAlpha=WeightedAlpha+C(i,j)%dens*C(i,j)%V*C(i,j)%alphavis
+			endif
 		enddo
 		WeightedAlpha=WeightedAlpha/Sig
 
@@ -140,7 +145,11 @@ c===============================================================================
                 !   density or dens*alpha (in case of deadzone)
 		!  Temperature is ignored! (for stability?)
 		do j=1,D%nTheta-1
-			Efrac(i,j)=Er*C(i,j)%gasdens*C(i,j)%V/Sig *C(i,j)%alphavis/WeightedAlpha
+			if(vistype.eq.1) then
+				Efrac(i,j)=Er*C(i,j)%gasdens*C(i,j)%V/Sig *C(i,j)%alphavis/WeightedAlpha
+			else
+				Efrac(i,j)=Er*C(i,j)%dens*C(i,j)%V/Sig *C(i,j)%alphavis/WeightedAlpha
+			endif
 			do ii=1,ngrains
 				C(i,j)%EviscDirect(ii)=0d0
 			enddo
